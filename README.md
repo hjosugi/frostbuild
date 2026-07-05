@@ -160,3 +160,7 @@ Phase 3: add remote CAS/action cache
 Phase 4: add Nix-backed toolchain environments
 Phase 5: add syscall-trace and static-analysis based test selection
 ```
+
+## License
+
+0BSD. You can use, copy, modify, and distribute this project for almost any purpose.
