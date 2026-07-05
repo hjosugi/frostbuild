@@ -86,10 +86,16 @@ Run affected tests:
 python3 frost.py test --workspace sample --jobs 8
 ```
 
-Clean local cache/output:
+Clean local output while preserving the local action cache/CAS:
 
 ```bash
 python3 frost.py clean --workspace sample
+```
+
+Remove output and cache state:
+
+```bash
+python3 frost.py clean --workspace sample --cache
 ```
 
 Optional Bazel comparison:

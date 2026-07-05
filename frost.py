@@ -18,12 +18,15 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures
+import contextlib
 import dataclasses
 import hashlib
 import json
 import os
 import pathlib
+import platform
 import shutil
+import shlex
 import subprocess
 import sys
 import time
@@ -32,6 +35,9 @@ from collections import defaultdict, deque
 from typing import Any
 
 BUILDER_VERSION = "frost-sim-builder-v1"
+ACTION_KEY_VERSION = "frost-action-key-v2"
+ACTION_ENV_KEYS = ("FROSTBUILD_FLAGS",)
+TOKEN_BYTE = b"+"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -52,6 +58,109 @@ class Plan:
     selected_targets: set[str]
     pruned_targets: set[str]
     reason: str
+
+
+@dataclasses.dataclass(frozen=True)
+class ActionDescriptor:
+    argv: tuple[str, ...]
+    cwd: str
+    env: tuple[tuple[str, str], ...]
+    inputs: tuple[tuple[str, str], ...]
+
+
+@dataclasses.dataclass
+class JobserverLease:
+    mode: str
+    effective_jobs: int
+    read_fd: int | None = None
+    write_fd: int | None = None
+    borrowed_tokens: int = 0
+    fifo_file: Any | None = None
+    server_read_fd: int | None = None
+    server_write_fd: int | None = None
+
+    @staticmethod
+    def disabled(requested_jobs: int) -> "JobserverLease":
+        return JobserverLease(mode="disabled", effective_jobs=max(1, requested_jobs))
+
+    @staticmethod
+    def from_environment(requested_jobs: int, env: dict[str, str] | None = None) -> "JobserverLease":
+        requested_jobs = max(1, requested_jobs)
+        env = dict(os.environ if env is None else env)
+        auth = parse_make_jobserver_auth(env.get("MAKEFLAGS", ""))
+        if auth is None:
+            return JobserverLease.disabled(requested_jobs)
+        if auth.startswith("fifo:"):
+            return JobserverLease._from_fifo(requested_jobs, auth.removeprefix("fifo:"))
+        try:
+            read_s, write_s = auth.split(",", 1)
+            read_fd = int(read_s)
+            write_fd = int(write_s)
+        except ValueError:
+            return JobserverLease.disabled(requested_jobs)
+        borrowed = borrow_pipe_tokens(read_fd, max(0, requested_jobs - 1))
+        return JobserverLease(
+            mode="client",
+            effective_jobs=max(1, min(requested_jobs, 1 + borrowed)),
+            read_fd=read_fd,
+            write_fd=write_fd,
+            borrowed_tokens=borrowed,
+        )
+
+    @staticmethod
+    def _from_fifo(requested_jobs: int, fifo_path: str) -> "JobserverLease":
+        try:
+            fifo = open(fifo_path, "r+b", buffering=0)
+        except OSError:
+            return JobserverLease.disabled(requested_jobs)
+        borrowed = borrow_pipe_tokens(fifo.fileno(), max(0, requested_jobs - 1))
+        return JobserverLease(
+            mode="client",
+            effective_jobs=max(1, min(requested_jobs, 1 + borrowed)),
+            write_fd=fifo.fileno(),
+            borrowed_tokens=borrowed,
+            fifo_file=fifo,
+        )
+
+    @staticmethod
+    def server(requested_jobs: int) -> "JobserverLease":
+        requested_jobs = max(1, requested_jobs)
+        read_fd, write_fd = os.pipe()
+        os.set_inheritable(read_fd, True)
+        os.set_inheritable(write_fd, True)
+        if requested_jobs > 1:
+            os.write(write_fd, TOKEN_BYTE * (requested_jobs - 1))
+        return JobserverLease(
+            mode="server",
+            effective_jobs=requested_jobs,
+            server_read_fd=read_fd,
+            server_write_fd=write_fd,
+        )
+
+    def child_env(self, base_env: dict[str, str] | None = None) -> dict[str, str]:
+        env = dict(os.environ if base_env is None else base_env)
+        if self.mode == "server" and self.server_read_fd is not None and self.server_write_fd is not None:
+            flags = env.get("MAKEFLAGS", "")
+            auth = f"--jobserver-auth={self.server_read_fd},{self.server_write_fd} -j"
+            env["MAKEFLAGS"] = f"{flags} {auth}".strip()
+        return env
+
+    def close(self) -> None:
+        if self.borrowed_tokens and self.write_fd is not None:
+            with contextlib.suppress(OSError):
+                os.write(self.write_fd, TOKEN_BYTE * self.borrowed_tokens)
+        if self.fifo_file is not None:
+            self.fifo_file.close()
+        for fd in (self.server_read_fd, self.server_write_fd):
+            if fd is not None:
+                with contextlib.suppress(OSError):
+                    os.close(fd)
+
+    def __enter__(self) -> "JobserverLease":
+        return self
+
+    def __exit__(self, exc_type: object, exc: object, tb: object) -> None:
+        self.close()
 
 
 class Workspace:
@@ -258,20 +367,96 @@ def topo_sort(ws: Workspace, subset: set[str]) -> list[str]:
     return order
 
 
-def action_key(ws: Workspace, t: Target) -> str:
-    parts: list[str] = [
-        BUILDER_VERSION,
-        ws.toolchain,
-        t.name,
-        t.kind,
-        t.src,
-        sha256_file(ws.path(t.src)) if ws.path(t.src).exists() else "MISSING_SRC",
+def parse_make_jobserver_auth(makeflags: str) -> str | None:
+    if not makeflags:
+        return None
+    try:
+        parts = shlex.split(makeflags)
+    except ValueError:
+        parts = makeflags.split()
+    for part in parts:
+        if part.startswith("--jobserver-auth="):
+            return part.split("=", 1)[1]
+        if part.startswith("--jobserver-fds="):
+            return part.split("=", 1)[1]
+    return None
+
+
+def borrow_pipe_tokens(read_fd: int, limit: int) -> int:
+    if limit <= 0:
+        return 0
+    borrowed = 0
+    was_blocking = True
+    try:
+        was_blocking = os.get_blocking(read_fd)
+        os.set_blocking(read_fd, False)
+    except OSError:
+        return 0
+    try:
+        while borrowed < limit:
+            try:
+                token = os.read(read_fd, 1)
+            except BlockingIOError:
+                break
+            except OSError:
+                break
+            if not token:
+                break
+            borrowed += 1
+    finally:
+        with contextlib.suppress(OSError):
+            os.set_blocking(read_fd, was_blocking)
+    return borrowed
+
+
+def relative_cwd(ws: Workspace, cwd: pathlib.Path | None = None) -> str:
+    cwd = (cwd or ws.root).resolve()
+    try:
+        rel = cwd.relative_to(ws.root)
+    except ValueError:
+        return cwd.as_posix()
+    return rel.as_posix() or "."
+
+
+def action_descriptor(
+    ws: Workspace,
+    t: Target,
+    *,
+    env: dict[str, str] | None = None,
+    cwd: pathlib.Path | None = None,
+) -> ActionDescriptor:
+    env = dict(os.environ if env is None else env)
+    inputs: list[tuple[str, str]] = [
+        (t.src, sha256_file(ws.path(t.src)) if ws.path(t.src).exists() else "MISSING_SRC"),
     ]
     for dep in sorted(t.deps):
         out = ws.output_path(dep)
-        parts.append(dep)
-        parts.append(sha256_file(out) if out.exists() else "MISSING_OUT")
-    return sha256_bytes("\0".join(parts).encode())
+        inputs.append((ws.rel(out), sha256_file(out) if out.exists() else "MISSING_OUT"))
+    return ActionDescriptor(
+        argv=("frost-sim-build", "--target", t.name, "--kind", t.kind, "--src", t.src),
+        cwd=relative_cwd(ws, cwd),
+        env=tuple(sorted((key, env[key]) for key in ACTION_ENV_KEYS if key in env)),
+        inputs=tuple(sorted(inputs)),
+    )
+
+
+def action_key(
+    ws: Workspace,
+    t: Target,
+    *,
+    env: dict[str, str] | None = None,
+    cwd: pathlib.Path | None = None,
+) -> str:
+    descriptor = action_descriptor(ws, t, env=env, cwd=cwd)
+    payload = {
+        "schema": ACTION_KEY_VERSION,
+        "builder": BUILDER_VERSION,
+        "platform": platform.system().lower(),
+        "target": t.name,
+        "toolchain_hash": sha256_bytes(ws.toolchain.encode()),
+        "descriptor": dataclasses.asdict(descriptor),
+    }
+    return sha256_bytes(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode())
 
 
 def restore_from_cache(ws: Workspace, out: pathlib.Path, digest: str) -> bool:
@@ -286,12 +471,23 @@ def restore_from_cache(ws: Workspace, out: pathlib.Path, digest: str) -> bool:
 def execute_action(ws: Workspace, name: str, action_cache: dict[str, Any], use_cache: bool) -> dict[str, Any]:
     t = ws.targets[name]
     out = ws.output_path(name)
+    lookup_start = time.perf_counter()
     key = action_key(ws, t)
     cache_entry = action_cache.get(key)
     if use_cache and cache_entry and restore_from_cache(ws, out, cache_entry["digest"]):
-        return {"target": name, "status": "cache_hit", "digest": cache_entry["digest"], "key": key}
+        lookup_latency_ms = (time.perf_counter() - lookup_start) * 1000
+        return {
+            "target": name,
+            "status": "cache_hit",
+            "digest": cache_entry["digest"],
+            "key": key,
+            "lookup_latency_ms": lookup_latency_ms,
+            "exit_code": cache_entry.get("exit_code", 0),
+        }
+    lookup_latency_ms = (time.perf_counter() - lookup_start) * 1000
 
     # Simulate compiler/test work. This is the cost we try to avoid.
+    action_start = time.perf_counter()
     time.sleep(t.cost_ms / 1000.0)
 
     src_text = ws.path(t.src).read_text(encoding="utf-8") if ws.path(t.src).exists() else ""
@@ -328,10 +524,20 @@ def execute_action(ws: Workspace, name: str, action_cache: dict[str, Any], use_c
         "target": name,
         "kind": t.kind,
         "digest": digest,
+        "outputs": {t.out: digest},
         "out": t.out,
+        "exit_code": 0,
+        "duration_ms": (time.perf_counter() - action_start) * 1000,
         "created_at": time.time(),
     }
-    return {"target": name, "status": "executed", "digest": digest, "key": key}
+    return {
+        "target": name,
+        "status": "executed",
+        "digest": digest,
+        "key": key,
+        "lookup_latency_ms": lookup_latency_ms,
+        "exit_code": 0,
+    }
 
 
 def execute_plan(ws: Workspace, selected: set[str], jobs: int, use_cache: bool = True) -> dict[str, Any]:
@@ -352,24 +558,25 @@ def execute_plan(ws: Workspace, selected: set[str], jobs: int, use_cache: bool =
     results: list[dict[str, Any]] = []
     start = time.perf_counter()
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, jobs)) as pool:
-        while ready or running:
-            while ready and len(running) < max(1, jobs):
-                n = ready.popleft()
-                fut = pool.submit(execute_action, ws, n, action_cache, use_cache)
-                running[fut] = n
-            if not running:
-                break
-            done, _ = concurrent.futures.wait(running.keys(), return_when=concurrent.futures.FIRST_COMPLETED)
-            for fut in done:
-                n = running.pop(fut)
-                res = fut.result()
-                results.append(res)
-                completed.add(n)
-                for parent in sorted(reverse.get(n, set())):
-                    deps_in_subset[parent].remove(n)
-                    if not deps_in_subset[parent]:
-                        ready.append(parent)
+    with JobserverLease.from_environment(jobs) as jobserver:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=jobserver.effective_jobs) as pool:
+            while ready or running:
+                while ready and len(running) < jobserver.effective_jobs:
+                    n = ready.popleft()
+                    fut = pool.submit(execute_action, ws, n, action_cache, use_cache)
+                    running[fut] = n
+                if not running:
+                    break
+                done, _ = concurrent.futures.wait(running.keys(), return_when=concurrent.futures.FIRST_COMPLETED)
+                for fut in done:
+                    n = running.pop(fut)
+                    res = fut.result()
+                    results.append(res)
+                    completed.add(n)
+                    for parent in sorted(reverse.get(n, set())):
+                        deps_in_subset[parent].remove(n)
+                        if not deps_in_subset[parent]:
+                            ready.append(parent)
 
     if completed != selected:
         missing = selected - completed
@@ -379,7 +586,15 @@ def execute_plan(ws: Workspace, selected: set[str], jobs: int, use_cache: bool =
     duration = time.perf_counter() - start
     executed = sum(1 for r in results if r["status"] == "executed")
     cache_hit = sum(1 for r in results if r["status"] == "cache_hit")
-    return {"executed": executed, "cache_hit": cache_hit, "results": sorted(results, key=lambda x: x["target"]), "duration_s": duration}
+    lookup_latencies = sorted(r.get("lookup_latency_ms", 0.0) for r in results)
+    p50 = lookup_latencies[len(lookup_latencies) // 2] if lookup_latencies else 0.0
+    return {
+        "executed": executed,
+        "cache_hit": cache_hit,
+        "results": sorted(results, key=lambda x: x["target"]),
+        "duration_s": duration,
+        "cache_lookup_latency_ms_p50": p50,
+    }
 
 
 def write_metadata(ws: Workspace) -> None:
@@ -430,15 +645,30 @@ def run_build(args: argparse.Namespace, kinds: set[str]) -> None:
         "executed": result["executed"],
         "cache_hit": result["cache_hit"],
         "duration_s": round(result["duration_s"], 4),
+        "cache_lookup_latency_ms_p50": round(result["cache_lookup_latency_ms_p50"], 4),
         "selected_targets": sorted(plan.selected_targets),
     }, indent=2, sort_keys=True))
 
 
 def clean(args: argparse.Namespace) -> None:
     ws = Workspace(pathlib.Path(args.workspace))
-    if ws.frost_dir.exists():
-        shutil.rmtree(ws.frost_dir)
-    print(f"removed {ws.frost_dir}")
+    if getattr(args, "cache", False):
+        if ws.frost_dir.exists():
+            shutil.rmtree(ws.frost_dir)
+        print(f"removed {ws.frost_dir}")
+        return
+    removed: list[pathlib.Path] = []
+    for path in (ws.out_dir, ws.state_path, ws.metadata_path):
+        if path.is_dir():
+            shutil.rmtree(path)
+            removed.append(path)
+        elif path.exists():
+            path.unlink()
+            removed.append(path)
+    if removed:
+        print("removed " + ", ".join(str(path) for path in removed))
+    else:
+        print(f"nothing to remove under {ws.frost_dir}")
 
 
 def touch_source(path: pathlib.Path) -> None:
@@ -502,6 +732,7 @@ def bench(args: argparse.Namespace) -> None:
         "micro_selected_count": len(micro_plan.selected_targets),
         "micro_pruned_count": len(micro_plan.pruned_targets),
         "naive_target_count": len(naive_set),
+        "cache_lookup_latency_ms_p50": round(micro["cache_lookup_latency_ms_p50"], 4),
         "note": "This is a deterministic simulation benchmark. Use scripts/compare_bazel.sh for real Bazel if installed.",
     }
     if args.with_bazel:
@@ -631,6 +862,7 @@ def main(argv: list[str] | None = None) -> int:
 
     p = sub.add_parser("clean")
     p.add_argument("--workspace", default="sample")
+    p.add_argument("--cache", action="store_true", help="also remove the local action cache and CAS")
     p.set_defaults(func=clean)
 
     p = sub.add_parser("bench", help="compare micro-partition incremental build vs naive full rebuild")

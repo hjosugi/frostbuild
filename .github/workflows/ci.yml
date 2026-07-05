@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  cargo:
+    name: Cargo build, test, clippy, fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: cargo-${{ runner.os }}-${{ hashFiles('Cargo.lock', '**/Cargo.toml') }}
+      - run: cargo build --release --locked
+      - run: cargo test --locked
+      - run: cargo clippy --all-targets --all-features -- -D warnings
+      - run: cargo fmt --all -- --check
+
+  python:
+    name: Python prototype tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m py_compile frost.py tests/test_frost.py
+      - run: python -m unittest discover -s tests
+      - run: python frost.py build --workspace sample --jobs 4 --force
