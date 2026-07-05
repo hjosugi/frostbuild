@@ -4,6 +4,7 @@ import os
 import pathlib
 import shutil
 import tempfile
+import time
 import unittest
 from unittest import mock
 
@@ -95,6 +96,52 @@ cost_ms = 1
 
         self.assertEqual(rebuild["executed"], 1)
         self.assertEqual(rebuild["cache_hit"], 0)
+
+    def test_metadata_catalog_indexes_and_reverse_closure_match_graph(self) -> None:
+        catalog = frost.build_metadata_catalog(self.ws)
+
+        self.assertFalse(frost.metadata_catalog_is_stale(self.ws, catalog))
+        self.assertEqual(catalog["indexes"]["source_to_partitions"]["src/app.fb"], ["app"])
+        self.assertEqual(catalog["indexes"]["source_to_targets"]["src/lib.fb"], ["lib"])
+        self.assertEqual(frost.catalog_changed_targets(catalog, ["src/lib.fb"]), {"lib"})
+        self.assertEqual(
+            frost.catalog_reverse_closure(catalog, {"lib"}),
+            self.ws.reverse_closure({"lib"}),
+        )
+
+    def test_metadata_catalog_scales_to_10k_targets(self) -> None:
+        ws = object.__new__(frost.Workspace)
+        ws.root = pathlib.Path("/")
+        ws.toolchain = "synthetic-toolchain-v1"
+        ws.default_targets = ("t9999",)
+        ws.targets = {}
+        for i in range(10_000):
+            name = f"t{i}"
+            deps = (f"t{i - 1}",) if i else ()
+            ws.targets[name] = frost.Target(
+                name=name,
+                kind="build",
+                src=f"src/{name}.fb",
+                deps=deps,
+                out=f".frost/out/{name}.out",
+                cost_ms=1,
+            )
+
+        start = time.perf_counter()
+        catalog = frost.build_metadata_catalog(ws)
+        build_ms = (time.perf_counter() - start) * 1000
+
+        start = time.perf_counter()
+        changed = frost.catalog_changed_targets(catalog, ["src/t9999.fb"])
+        query_ms = (time.perf_counter() - start) * 1000
+
+        self.assertLess(build_ms, 100)
+        self.assertLess(query_ms, 1)
+        self.assertEqual(changed, {"t9999"})
+        self.assertEqual(
+            frost.catalog_reverse_closure(catalog, {"t9998"}),
+            ws.reverse_closure({"t9998"}),
+        )
 
 
 class JobserverTestCase(unittest.TestCase):

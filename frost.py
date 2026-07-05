@@ -36,6 +36,7 @@ from typing import Any
 
 BUILDER_VERSION = "frost-sim-builder-v1"
 ACTION_KEY_VERSION = "frost-action-key-v2"
+METADATA_CATALOG_SCHEMA = "frost-metadata-catalog-v1"
 ACTION_ENV_KEYS = ("FROSTBUILD_FLAGS",)
 TOKEN_BYTE = b"+"
 
@@ -290,6 +291,104 @@ def source_to_targets(ws: Workspace) -> dict[str, set[str]]:
     for name, t in ws.targets.items():
         m[t.src].add(name)
     return m
+
+
+def workspace_manifest_fingerprint(ws: Workspace) -> str:
+    h = hashlib.sha256()
+
+    def field(value: object) -> None:
+        b = str(value).encode()
+        h.update(str(len(b)).encode())
+        h.update(b"\0")
+        h.update(b)
+        h.update(b"\0")
+
+    field(ws.toolchain)
+    for target in sorted(ws.default_targets):
+        field("default")
+        field(target)
+    for name, t in sorted(ws.targets.items()):
+        field("target")
+        field(name)
+        field(t.kind)
+        field(t.src)
+        for dep in sorted(t.deps):
+            field("dep")
+            field(dep)
+        field(t.out)
+        field(t.cost_ms)
+    return h.hexdigest()
+
+
+def build_metadata_catalog(ws: Workspace, *, include_source_hashes: bool = False) -> dict[str, Any]:
+    rev = ws.reverse_deps()
+    partitions = []
+    source_to_partitions: dict[str, list[str]] = defaultdict(list)
+    source_to_targets_index: dict[str, list[str]] = defaultdict(list)
+    partition_to_target: dict[str, str] = {}
+    target_to_partition: dict[str, str] = {}
+
+    for name, t in sorted(ws.targets.items()):
+        partition_id = name
+        partition = {
+            "partition_id": partition_id,
+            "target": name,
+            "kind": t.kind,
+            "src": t.src,
+            "deps": list(t.deps),
+            "reverse_deps": sorted(rev.get(name, [])),
+            "out": t.out,
+            "cost_ms": t.cost_ms,
+        }
+        if include_source_hashes:
+            partition["source_hash"] = sha256_file(ws.path(t.src)) if ws.path(t.src).exists() else "MISSING"
+        partitions.append(partition)
+        source_to_partitions[t.src].append(partition_id)
+        source_to_targets_index[t.src].append(name)
+        partition_to_target[partition_id] = name
+        target_to_partition[name] = partition_id
+
+    return {
+        "schema": METADATA_CATALOG_SCHEMA,
+        "toolchain": ws.toolchain,
+        "manifest_fingerprint": workspace_manifest_fingerprint(ws),
+        "partitions": partitions,
+        "indexes": {
+            "source_to_partitions": {k: sorted(v) for k, v in sorted(source_to_partitions.items())},
+            "source_to_targets": {k: sorted(v) for k, v in sorted(source_to_targets_index.items())},
+            "partition_to_target": dict(sorted(partition_to_target.items())),
+            "target_to_partition": dict(sorted(target_to_partition.items())),
+            "reverse_deps": {k: sorted(v) for k, v in sorted(rev.items())},
+        },
+    }
+
+
+def metadata_catalog_is_stale(ws: Workspace, catalog: dict[str, Any]) -> bool:
+    return (
+        catalog.get("schema") != METADATA_CATALOG_SCHEMA
+        or catalog.get("manifest_fingerprint") != workspace_manifest_fingerprint(ws)
+    )
+
+
+def catalog_changed_targets(catalog: dict[str, Any], sources: list[str] | tuple[str, ...] | set[str]) -> set[str]:
+    source_index = catalog.get("indexes", {}).get("source_to_targets", {})
+    targets: set[str] = set()
+    for source in sources:
+        targets.update(source_index.get(source, []))
+    return targets
+
+
+def catalog_reverse_closure(catalog: dict[str, Any], roots: set[str]) -> set[str]:
+    rev = catalog.get("indexes", {}).get("reverse_deps", {})
+    seen = set(roots)
+    q = deque(roots)
+    while q:
+        n = q.popleft()
+        for parent in rev.get(n, []):
+            if parent not in seen:
+                seen.add(parent)
+                q.append(parent)
+    return seen
 
 
 def detect_changed_sources(ws: Workspace, explicit_changed: list[str] | None = None) -> tuple[list[str], set[str], str]:
@@ -598,20 +697,7 @@ def execute_plan(ws: Workspace, selected: set[str], jobs: int, use_cache: bool =
 
 
 def write_metadata(ws: Workspace) -> None:
-    rev = ws.reverse_deps()
-    meta = []
-    for name, t in sorted(ws.targets.items()):
-        meta.append({
-            "partition_id": name,
-            "kind": t.kind,
-            "src": t.src,
-            "deps": list(t.deps),
-            "reverse_deps": sorted(rev.get(name, [])),
-            "out": t.out,
-            "source_hash": sha256_file(ws.path(t.src)) if ws.path(t.src).exists() else "MISSING",
-            "cost_ms": t.cost_ms,
-        })
-    save_json(ws.metadata_path, {"toolchain": ws.toolchain, "partitions": meta})
+    save_json(ws.metadata_path, build_metadata_catalog(ws, include_source_hashes=True))
 
 
 def print_plan(ws: Workspace, plan: Plan) -> None:
