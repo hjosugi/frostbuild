@@ -1,0 +1,3 @@
+EXPORT pkg02_mod05
+IMPORT pkg02_mod06
+VALUE 2-5

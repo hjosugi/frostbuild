@@ -1,0 +1,4 @@
+EXPORT pkg01_mod02
+IMPORT pkg01_mod03
+IMPORT pkg01_mod04
+VALUE 1-2

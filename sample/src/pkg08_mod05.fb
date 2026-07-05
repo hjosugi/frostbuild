@@ -1,0 +1,3 @@
+EXPORT pkg08_mod05
+IMPORT pkg08_mod06
+VALUE 8-5

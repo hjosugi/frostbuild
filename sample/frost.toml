@@ -1,0 +1,1271 @@
+[workspace]
+toolchain = "python-simulated-toolchain-v1"
+default_targets = ["app"]
+
+[target.app]
+kind = "build"
+src = "src/app.fb"
+deps = ["pkg00_mod00", "pkg01_mod00", "pkg02_mod00", "pkg03_mod00", "pkg04_mod00", "pkg05_mod00", "pkg06_mod00", "pkg07_mod00", "pkg08_mod00", "pkg09_mod00", "pkg10_mod00", "pkg11_mod00", "pkg12_mod00", "pkg13_mod00", "pkg14_mod00", "pkg15_mod00", "pkg16_mod00", "pkg17_mod00", "pkg18_mod00", "pkg19_mod00"]
+out = ".frost/out/app.out"
+cost_ms = 30
+
+[target.pkg00_mod00]
+kind = "build"
+src = "src/pkg00_mod00.fb"
+deps = ["pkg00_mod01", "pkg00_mod02"]
+out = ".frost/out/pkg00_mod00.out"
+cost_ms = 30
+
+[target.pkg00_mod01]
+kind = "build"
+src = "src/pkg00_mod01.fb"
+deps = ["pkg00_mod02"]
+out = ".frost/out/pkg00_mod01.out"
+cost_ms = 30
+
+[target.pkg00_mod02]
+kind = "build"
+src = "src/pkg00_mod02.fb"
+deps = ["pkg00_mod03", "pkg00_mod04"]
+out = ".frost/out/pkg00_mod02.out"
+cost_ms = 30
+
+[target.pkg00_mod03]
+kind = "build"
+src = "src/pkg00_mod03.fb"
+deps = ["pkg00_mod04"]
+out = ".frost/out/pkg00_mod03.out"
+cost_ms = 30
+
+[target.pkg00_mod04]
+kind = "build"
+src = "src/pkg00_mod04.fb"
+deps = ["pkg00_mod05", "pkg00_mod06"]
+out = ".frost/out/pkg00_mod04.out"
+cost_ms = 30
+
+[target.pkg00_mod05]
+kind = "build"
+src = "src/pkg00_mod05.fb"
+deps = ["pkg00_mod06"]
+out = ".frost/out/pkg00_mod05.out"
+cost_ms = 30
+
+[target.pkg00_mod06]
+kind = "build"
+src = "src/pkg00_mod06.fb"
+deps = ["pkg00_mod07"]
+out = ".frost/out/pkg00_mod06.out"
+cost_ms = 30
+
+[target.pkg00_mod07]
+kind = "build"
+src = "src/pkg00_mod07.fb"
+deps = []
+out = ".frost/out/pkg00_mod07.out"
+cost_ms = 30
+
+[target.pkg01_mod00]
+kind = "build"
+src = "src/pkg01_mod00.fb"
+deps = ["pkg01_mod01", "pkg01_mod02"]
+out = ".frost/out/pkg01_mod00.out"
+cost_ms = 30
+
+[target.pkg01_mod01]
+kind = "build"
+src = "src/pkg01_mod01.fb"
+deps = ["pkg01_mod02"]
+out = ".frost/out/pkg01_mod01.out"
+cost_ms = 30
+
+[target.pkg01_mod02]
+kind = "build"
+src = "src/pkg01_mod02.fb"
+deps = ["pkg01_mod03", "pkg01_mod04"]
+out = ".frost/out/pkg01_mod02.out"
+cost_ms = 30
+
+[target.pkg01_mod03]
+kind = "build"
+src = "src/pkg01_mod03.fb"
+deps = ["pkg01_mod04"]
+out = ".frost/out/pkg01_mod03.out"
+cost_ms = 30
+
+[target.pkg01_mod04]
+kind = "build"
+src = "src/pkg01_mod04.fb"
+deps = ["pkg01_mod05", "pkg01_mod06"]
+out = ".frost/out/pkg01_mod04.out"
+cost_ms = 30
+
+[target.pkg01_mod05]
+kind = "build"
+src = "src/pkg01_mod05.fb"
+deps = ["pkg01_mod06"]
+out = ".frost/out/pkg01_mod05.out"
+cost_ms = 30
+
+[target.pkg01_mod06]
+kind = "build"
+src = "src/pkg01_mod06.fb"
+deps = ["pkg01_mod07"]
+out = ".frost/out/pkg01_mod06.out"
+cost_ms = 30
+
+[target.pkg01_mod07]
+kind = "build"
+src = "src/pkg01_mod07.fb"
+deps = []
+out = ".frost/out/pkg01_mod07.out"
+cost_ms = 30
+
+[target.pkg02_mod00]
+kind = "build"
+src = "src/pkg02_mod00.fb"
+deps = ["pkg02_mod01", "pkg02_mod02"]
+out = ".frost/out/pkg02_mod00.out"
+cost_ms = 30
+
+[target.pkg02_mod01]
+kind = "build"
+src = "src/pkg02_mod01.fb"
+deps = ["pkg02_mod02"]
+out = ".frost/out/pkg02_mod01.out"
+cost_ms = 30
+
+[target.pkg02_mod02]
+kind = "build"
+src = "src/pkg02_mod02.fb"
+deps = ["pkg02_mod03", "pkg02_mod04"]
+out = ".frost/out/pkg02_mod02.out"
+cost_ms = 30
+
+[target.pkg02_mod03]
+kind = "build"
+src = "src/pkg02_mod03.fb"
+deps = ["pkg02_mod04"]
+out = ".frost/out/pkg02_mod03.out"
+cost_ms = 30
+
+[target.pkg02_mod04]
+kind = "build"
+src = "src/pkg02_mod04.fb"
+deps = ["pkg02_mod05", "pkg02_mod06"]
+out = ".frost/out/pkg02_mod04.out"
+cost_ms = 30
+
+[target.pkg02_mod05]
+kind = "build"
+src = "src/pkg02_mod05.fb"
+deps = ["pkg02_mod06"]
+out = ".frost/out/pkg02_mod05.out"
+cost_ms = 30
+
+[target.pkg02_mod06]
+kind = "build"
+src = "src/pkg02_mod06.fb"
+deps = ["pkg02_mod07"]
+out = ".frost/out/pkg02_mod06.out"
+cost_ms = 30
+
+[target.pkg02_mod07]
+kind = "build"
+src = "src/pkg02_mod07.fb"
+deps = []
+out = ".frost/out/pkg02_mod07.out"
+cost_ms = 30
+
+[target.pkg03_mod00]
+kind = "build"
+src = "src/pkg03_mod00.fb"
+deps = ["pkg03_mod01", "pkg03_mod02"]
+out = ".frost/out/pkg03_mod00.out"
+cost_ms = 30
+
+[target.pkg03_mod01]
+kind = "build"
+src = "src/pkg03_mod01.fb"
+deps = ["pkg03_mod02"]
+out = ".frost/out/pkg03_mod01.out"
+cost_ms = 30
+
+[target.pkg03_mod02]
+kind = "build"
+src = "src/pkg03_mod02.fb"
+deps = ["pkg03_mod03", "pkg03_mod04"]
+out = ".frost/out/pkg03_mod02.out"
+cost_ms = 30
+
+[target.pkg03_mod03]
+kind = "build"
+src = "src/pkg03_mod03.fb"
+deps = ["pkg03_mod04"]
+out = ".frost/out/pkg03_mod03.out"
+cost_ms = 30
+
+[target.pkg03_mod04]
+kind = "build"
+src = "src/pkg03_mod04.fb"
+deps = ["pkg03_mod05", "pkg03_mod06"]
+out = ".frost/out/pkg03_mod04.out"
+cost_ms = 30
+
+[target.pkg03_mod05]
+kind = "build"
+src = "src/pkg03_mod05.fb"
+deps = ["pkg03_mod06"]
+out = ".frost/out/pkg03_mod05.out"
+cost_ms = 30
+
+[target.pkg03_mod06]
+kind = "build"
+src = "src/pkg03_mod06.fb"
+deps = ["pkg03_mod07"]
+out = ".frost/out/pkg03_mod06.out"
+cost_ms = 30
+
+[target.pkg03_mod07]
+kind = "build"
+src = "src/pkg03_mod07.fb"
+deps = []
+out = ".frost/out/pkg03_mod07.out"
+cost_ms = 30
+
+[target.pkg04_mod00]
+kind = "build"
+src = "src/pkg04_mod00.fb"
+deps = ["pkg04_mod01", "pkg04_mod02"]
+out = ".frost/out/pkg04_mod00.out"
+cost_ms = 30
+
+[target.pkg04_mod01]
+kind = "build"
+src = "src/pkg04_mod01.fb"
+deps = ["pkg04_mod02"]
+out = ".frost/out/pkg04_mod01.out"
+cost_ms = 30
+
+[target.pkg04_mod02]
+kind = "build"
+src = "src/pkg04_mod02.fb"
+deps = ["pkg04_mod03", "pkg04_mod04"]
+out = ".frost/out/pkg04_mod02.out"
+cost_ms = 30
+
+[target.pkg04_mod03]
+kind = "build"
+src = "src/pkg04_mod03.fb"
+deps = ["pkg04_mod04"]
+out = ".frost/out/pkg04_mod03.out"
+cost_ms = 30
+
+[target.pkg04_mod04]
+kind = "build"
+src = "src/pkg04_mod04.fb"
+deps = ["pkg04_mod05", "pkg04_mod06"]
+out = ".frost/out/pkg04_mod04.out"
+cost_ms = 30
+
+[target.pkg04_mod05]
+kind = "build"
+src = "src/pkg04_mod05.fb"
+deps = ["pkg04_mod06"]
+out = ".frost/out/pkg04_mod05.out"
+cost_ms = 30
+
+[target.pkg04_mod06]
+kind = "build"
+src = "src/pkg04_mod06.fb"
+deps = ["pkg04_mod07"]
+out = ".frost/out/pkg04_mod06.out"
+cost_ms = 30
+
+[target.pkg04_mod07]
+kind = "build"
+src = "src/pkg04_mod07.fb"
+deps = []
+out = ".frost/out/pkg04_mod07.out"
+cost_ms = 30
+
+[target.pkg05_mod00]
+kind = "build"
+src = "src/pkg05_mod00.fb"
+deps = ["pkg05_mod01", "pkg05_mod02"]
+out = ".frost/out/pkg05_mod00.out"
+cost_ms = 30
+
+[target.pkg05_mod01]
+kind = "build"
+src = "src/pkg05_mod01.fb"
+deps = ["pkg05_mod02"]
+out = ".frost/out/pkg05_mod01.out"
+cost_ms = 30
+
+[target.pkg05_mod02]
+kind = "build"
+src = "src/pkg05_mod02.fb"
+deps = ["pkg05_mod03", "pkg05_mod04"]
+out = ".frost/out/pkg05_mod02.out"
+cost_ms = 30
+
+[target.pkg05_mod03]
+kind = "build"
+src = "src/pkg05_mod03.fb"
+deps = ["pkg05_mod04"]
+out = ".frost/out/pkg05_mod03.out"
+cost_ms = 30
+
+[target.pkg05_mod04]
+kind = "build"
+src = "src/pkg05_mod04.fb"
+deps = ["pkg05_mod05", "pkg05_mod06"]
+out = ".frost/out/pkg05_mod04.out"
+cost_ms = 30
+
+[target.pkg05_mod05]
+kind = "build"
+src = "src/pkg05_mod05.fb"
+deps = ["pkg05_mod06"]
+out = ".frost/out/pkg05_mod05.out"
+cost_ms = 30
+
+[target.pkg05_mod06]
+kind = "build"
+src = "src/pkg05_mod06.fb"
+deps = ["pkg05_mod07"]
+out = ".frost/out/pkg05_mod06.out"
+cost_ms = 30
+
+[target.pkg05_mod07]
+kind = "build"
+src = "src/pkg05_mod07.fb"
+deps = []
+out = ".frost/out/pkg05_mod07.out"
+cost_ms = 30
+
+[target.pkg06_mod00]
+kind = "build"
+src = "src/pkg06_mod00.fb"
+deps = ["pkg06_mod01", "pkg06_mod02"]
+out = ".frost/out/pkg06_mod00.out"
+cost_ms = 30
+
+[target.pkg06_mod01]
+kind = "build"
+src = "src/pkg06_mod01.fb"
+deps = ["pkg06_mod02"]
+out = ".frost/out/pkg06_mod01.out"
+cost_ms = 30
+
+[target.pkg06_mod02]
+kind = "build"
+src = "src/pkg06_mod02.fb"
+deps = ["pkg06_mod03", "pkg06_mod04"]
+out = ".frost/out/pkg06_mod02.out"
+cost_ms = 30
+
+[target.pkg06_mod03]
+kind = "build"
+src = "src/pkg06_mod03.fb"
+deps = ["pkg06_mod04"]
+out = ".frost/out/pkg06_mod03.out"
+cost_ms = 30
+
+[target.pkg06_mod04]
+kind = "build"
+src = "src/pkg06_mod04.fb"
+deps = ["pkg06_mod05", "pkg06_mod06"]
+out = ".frost/out/pkg06_mod04.out"
+cost_ms = 30
+
+[target.pkg06_mod05]
+kind = "build"
+src = "src/pkg06_mod05.fb"
+deps = ["pkg06_mod06"]
+out = ".frost/out/pkg06_mod05.out"
+cost_ms = 30
+
+[target.pkg06_mod06]
+kind = "build"
+src = "src/pkg06_mod06.fb"
+deps = ["pkg06_mod07"]
+out = ".frost/out/pkg06_mod06.out"
+cost_ms = 30
+
+[target.pkg06_mod07]
+kind = "build"
+src = "src/pkg06_mod07.fb"
+deps = []
+out = ".frost/out/pkg06_mod07.out"
+cost_ms = 30
+
+[target.pkg07_mod00]
+kind = "build"
+src = "src/pkg07_mod00.fb"
+deps = ["pkg07_mod01", "pkg07_mod02"]
+out = ".frost/out/pkg07_mod00.out"
+cost_ms = 30
+
+[target.pkg07_mod01]
+kind = "build"
+src = "src/pkg07_mod01.fb"
+deps = ["pkg07_mod02"]
+out = ".frost/out/pkg07_mod01.out"
+cost_ms = 30
+
+[target.pkg07_mod02]
+kind = "build"
+src = "src/pkg07_mod02.fb"
+deps = ["pkg07_mod03", "pkg07_mod04"]
+out = ".frost/out/pkg07_mod02.out"
+cost_ms = 30
+
+[target.pkg07_mod03]
+kind = "build"
+src = "src/pkg07_mod03.fb"
+deps = ["pkg07_mod04"]
+out = ".frost/out/pkg07_mod03.out"
+cost_ms = 30
+
+[target.pkg07_mod04]
+kind = "build"
+src = "src/pkg07_mod04.fb"
+deps = ["pkg07_mod05", "pkg07_mod06"]
+out = ".frost/out/pkg07_mod04.out"
+cost_ms = 30
+
+[target.pkg07_mod05]
+kind = "build"
+src = "src/pkg07_mod05.fb"
+deps = ["pkg07_mod06"]
+out = ".frost/out/pkg07_mod05.out"
+cost_ms = 30
+
+[target.pkg07_mod06]
+kind = "build"
+src = "src/pkg07_mod06.fb"
+deps = ["pkg07_mod07"]
+out = ".frost/out/pkg07_mod06.out"
+cost_ms = 30
+
+[target.pkg07_mod07]
+kind = "build"
+src = "src/pkg07_mod07.fb"
+deps = []
+out = ".frost/out/pkg07_mod07.out"
+cost_ms = 30
+
+[target.pkg08_mod00]
+kind = "build"
+src = "src/pkg08_mod00.fb"
+deps = ["pkg08_mod01", "pkg08_mod02"]
+out = ".frost/out/pkg08_mod00.out"
+cost_ms = 30
+
+[target.pkg08_mod01]
+kind = "build"
+src = "src/pkg08_mod01.fb"
+deps = ["pkg08_mod02"]
+out = ".frost/out/pkg08_mod01.out"
+cost_ms = 30
+
+[target.pkg08_mod02]
+kind = "build"
+src = "src/pkg08_mod02.fb"
+deps = ["pkg08_mod03", "pkg08_mod04"]
+out = ".frost/out/pkg08_mod02.out"
+cost_ms = 30
+
+[target.pkg08_mod03]
+kind = "build"
+src = "src/pkg08_mod03.fb"
+deps = ["pkg08_mod04"]
+out = ".frost/out/pkg08_mod03.out"
+cost_ms = 30
+
+[target.pkg08_mod04]
+kind = "build"
+src = "src/pkg08_mod04.fb"
+deps = ["pkg08_mod05", "pkg08_mod06"]
+out = ".frost/out/pkg08_mod04.out"
+cost_ms = 30
+
+[target.pkg08_mod05]
+kind = "build"
+src = "src/pkg08_mod05.fb"
+deps = ["pkg08_mod06"]
+out = ".frost/out/pkg08_mod05.out"
+cost_ms = 30
+
+[target.pkg08_mod06]
+kind = "build"
+src = "src/pkg08_mod06.fb"
+deps = ["pkg08_mod07"]
+out = ".frost/out/pkg08_mod06.out"
+cost_ms = 30
+
+[target.pkg08_mod07]
+kind = "build"
+src = "src/pkg08_mod07.fb"
+deps = []
+out = ".frost/out/pkg08_mod07.out"
+cost_ms = 30
+
+[target.pkg09_mod00]
+kind = "build"
+src = "src/pkg09_mod00.fb"
+deps = ["pkg09_mod01", "pkg09_mod02"]
+out = ".frost/out/pkg09_mod00.out"
+cost_ms = 30
+
+[target.pkg09_mod01]
+kind = "build"
+src = "src/pkg09_mod01.fb"
+deps = ["pkg09_mod02"]
+out = ".frost/out/pkg09_mod01.out"
+cost_ms = 30
+
+[target.pkg09_mod02]
+kind = "build"
+src = "src/pkg09_mod02.fb"
+deps = ["pkg09_mod03", "pkg09_mod04"]
+out = ".frost/out/pkg09_mod02.out"
+cost_ms = 30
+
+[target.pkg09_mod03]
+kind = "build"
+src = "src/pkg09_mod03.fb"
+deps = ["pkg09_mod04"]
+out = ".frost/out/pkg09_mod03.out"
+cost_ms = 30
+
+[target.pkg09_mod04]
+kind = "build"
+src = "src/pkg09_mod04.fb"
+deps = ["pkg09_mod05", "pkg09_mod06"]
+out = ".frost/out/pkg09_mod04.out"
+cost_ms = 30
+
+[target.pkg09_mod05]
+kind = "build"
+src = "src/pkg09_mod05.fb"
+deps = ["pkg09_mod06"]
+out = ".frost/out/pkg09_mod05.out"
+cost_ms = 30
+
+[target.pkg09_mod06]
+kind = "build"
+src = "src/pkg09_mod06.fb"
+deps = ["pkg09_mod07"]
+out = ".frost/out/pkg09_mod06.out"
+cost_ms = 30
+
+[target.pkg09_mod07]
+kind = "build"
+src = "src/pkg09_mod07.fb"
+deps = []
+out = ".frost/out/pkg09_mod07.out"
+cost_ms = 30
+
+[target.pkg10_mod00]
+kind = "build"
+src = "src/pkg10_mod00.fb"
+deps = ["pkg10_mod01", "pkg10_mod02"]
+out = ".frost/out/pkg10_mod00.out"
+cost_ms = 30
+
+[target.pkg10_mod01]
+kind = "build"
+src = "src/pkg10_mod01.fb"
+deps = ["pkg10_mod02"]
+out = ".frost/out/pkg10_mod01.out"
+cost_ms = 30
+
+[target.pkg10_mod02]
+kind = "build"
+src = "src/pkg10_mod02.fb"
+deps = ["pkg10_mod03", "pkg10_mod04"]
+out = ".frost/out/pkg10_mod02.out"
+cost_ms = 30
+
+[target.pkg10_mod03]
+kind = "build"
+src = "src/pkg10_mod03.fb"
+deps = ["pkg10_mod04"]
+out = ".frost/out/pkg10_mod03.out"
+cost_ms = 30
+
+[target.pkg10_mod04]
+kind = "build"
+src = "src/pkg10_mod04.fb"
+deps = ["pkg10_mod05", "pkg10_mod06"]
+out = ".frost/out/pkg10_mod04.out"
+cost_ms = 30
+
+[target.pkg10_mod05]
+kind = "build"
+src = "src/pkg10_mod05.fb"
+deps = ["pkg10_mod06"]
+out = ".frost/out/pkg10_mod05.out"
+cost_ms = 30
+
+[target.pkg10_mod06]
+kind = "build"
+src = "src/pkg10_mod06.fb"
+deps = ["pkg10_mod07"]
+out = ".frost/out/pkg10_mod06.out"
+cost_ms = 30
+
+[target.pkg10_mod07]
+kind = "build"
+src = "src/pkg10_mod07.fb"
+deps = []
+out = ".frost/out/pkg10_mod07.out"
+cost_ms = 30
+
+[target.pkg11_mod00]
+kind = "build"
+src = "src/pkg11_mod00.fb"
+deps = ["pkg11_mod01", "pkg11_mod02"]
+out = ".frost/out/pkg11_mod00.out"
+cost_ms = 30
+
+[target.pkg11_mod01]
+kind = "build"
+src = "src/pkg11_mod01.fb"
+deps = ["pkg11_mod02"]
+out = ".frost/out/pkg11_mod01.out"
+cost_ms = 30
+
+[target.pkg11_mod02]
+kind = "build"
+src = "src/pkg11_mod02.fb"
+deps = ["pkg11_mod03", "pkg11_mod04"]
+out = ".frost/out/pkg11_mod02.out"
+cost_ms = 30
+
+[target.pkg11_mod03]
+kind = "build"
+src = "src/pkg11_mod03.fb"
+deps = ["pkg11_mod04"]
+out = ".frost/out/pkg11_mod03.out"
+cost_ms = 30
+
+[target.pkg11_mod04]
+kind = "build"
+src = "src/pkg11_mod04.fb"
+deps = ["pkg11_mod05", "pkg11_mod06"]
+out = ".frost/out/pkg11_mod04.out"
+cost_ms = 30
+
+[target.pkg11_mod05]
+kind = "build"
+src = "src/pkg11_mod05.fb"
+deps = ["pkg11_mod06"]
+out = ".frost/out/pkg11_mod05.out"
+cost_ms = 30
+
+[target.pkg11_mod06]
+kind = "build"
+src = "src/pkg11_mod06.fb"
+deps = ["pkg11_mod07"]
+out = ".frost/out/pkg11_mod06.out"
+cost_ms = 30
+
+[target.pkg11_mod07]
+kind = "build"
+src = "src/pkg11_mod07.fb"
+deps = []
+out = ".frost/out/pkg11_mod07.out"
+cost_ms = 30
+
+[target.pkg12_mod00]
+kind = "build"
+src = "src/pkg12_mod00.fb"
+deps = ["pkg12_mod01", "pkg12_mod02"]
+out = ".frost/out/pkg12_mod00.out"
+cost_ms = 30
+
+[target.pkg12_mod01]
+kind = "build"
+src = "src/pkg12_mod01.fb"
+deps = ["pkg12_mod02"]
+out = ".frost/out/pkg12_mod01.out"
+cost_ms = 30
+
+[target.pkg12_mod02]
+kind = "build"
+src = "src/pkg12_mod02.fb"
+deps = ["pkg12_mod03", "pkg12_mod04"]
+out = ".frost/out/pkg12_mod02.out"
+cost_ms = 30
+
+[target.pkg12_mod03]
+kind = "build"
+src = "src/pkg12_mod03.fb"
+deps = ["pkg12_mod04"]
+out = ".frost/out/pkg12_mod03.out"
+cost_ms = 30
+
+[target.pkg12_mod04]
+kind = "build"
+src = "src/pkg12_mod04.fb"
+deps = ["pkg12_mod05", "pkg12_mod06"]
+out = ".frost/out/pkg12_mod04.out"
+cost_ms = 30
+
+[target.pkg12_mod05]
+kind = "build"
+src = "src/pkg12_mod05.fb"
+deps = ["pkg12_mod06"]
+out = ".frost/out/pkg12_mod05.out"
+cost_ms = 30
+
+[target.pkg12_mod06]
+kind = "build"
+src = "src/pkg12_mod06.fb"
+deps = ["pkg12_mod07"]
+out = ".frost/out/pkg12_mod06.out"
+cost_ms = 30
+
+[target.pkg12_mod07]
+kind = "build"
+src = "src/pkg12_mod07.fb"
+deps = []
+out = ".frost/out/pkg12_mod07.out"
+cost_ms = 30
+
+[target.pkg13_mod00]
+kind = "build"
+src = "src/pkg13_mod00.fb"
+deps = ["pkg13_mod01", "pkg13_mod02"]
+out = ".frost/out/pkg13_mod00.out"
+cost_ms = 30
+
+[target.pkg13_mod01]
+kind = "build"
+src = "src/pkg13_mod01.fb"
+deps = ["pkg13_mod02"]
+out = ".frost/out/pkg13_mod01.out"
+cost_ms = 30
+
+[target.pkg13_mod02]
+kind = "build"
+src = "src/pkg13_mod02.fb"
+deps = ["pkg13_mod03", "pkg13_mod04"]
+out = ".frost/out/pkg13_mod02.out"
+cost_ms = 30
+
+[target.pkg13_mod03]
+kind = "build"
+src = "src/pkg13_mod03.fb"
+deps = ["pkg13_mod04"]
+out = ".frost/out/pkg13_mod03.out"
+cost_ms = 30
+
+[target.pkg13_mod04]
+kind = "build"
+src = "src/pkg13_mod04.fb"
+deps = ["pkg13_mod05", "pkg13_mod06"]
+out = ".frost/out/pkg13_mod04.out"
+cost_ms = 30
+
+[target.pkg13_mod05]
+kind = "build"
+src = "src/pkg13_mod05.fb"
+deps = ["pkg13_mod06"]
+out = ".frost/out/pkg13_mod05.out"
+cost_ms = 30
+
+[target.pkg13_mod06]
+kind = "build"
+src = "src/pkg13_mod06.fb"
+deps = ["pkg13_mod07"]
+out = ".frost/out/pkg13_mod06.out"
+cost_ms = 30
+
+[target.pkg13_mod07]
+kind = "build"
+src = "src/pkg13_mod07.fb"
+deps = []
+out = ".frost/out/pkg13_mod07.out"
+cost_ms = 30
+
+[target.pkg14_mod00]
+kind = "build"
+src = "src/pkg14_mod00.fb"
+deps = ["pkg14_mod01", "pkg14_mod02"]
+out = ".frost/out/pkg14_mod00.out"
+cost_ms = 30
+
+[target.pkg14_mod01]
+kind = "build"
+src = "src/pkg14_mod01.fb"
+deps = ["pkg14_mod02"]
+out = ".frost/out/pkg14_mod01.out"
+cost_ms = 30
+
+[target.pkg14_mod02]
+kind = "build"
+src = "src/pkg14_mod02.fb"
+deps = ["pkg14_mod03", "pkg14_mod04"]
+out = ".frost/out/pkg14_mod02.out"
+cost_ms = 30
+
+[target.pkg14_mod03]
+kind = "build"
+src = "src/pkg14_mod03.fb"
+deps = ["pkg14_mod04"]
+out = ".frost/out/pkg14_mod03.out"
+cost_ms = 30
+
+[target.pkg14_mod04]
+kind = "build"
+src = "src/pkg14_mod04.fb"
+deps = ["pkg14_mod05", "pkg14_mod06"]
+out = ".frost/out/pkg14_mod04.out"
+cost_ms = 30
+
+[target.pkg14_mod05]
+kind = "build"
+src = "src/pkg14_mod05.fb"
+deps = ["pkg14_mod06"]
+out = ".frost/out/pkg14_mod05.out"
+cost_ms = 30
+
+[target.pkg14_mod06]
+kind = "build"
+src = "src/pkg14_mod06.fb"
+deps = ["pkg14_mod07"]
+out = ".frost/out/pkg14_mod06.out"
+cost_ms = 30
+
+[target.pkg14_mod07]
+kind = "build"
+src = "src/pkg14_mod07.fb"
+deps = []
+out = ".frost/out/pkg14_mod07.out"
+cost_ms = 30
+
+[target.pkg15_mod00]
+kind = "build"
+src = "src/pkg15_mod00.fb"
+deps = ["pkg15_mod01", "pkg15_mod02"]
+out = ".frost/out/pkg15_mod00.out"
+cost_ms = 30
+
+[target.pkg15_mod01]
+kind = "build"
+src = "src/pkg15_mod01.fb"
+deps = ["pkg15_mod02"]
+out = ".frost/out/pkg15_mod01.out"
+cost_ms = 30
+
+[target.pkg15_mod02]
+kind = "build"
+src = "src/pkg15_mod02.fb"
+deps = ["pkg15_mod03", "pkg15_mod04"]
+out = ".frost/out/pkg15_mod02.out"
+cost_ms = 30
+
+[target.pkg15_mod03]
+kind = "build"
+src = "src/pkg15_mod03.fb"
+deps = ["pkg15_mod04"]
+out = ".frost/out/pkg15_mod03.out"
+cost_ms = 30
+
+[target.pkg15_mod04]
+kind = "build"
+src = "src/pkg15_mod04.fb"
+deps = ["pkg15_mod05", "pkg15_mod06"]
+out = ".frost/out/pkg15_mod04.out"
+cost_ms = 30
+
+[target.pkg15_mod05]
+kind = "build"
+src = "src/pkg15_mod05.fb"
+deps = ["pkg15_mod06"]
+out = ".frost/out/pkg15_mod05.out"
+cost_ms = 30
+
+[target.pkg15_mod06]
+kind = "build"
+src = "src/pkg15_mod06.fb"
+deps = ["pkg15_mod07"]
+out = ".frost/out/pkg15_mod06.out"
+cost_ms = 30
+
+[target.pkg15_mod07]
+kind = "build"
+src = "src/pkg15_mod07.fb"
+deps = []
+out = ".frost/out/pkg15_mod07.out"
+cost_ms = 30
+
+[target.pkg16_mod00]
+kind = "build"
+src = "src/pkg16_mod00.fb"
+deps = ["pkg16_mod01", "pkg16_mod02"]
+out = ".frost/out/pkg16_mod00.out"
+cost_ms = 30
+
+[target.pkg16_mod01]
+kind = "build"
+src = "src/pkg16_mod01.fb"
+deps = ["pkg16_mod02"]
+out = ".frost/out/pkg16_mod01.out"
+cost_ms = 30
+
+[target.pkg16_mod02]
+kind = "build"
+src = "src/pkg16_mod02.fb"
+deps = ["pkg16_mod03", "pkg16_mod04"]
+out = ".frost/out/pkg16_mod02.out"
+cost_ms = 30
+
+[target.pkg16_mod03]
+kind = "build"
+src = "src/pkg16_mod03.fb"
+deps = ["pkg16_mod04"]
+out = ".frost/out/pkg16_mod03.out"
+cost_ms = 30
+
+[target.pkg16_mod04]
+kind = "build"
+src = "src/pkg16_mod04.fb"
+deps = ["pkg16_mod05", "pkg16_mod06"]
+out = ".frost/out/pkg16_mod04.out"
+cost_ms = 30
+
+[target.pkg16_mod05]
+kind = "build"
+src = "src/pkg16_mod05.fb"
+deps = ["pkg16_mod06"]
+out = ".frost/out/pkg16_mod05.out"
+cost_ms = 30
+
+[target.pkg16_mod06]
+kind = "build"
+src = "src/pkg16_mod06.fb"
+deps = ["pkg16_mod07"]
+out = ".frost/out/pkg16_mod06.out"
+cost_ms = 30
+
+[target.pkg16_mod07]
+kind = "build"
+src = "src/pkg16_mod07.fb"
+deps = []
+out = ".frost/out/pkg16_mod07.out"
+cost_ms = 30
+
+[target.pkg17_mod00]
+kind = "build"
+src = "src/pkg17_mod00.fb"
+deps = ["pkg17_mod01", "pkg17_mod02"]
+out = ".frost/out/pkg17_mod00.out"
+cost_ms = 30
+
+[target.pkg17_mod01]
+kind = "build"
+src = "src/pkg17_mod01.fb"
+deps = ["pkg17_mod02"]
+out = ".frost/out/pkg17_mod01.out"
+cost_ms = 30
+
+[target.pkg17_mod02]
+kind = "build"
+src = "src/pkg17_mod02.fb"
+deps = ["pkg17_mod03", "pkg17_mod04"]
+out = ".frost/out/pkg17_mod02.out"
+cost_ms = 30
+
+[target.pkg17_mod03]
+kind = "build"
+src = "src/pkg17_mod03.fb"
+deps = ["pkg17_mod04"]
+out = ".frost/out/pkg17_mod03.out"
+cost_ms = 30
+
+[target.pkg17_mod04]
+kind = "build"
+src = "src/pkg17_mod04.fb"
+deps = ["pkg17_mod05", "pkg17_mod06"]
+out = ".frost/out/pkg17_mod04.out"
+cost_ms = 30
+
+[target.pkg17_mod05]
+kind = "build"
+src = "src/pkg17_mod05.fb"
+deps = ["pkg17_mod06"]
+out = ".frost/out/pkg17_mod05.out"
+cost_ms = 30
+
+[target.pkg17_mod06]
+kind = "build"
+src = "src/pkg17_mod06.fb"
+deps = ["pkg17_mod07"]
+out = ".frost/out/pkg17_mod06.out"
+cost_ms = 30
+
+[target.pkg17_mod07]
+kind = "build"
+src = "src/pkg17_mod07.fb"
+deps = []
+out = ".frost/out/pkg17_mod07.out"
+cost_ms = 30
+
+[target.pkg18_mod00]
+kind = "build"
+src = "src/pkg18_mod00.fb"
+deps = ["pkg18_mod01", "pkg18_mod02"]
+out = ".frost/out/pkg18_mod00.out"
+cost_ms = 30
+
+[target.pkg18_mod01]
+kind = "build"
+src = "src/pkg18_mod01.fb"
+deps = ["pkg18_mod02"]
+out = ".frost/out/pkg18_mod01.out"
+cost_ms = 30
+
+[target.pkg18_mod02]
+kind = "build"
+src = "src/pkg18_mod02.fb"
+deps = ["pkg18_mod03", "pkg18_mod04"]
+out = ".frost/out/pkg18_mod02.out"
+cost_ms = 30
+
+[target.pkg18_mod03]
+kind = "build"
+src = "src/pkg18_mod03.fb"
+deps = ["pkg18_mod04"]
+out = ".frost/out/pkg18_mod03.out"
+cost_ms = 30
+
+[target.pkg18_mod04]
+kind = "build"
+src = "src/pkg18_mod04.fb"
+deps = ["pkg18_mod05", "pkg18_mod06"]
+out = ".frost/out/pkg18_mod04.out"
+cost_ms = 30
+
+[target.pkg18_mod05]
+kind = "build"
+src = "src/pkg18_mod05.fb"
+deps = ["pkg18_mod06"]
+out = ".frost/out/pkg18_mod05.out"
+cost_ms = 30
+
+[target.pkg18_mod06]
+kind = "build"
+src = "src/pkg18_mod06.fb"
+deps = ["pkg18_mod07"]
+out = ".frost/out/pkg18_mod06.out"
+cost_ms = 30
+
+[target.pkg18_mod07]
+kind = "build"
+src = "src/pkg18_mod07.fb"
+deps = []
+out = ".frost/out/pkg18_mod07.out"
+cost_ms = 30
+
+[target.pkg19_mod00]
+kind = "build"
+src = "src/pkg19_mod00.fb"
+deps = ["pkg19_mod01", "pkg19_mod02"]
+out = ".frost/out/pkg19_mod00.out"
+cost_ms = 30
+
+[target.pkg19_mod01]
+kind = "build"
+src = "src/pkg19_mod01.fb"
+deps = ["pkg19_mod02"]
+out = ".frost/out/pkg19_mod01.out"
+cost_ms = 30
+
+[target.pkg19_mod02]
+kind = "build"
+src = "src/pkg19_mod02.fb"
+deps = ["pkg19_mod03", "pkg19_mod04"]
+out = ".frost/out/pkg19_mod02.out"
+cost_ms = 30
+
+[target.pkg19_mod03]
+kind = "build"
+src = "src/pkg19_mod03.fb"
+deps = ["pkg19_mod04"]
+out = ".frost/out/pkg19_mod03.out"
+cost_ms = 30
+
+[target.pkg19_mod04]
+kind = "build"
+src = "src/pkg19_mod04.fb"
+deps = ["pkg19_mod05", "pkg19_mod06"]
+out = ".frost/out/pkg19_mod04.out"
+cost_ms = 30
+
+[target.pkg19_mod05]
+kind = "build"
+src = "src/pkg19_mod05.fb"
+deps = ["pkg19_mod06"]
+out = ".frost/out/pkg19_mod05.out"
+cost_ms = 30
+
+[target.pkg19_mod06]
+kind = "build"
+src = "src/pkg19_mod06.fb"
+deps = ["pkg19_mod07"]
+out = ".frost/out/pkg19_mod06.out"
+cost_ms = 30
+
+[target.pkg19_mod07]
+kind = "build"
+src = "src/pkg19_mod07.fb"
+deps = []
+out = ".frost/out/pkg19_mod07.out"
+cost_ms = 30
+
+[target.test_pkg00]
+kind = "test"
+src = "tests/test_pkg00.fbtest"
+deps = ["pkg00_mod00"]
+out = ".frost/out/test_pkg00.ok"
+cost_ms = 15
+
+[target.test_pkg01]
+kind = "test"
+src = "tests/test_pkg01.fbtest"
+deps = ["pkg01_mod00"]
+out = ".frost/out/test_pkg01.ok"
+cost_ms = 15
+
+[target.test_pkg02]
+kind = "test"
+src = "tests/test_pkg02.fbtest"
+deps = ["pkg02_mod00"]
+out = ".frost/out/test_pkg02.ok"
+cost_ms = 15
+
+[target.test_pkg03]
+kind = "test"
+src = "tests/test_pkg03.fbtest"
+deps = ["pkg03_mod00"]
+out = ".frost/out/test_pkg03.ok"
+cost_ms = 15
+
+[target.test_pkg04]
+kind = "test"
+src = "tests/test_pkg04.fbtest"
+deps = ["pkg04_mod00"]
+out = ".frost/out/test_pkg04.ok"
+cost_ms = 15
+
+[target.test_pkg05]
+kind = "test"
+src = "tests/test_pkg05.fbtest"
+deps = ["pkg05_mod00"]
+out = ".frost/out/test_pkg05.ok"
+cost_ms = 15
+
+[target.test_pkg06]
+kind = "test"
+src = "tests/test_pkg06.fbtest"
+deps = ["pkg06_mod00"]
+out = ".frost/out/test_pkg06.ok"
+cost_ms = 15
+
+[target.test_pkg07]
+kind = "test"
+src = "tests/test_pkg07.fbtest"
+deps = ["pkg07_mod00"]
+out = ".frost/out/test_pkg07.ok"
+cost_ms = 15
+
+[target.test_pkg08]
+kind = "test"
+src = "tests/test_pkg08.fbtest"
+deps = ["pkg08_mod00"]
+out = ".frost/out/test_pkg08.ok"
+cost_ms = 15
+
+[target.test_pkg09]
+kind = "test"
+src = "tests/test_pkg09.fbtest"
+deps = ["pkg09_mod00"]
+out = ".frost/out/test_pkg09.ok"
+cost_ms = 15
+
+[target.test_pkg10]
+kind = "test"
+src = "tests/test_pkg10.fbtest"
+deps = ["pkg10_mod00"]
+out = ".frost/out/test_pkg10.ok"
+cost_ms = 15
+
+[target.test_pkg11]
+kind = "test"
+src = "tests/test_pkg11.fbtest"
+deps = ["pkg11_mod00"]
+out = ".frost/out/test_pkg11.ok"
+cost_ms = 15
+
+[target.test_pkg12]
+kind = "test"
+src = "tests/test_pkg12.fbtest"
+deps = ["pkg12_mod00"]
+out = ".frost/out/test_pkg12.ok"
+cost_ms = 15
+
+[target.test_pkg13]
+kind = "test"
+src = "tests/test_pkg13.fbtest"
+deps = ["pkg13_mod00"]
+out = ".frost/out/test_pkg13.ok"
+cost_ms = 15
+
+[target.test_pkg14]
+kind = "test"
+src = "tests/test_pkg14.fbtest"
+deps = ["pkg14_mod00"]
+out = ".frost/out/test_pkg14.ok"
+cost_ms = 15
+
+[target.test_pkg15]
+kind = "test"
+src = "tests/test_pkg15.fbtest"
+deps = ["pkg15_mod00"]
+out = ".frost/out/test_pkg15.ok"
+cost_ms = 15
+
+[target.test_pkg16]
+kind = "test"
+src = "tests/test_pkg16.fbtest"
+deps = ["pkg16_mod00"]
+out = ".frost/out/test_pkg16.ok"
+cost_ms = 15
+
+[target.test_pkg17]
+kind = "test"
+src = "tests/test_pkg17.fbtest"
+deps = ["pkg17_mod00"]
+out = ".frost/out/test_pkg17.ok"
+cost_ms = 15
+
+[target.test_pkg18]
+kind = "test"
+src = "tests/test_pkg18.fbtest"
+deps = ["pkg18_mod00"]
+out = ".frost/out/test_pkg18.ok"
+cost_ms = 15
+
+[target.test_pkg19]
+kind = "test"
+src = "tests/test_pkg19.fbtest"
+deps = ["pkg19_mod00"]
+out = ".frost/out/test_pkg19.ok"
+cost_ms = 15
+

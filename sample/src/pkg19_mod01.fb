@@ -1,0 +1,3 @@
+EXPORT pkg19_mod01
+IMPORT pkg19_mod02
+VALUE 19-1

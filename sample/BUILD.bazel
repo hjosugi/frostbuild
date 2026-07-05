@@ -1,0 +1,1291 @@
+# Generated Bazel workspace for optional comparison.
+package(default_visibility = ["//visibility:public"])
+
+genrule(
+    name = "app",
+    srcs = ["src/app.fb", ":pkg00_mod00", ":pkg01_mod00", ":pkg02_mod00", ":pkg03_mod00", ":pkg04_mod00", ":pkg05_mod00", ":pkg06_mod00", ":pkg07_mod00", ":pkg08_mod00", ":pkg09_mod00", ":pkg10_mod00", ":pkg11_mod00", ":pkg12_mod00", ":pkg13_mod00", ":pkg14_mod00", ":pkg15_mod00", ":pkg16_mod00", ":pkg17_mod00", ":pkg18_mod00", ":pkg19_mod00"],
+    outs = ["bazel_out/app.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg00_mod00",
+    srcs = ["src/pkg00_mod00.fb", ":pkg00_mod01", ":pkg00_mod02"],
+    outs = ["bazel_out/pkg00_mod00.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg00_mod01",
+    srcs = ["src/pkg00_mod01.fb", ":pkg00_mod02"],
+    outs = ["bazel_out/pkg00_mod01.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg00_mod02",
+    srcs = ["src/pkg00_mod02.fb", ":pkg00_mod03", ":pkg00_mod04"],
+    outs = ["bazel_out/pkg00_mod02.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg00_mod03",
+    srcs = ["src/pkg00_mod03.fb", ":pkg00_mod04"],
+    outs = ["bazel_out/pkg00_mod03.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg00_mod04",
+    srcs = ["src/pkg00_mod04.fb", ":pkg00_mod05", ":pkg00_mod06"],
+    outs = ["bazel_out/pkg00_mod04.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg00_mod05",
+    srcs = ["src/pkg00_mod05.fb", ":pkg00_mod06"],
+    outs = ["bazel_out/pkg00_mod05.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg00_mod06",
+    srcs = ["src/pkg00_mod06.fb", ":pkg00_mod07"],
+    outs = ["bazel_out/pkg00_mod06.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg00_mod07",
+    srcs = ["src/pkg00_mod07.fb"],
+    outs = ["bazel_out/pkg00_mod07.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg01_mod00",
+    srcs = ["src/pkg01_mod00.fb", ":pkg01_mod01", ":pkg01_mod02"],
+    outs = ["bazel_out/pkg01_mod00.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg01_mod01",
+    srcs = ["src/pkg01_mod01.fb", ":pkg01_mod02"],
+    outs = ["bazel_out/pkg01_mod01.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg01_mod02",
+    srcs = ["src/pkg01_mod02.fb", ":pkg01_mod03", ":pkg01_mod04"],
+    outs = ["bazel_out/pkg01_mod02.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg01_mod03",
+    srcs = ["src/pkg01_mod03.fb", ":pkg01_mod04"],
+    outs = ["bazel_out/pkg01_mod03.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg01_mod04",
+    srcs = ["src/pkg01_mod04.fb", ":pkg01_mod05", ":pkg01_mod06"],
+    outs = ["bazel_out/pkg01_mod04.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg01_mod05",
+    srcs = ["src/pkg01_mod05.fb", ":pkg01_mod06"],
+    outs = ["bazel_out/pkg01_mod05.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg01_mod06",
+    srcs = ["src/pkg01_mod06.fb", ":pkg01_mod07"],
+    outs = ["bazel_out/pkg01_mod06.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg01_mod07",
+    srcs = ["src/pkg01_mod07.fb"],
+    outs = ["bazel_out/pkg01_mod07.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg02_mod00",
+    srcs = ["src/pkg02_mod00.fb", ":pkg02_mod01", ":pkg02_mod02"],
+    outs = ["bazel_out/pkg02_mod00.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg02_mod01",
+    srcs = ["src/pkg02_mod01.fb", ":pkg02_mod02"],
+    outs = ["bazel_out/pkg02_mod01.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg02_mod02",
+    srcs = ["src/pkg02_mod02.fb", ":pkg02_mod03", ":pkg02_mod04"],
+    outs = ["bazel_out/pkg02_mod02.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg02_mod03",
+    srcs = ["src/pkg02_mod03.fb", ":pkg02_mod04"],
+    outs = ["bazel_out/pkg02_mod03.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg02_mod04",
+    srcs = ["src/pkg02_mod04.fb", ":pkg02_mod05", ":pkg02_mod06"],
+    outs = ["bazel_out/pkg02_mod04.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg02_mod05",
+    srcs = ["src/pkg02_mod05.fb", ":pkg02_mod06"],
+    outs = ["bazel_out/pkg02_mod05.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg02_mod06",
+    srcs = ["src/pkg02_mod06.fb", ":pkg02_mod07"],
+    outs = ["bazel_out/pkg02_mod06.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg02_mod07",
+    srcs = ["src/pkg02_mod07.fb"],
+    outs = ["bazel_out/pkg02_mod07.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg03_mod00",
+    srcs = ["src/pkg03_mod00.fb", ":pkg03_mod01", ":pkg03_mod02"],
+    outs = ["bazel_out/pkg03_mod00.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg03_mod01",
+    srcs = ["src/pkg03_mod01.fb", ":pkg03_mod02"],
+    outs = ["bazel_out/pkg03_mod01.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg03_mod02",
+    srcs = ["src/pkg03_mod02.fb", ":pkg03_mod03", ":pkg03_mod04"],
+    outs = ["bazel_out/pkg03_mod02.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg03_mod03",
+    srcs = ["src/pkg03_mod03.fb", ":pkg03_mod04"],
+    outs = ["bazel_out/pkg03_mod03.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg03_mod04",
+    srcs = ["src/pkg03_mod04.fb", ":pkg03_mod05", ":pkg03_mod06"],
+    outs = ["bazel_out/pkg03_mod04.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg03_mod05",
+    srcs = ["src/pkg03_mod05.fb", ":pkg03_mod06"],
+    outs = ["bazel_out/pkg03_mod05.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg03_mod06",
+    srcs = ["src/pkg03_mod06.fb", ":pkg03_mod07"],
+    outs = ["bazel_out/pkg03_mod06.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg03_mod07",
+    srcs = ["src/pkg03_mod07.fb"],
+    outs = ["bazel_out/pkg03_mod07.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg04_mod00",
+    srcs = ["src/pkg04_mod00.fb", ":pkg04_mod01", ":pkg04_mod02"],
+    outs = ["bazel_out/pkg04_mod00.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg04_mod01",
+    srcs = ["src/pkg04_mod01.fb", ":pkg04_mod02"],
+    outs = ["bazel_out/pkg04_mod01.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg04_mod02",
+    srcs = ["src/pkg04_mod02.fb", ":pkg04_mod03", ":pkg04_mod04"],
+    outs = ["bazel_out/pkg04_mod02.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg04_mod03",
+    srcs = ["src/pkg04_mod03.fb", ":pkg04_mod04"],
+    outs = ["bazel_out/pkg04_mod03.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg04_mod04",
+    srcs = ["src/pkg04_mod04.fb", ":pkg04_mod05", ":pkg04_mod06"],
+    outs = ["bazel_out/pkg04_mod04.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg04_mod05",
+    srcs = ["src/pkg04_mod05.fb", ":pkg04_mod06"],
+    outs = ["bazel_out/pkg04_mod05.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg04_mod06",
+    srcs = ["src/pkg04_mod06.fb", ":pkg04_mod07"],
+    outs = ["bazel_out/pkg04_mod06.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg04_mod07",
+    srcs = ["src/pkg04_mod07.fb"],
+    outs = ["bazel_out/pkg04_mod07.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg05_mod00",
+    srcs = ["src/pkg05_mod00.fb", ":pkg05_mod01", ":pkg05_mod02"],
+    outs = ["bazel_out/pkg05_mod00.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg05_mod01",
+    srcs = ["src/pkg05_mod01.fb", ":pkg05_mod02"],
+    outs = ["bazel_out/pkg05_mod01.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg05_mod02",
+    srcs = ["src/pkg05_mod02.fb", ":pkg05_mod03", ":pkg05_mod04"],
+    outs = ["bazel_out/pkg05_mod02.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg05_mod03",
+    srcs = ["src/pkg05_mod03.fb", ":pkg05_mod04"],
+    outs = ["bazel_out/pkg05_mod03.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg05_mod04",
+    srcs = ["src/pkg05_mod04.fb", ":pkg05_mod05", ":pkg05_mod06"],
+    outs = ["bazel_out/pkg05_mod04.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg05_mod05",
+    srcs = ["src/pkg05_mod05.fb", ":pkg05_mod06"],
+    outs = ["bazel_out/pkg05_mod05.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg05_mod06",
+    srcs = ["src/pkg05_mod06.fb", ":pkg05_mod07"],
+    outs = ["bazel_out/pkg05_mod06.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg05_mod07",
+    srcs = ["src/pkg05_mod07.fb"],
+    outs = ["bazel_out/pkg05_mod07.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg06_mod00",
+    srcs = ["src/pkg06_mod00.fb", ":pkg06_mod01", ":pkg06_mod02"],
+    outs = ["bazel_out/pkg06_mod00.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg06_mod01",
+    srcs = ["src/pkg06_mod01.fb", ":pkg06_mod02"],
+    outs = ["bazel_out/pkg06_mod01.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg06_mod02",
+    srcs = ["src/pkg06_mod02.fb", ":pkg06_mod03", ":pkg06_mod04"],
+    outs = ["bazel_out/pkg06_mod02.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg06_mod03",
+    srcs = ["src/pkg06_mod03.fb", ":pkg06_mod04"],
+    outs = ["bazel_out/pkg06_mod03.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg06_mod04",
+    srcs = ["src/pkg06_mod04.fb", ":pkg06_mod05", ":pkg06_mod06"],
+    outs = ["bazel_out/pkg06_mod04.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg06_mod05",
+    srcs = ["src/pkg06_mod05.fb", ":pkg06_mod06"],
+    outs = ["bazel_out/pkg06_mod05.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg06_mod06",
+    srcs = ["src/pkg06_mod06.fb", ":pkg06_mod07"],
+    outs = ["bazel_out/pkg06_mod06.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg06_mod07",
+    srcs = ["src/pkg06_mod07.fb"],
+    outs = ["bazel_out/pkg06_mod07.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg07_mod00",
+    srcs = ["src/pkg07_mod00.fb", ":pkg07_mod01", ":pkg07_mod02"],
+    outs = ["bazel_out/pkg07_mod00.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg07_mod01",
+    srcs = ["src/pkg07_mod01.fb", ":pkg07_mod02"],
+    outs = ["bazel_out/pkg07_mod01.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg07_mod02",
+    srcs = ["src/pkg07_mod02.fb", ":pkg07_mod03", ":pkg07_mod04"],
+    outs = ["bazel_out/pkg07_mod02.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg07_mod03",
+    srcs = ["src/pkg07_mod03.fb", ":pkg07_mod04"],
+    outs = ["bazel_out/pkg07_mod03.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg07_mod04",
+    srcs = ["src/pkg07_mod04.fb", ":pkg07_mod05", ":pkg07_mod06"],
+    outs = ["bazel_out/pkg07_mod04.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg07_mod05",
+    srcs = ["src/pkg07_mod05.fb", ":pkg07_mod06"],
+    outs = ["bazel_out/pkg07_mod05.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg07_mod06",
+    srcs = ["src/pkg07_mod06.fb", ":pkg07_mod07"],
+    outs = ["bazel_out/pkg07_mod06.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg07_mod07",
+    srcs = ["src/pkg07_mod07.fb"],
+    outs = ["bazel_out/pkg07_mod07.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg08_mod00",
+    srcs = ["src/pkg08_mod00.fb", ":pkg08_mod01", ":pkg08_mod02"],
+    outs = ["bazel_out/pkg08_mod00.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg08_mod01",
+    srcs = ["src/pkg08_mod01.fb", ":pkg08_mod02"],
+    outs = ["bazel_out/pkg08_mod01.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg08_mod02",
+    srcs = ["src/pkg08_mod02.fb", ":pkg08_mod03", ":pkg08_mod04"],
+    outs = ["bazel_out/pkg08_mod02.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg08_mod03",
+    srcs = ["src/pkg08_mod03.fb", ":pkg08_mod04"],
+    outs = ["bazel_out/pkg08_mod03.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg08_mod04",
+    srcs = ["src/pkg08_mod04.fb", ":pkg08_mod05", ":pkg08_mod06"],
+    outs = ["bazel_out/pkg08_mod04.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg08_mod05",
+    srcs = ["src/pkg08_mod05.fb", ":pkg08_mod06"],
+    outs = ["bazel_out/pkg08_mod05.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg08_mod06",
+    srcs = ["src/pkg08_mod06.fb", ":pkg08_mod07"],
+    outs = ["bazel_out/pkg08_mod06.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg08_mod07",
+    srcs = ["src/pkg08_mod07.fb"],
+    outs = ["bazel_out/pkg08_mod07.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg09_mod00",
+    srcs = ["src/pkg09_mod00.fb", ":pkg09_mod01", ":pkg09_mod02"],
+    outs = ["bazel_out/pkg09_mod00.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg09_mod01",
+    srcs = ["src/pkg09_mod01.fb", ":pkg09_mod02"],
+    outs = ["bazel_out/pkg09_mod01.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg09_mod02",
+    srcs = ["src/pkg09_mod02.fb", ":pkg09_mod03", ":pkg09_mod04"],
+    outs = ["bazel_out/pkg09_mod02.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg09_mod03",
+    srcs = ["src/pkg09_mod03.fb", ":pkg09_mod04"],
+    outs = ["bazel_out/pkg09_mod03.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg09_mod04",
+    srcs = ["src/pkg09_mod04.fb", ":pkg09_mod05", ":pkg09_mod06"],
+    outs = ["bazel_out/pkg09_mod04.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg09_mod05",
+    srcs = ["src/pkg09_mod05.fb", ":pkg09_mod06"],
+    outs = ["bazel_out/pkg09_mod05.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg09_mod06",
+    srcs = ["src/pkg09_mod06.fb", ":pkg09_mod07"],
+    outs = ["bazel_out/pkg09_mod06.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg09_mod07",
+    srcs = ["src/pkg09_mod07.fb"],
+    outs = ["bazel_out/pkg09_mod07.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg10_mod00",
+    srcs = ["src/pkg10_mod00.fb", ":pkg10_mod01", ":pkg10_mod02"],
+    outs = ["bazel_out/pkg10_mod00.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg10_mod01",
+    srcs = ["src/pkg10_mod01.fb", ":pkg10_mod02"],
+    outs = ["bazel_out/pkg10_mod01.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg10_mod02",
+    srcs = ["src/pkg10_mod02.fb", ":pkg10_mod03", ":pkg10_mod04"],
+    outs = ["bazel_out/pkg10_mod02.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg10_mod03",
+    srcs = ["src/pkg10_mod03.fb", ":pkg10_mod04"],
+    outs = ["bazel_out/pkg10_mod03.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg10_mod04",
+    srcs = ["src/pkg10_mod04.fb", ":pkg10_mod05", ":pkg10_mod06"],
+    outs = ["bazel_out/pkg10_mod04.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg10_mod05",
+    srcs = ["src/pkg10_mod05.fb", ":pkg10_mod06"],
+    outs = ["bazel_out/pkg10_mod05.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg10_mod06",
+    srcs = ["src/pkg10_mod06.fb", ":pkg10_mod07"],
+    outs = ["bazel_out/pkg10_mod06.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg10_mod07",
+    srcs = ["src/pkg10_mod07.fb"],
+    outs = ["bazel_out/pkg10_mod07.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg11_mod00",
+    srcs = ["src/pkg11_mod00.fb", ":pkg11_mod01", ":pkg11_mod02"],
+    outs = ["bazel_out/pkg11_mod00.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg11_mod01",
+    srcs = ["src/pkg11_mod01.fb", ":pkg11_mod02"],
+    outs = ["bazel_out/pkg11_mod01.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg11_mod02",
+    srcs = ["src/pkg11_mod02.fb", ":pkg11_mod03", ":pkg11_mod04"],
+    outs = ["bazel_out/pkg11_mod02.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg11_mod03",
+    srcs = ["src/pkg11_mod03.fb", ":pkg11_mod04"],
+    outs = ["bazel_out/pkg11_mod03.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg11_mod04",
+    srcs = ["src/pkg11_mod04.fb", ":pkg11_mod05", ":pkg11_mod06"],
+    outs = ["bazel_out/pkg11_mod04.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg11_mod05",
+    srcs = ["src/pkg11_mod05.fb", ":pkg11_mod06"],
+    outs = ["bazel_out/pkg11_mod05.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg11_mod06",
+    srcs = ["src/pkg11_mod06.fb", ":pkg11_mod07"],
+    outs = ["bazel_out/pkg11_mod06.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg11_mod07",
+    srcs = ["src/pkg11_mod07.fb"],
+    outs = ["bazel_out/pkg11_mod07.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg12_mod00",
+    srcs = ["src/pkg12_mod00.fb", ":pkg12_mod01", ":pkg12_mod02"],
+    outs = ["bazel_out/pkg12_mod00.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg12_mod01",
+    srcs = ["src/pkg12_mod01.fb", ":pkg12_mod02"],
+    outs = ["bazel_out/pkg12_mod01.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg12_mod02",
+    srcs = ["src/pkg12_mod02.fb", ":pkg12_mod03", ":pkg12_mod04"],
+    outs = ["bazel_out/pkg12_mod02.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg12_mod03",
+    srcs = ["src/pkg12_mod03.fb", ":pkg12_mod04"],
+    outs = ["bazel_out/pkg12_mod03.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg12_mod04",
+    srcs = ["src/pkg12_mod04.fb", ":pkg12_mod05", ":pkg12_mod06"],
+    outs = ["bazel_out/pkg12_mod04.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg12_mod05",
+    srcs = ["src/pkg12_mod05.fb", ":pkg12_mod06"],
+    outs = ["bazel_out/pkg12_mod05.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg12_mod06",
+    srcs = ["src/pkg12_mod06.fb", ":pkg12_mod07"],
+    outs = ["bazel_out/pkg12_mod06.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg12_mod07",
+    srcs = ["src/pkg12_mod07.fb"],
+    outs = ["bazel_out/pkg12_mod07.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg13_mod00",
+    srcs = ["src/pkg13_mod00.fb", ":pkg13_mod01", ":pkg13_mod02"],
+    outs = ["bazel_out/pkg13_mod00.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg13_mod01",
+    srcs = ["src/pkg13_mod01.fb", ":pkg13_mod02"],
+    outs = ["bazel_out/pkg13_mod01.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg13_mod02",
+    srcs = ["src/pkg13_mod02.fb", ":pkg13_mod03", ":pkg13_mod04"],
+    outs = ["bazel_out/pkg13_mod02.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg13_mod03",
+    srcs = ["src/pkg13_mod03.fb", ":pkg13_mod04"],
+    outs = ["bazel_out/pkg13_mod03.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg13_mod04",
+    srcs = ["src/pkg13_mod04.fb", ":pkg13_mod05", ":pkg13_mod06"],
+    outs = ["bazel_out/pkg13_mod04.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg13_mod05",
+    srcs = ["src/pkg13_mod05.fb", ":pkg13_mod06"],
+    outs = ["bazel_out/pkg13_mod05.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg13_mod06",
+    srcs = ["src/pkg13_mod06.fb", ":pkg13_mod07"],
+    outs = ["bazel_out/pkg13_mod06.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg13_mod07",
+    srcs = ["src/pkg13_mod07.fb"],
+    outs = ["bazel_out/pkg13_mod07.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg14_mod00",
+    srcs = ["src/pkg14_mod00.fb", ":pkg14_mod01", ":pkg14_mod02"],
+    outs = ["bazel_out/pkg14_mod00.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg14_mod01",
+    srcs = ["src/pkg14_mod01.fb", ":pkg14_mod02"],
+    outs = ["bazel_out/pkg14_mod01.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg14_mod02",
+    srcs = ["src/pkg14_mod02.fb", ":pkg14_mod03", ":pkg14_mod04"],
+    outs = ["bazel_out/pkg14_mod02.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg14_mod03",
+    srcs = ["src/pkg14_mod03.fb", ":pkg14_mod04"],
+    outs = ["bazel_out/pkg14_mod03.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg14_mod04",
+    srcs = ["src/pkg14_mod04.fb", ":pkg14_mod05", ":pkg14_mod06"],
+    outs = ["bazel_out/pkg14_mod04.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg14_mod05",
+    srcs = ["src/pkg14_mod05.fb", ":pkg14_mod06"],
+    outs = ["bazel_out/pkg14_mod05.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg14_mod06",
+    srcs = ["src/pkg14_mod06.fb", ":pkg14_mod07"],
+    outs = ["bazel_out/pkg14_mod06.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg14_mod07",
+    srcs = ["src/pkg14_mod07.fb"],
+    outs = ["bazel_out/pkg14_mod07.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg15_mod00",
+    srcs = ["src/pkg15_mod00.fb", ":pkg15_mod01", ":pkg15_mod02"],
+    outs = ["bazel_out/pkg15_mod00.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg15_mod01",
+    srcs = ["src/pkg15_mod01.fb", ":pkg15_mod02"],
+    outs = ["bazel_out/pkg15_mod01.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg15_mod02",
+    srcs = ["src/pkg15_mod02.fb", ":pkg15_mod03", ":pkg15_mod04"],
+    outs = ["bazel_out/pkg15_mod02.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg15_mod03",
+    srcs = ["src/pkg15_mod03.fb", ":pkg15_mod04"],
+    outs = ["bazel_out/pkg15_mod03.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg15_mod04",
+    srcs = ["src/pkg15_mod04.fb", ":pkg15_mod05", ":pkg15_mod06"],
+    outs = ["bazel_out/pkg15_mod04.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg15_mod05",
+    srcs = ["src/pkg15_mod05.fb", ":pkg15_mod06"],
+    outs = ["bazel_out/pkg15_mod05.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg15_mod06",
+    srcs = ["src/pkg15_mod06.fb", ":pkg15_mod07"],
+    outs = ["bazel_out/pkg15_mod06.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg15_mod07",
+    srcs = ["src/pkg15_mod07.fb"],
+    outs = ["bazel_out/pkg15_mod07.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg16_mod00",
+    srcs = ["src/pkg16_mod00.fb", ":pkg16_mod01", ":pkg16_mod02"],
+    outs = ["bazel_out/pkg16_mod00.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg16_mod01",
+    srcs = ["src/pkg16_mod01.fb", ":pkg16_mod02"],
+    outs = ["bazel_out/pkg16_mod01.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg16_mod02",
+    srcs = ["src/pkg16_mod02.fb", ":pkg16_mod03", ":pkg16_mod04"],
+    outs = ["bazel_out/pkg16_mod02.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg16_mod03",
+    srcs = ["src/pkg16_mod03.fb", ":pkg16_mod04"],
+    outs = ["bazel_out/pkg16_mod03.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg16_mod04",
+    srcs = ["src/pkg16_mod04.fb", ":pkg16_mod05", ":pkg16_mod06"],
+    outs = ["bazel_out/pkg16_mod04.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg16_mod05",
+    srcs = ["src/pkg16_mod05.fb", ":pkg16_mod06"],
+    outs = ["bazel_out/pkg16_mod05.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg16_mod06",
+    srcs = ["src/pkg16_mod06.fb", ":pkg16_mod07"],
+    outs = ["bazel_out/pkg16_mod06.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg16_mod07",
+    srcs = ["src/pkg16_mod07.fb"],
+    outs = ["bazel_out/pkg16_mod07.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg17_mod00",
+    srcs = ["src/pkg17_mod00.fb", ":pkg17_mod01", ":pkg17_mod02"],
+    outs = ["bazel_out/pkg17_mod00.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg17_mod01",
+    srcs = ["src/pkg17_mod01.fb", ":pkg17_mod02"],
+    outs = ["bazel_out/pkg17_mod01.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg17_mod02",
+    srcs = ["src/pkg17_mod02.fb", ":pkg17_mod03", ":pkg17_mod04"],
+    outs = ["bazel_out/pkg17_mod02.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg17_mod03",
+    srcs = ["src/pkg17_mod03.fb", ":pkg17_mod04"],
+    outs = ["bazel_out/pkg17_mod03.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg17_mod04",
+    srcs = ["src/pkg17_mod04.fb", ":pkg17_mod05", ":pkg17_mod06"],
+    outs = ["bazel_out/pkg17_mod04.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg17_mod05",
+    srcs = ["src/pkg17_mod05.fb", ":pkg17_mod06"],
+    outs = ["bazel_out/pkg17_mod05.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg17_mod06",
+    srcs = ["src/pkg17_mod06.fb", ":pkg17_mod07"],
+    outs = ["bazel_out/pkg17_mod06.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg17_mod07",
+    srcs = ["src/pkg17_mod07.fb"],
+    outs = ["bazel_out/pkg17_mod07.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg18_mod00",
+    srcs = ["src/pkg18_mod00.fb", ":pkg18_mod01", ":pkg18_mod02"],
+    outs = ["bazel_out/pkg18_mod00.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg18_mod01",
+    srcs = ["src/pkg18_mod01.fb", ":pkg18_mod02"],
+    outs = ["bazel_out/pkg18_mod01.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg18_mod02",
+    srcs = ["src/pkg18_mod02.fb", ":pkg18_mod03", ":pkg18_mod04"],
+    outs = ["bazel_out/pkg18_mod02.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg18_mod03",
+    srcs = ["src/pkg18_mod03.fb", ":pkg18_mod04"],
+    outs = ["bazel_out/pkg18_mod03.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg18_mod04",
+    srcs = ["src/pkg18_mod04.fb", ":pkg18_mod05", ":pkg18_mod06"],
+    outs = ["bazel_out/pkg18_mod04.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg18_mod05",
+    srcs = ["src/pkg18_mod05.fb", ":pkg18_mod06"],
+    outs = ["bazel_out/pkg18_mod05.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg18_mod06",
+    srcs = ["src/pkg18_mod06.fb", ":pkg18_mod07"],
+    outs = ["bazel_out/pkg18_mod06.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg18_mod07",
+    srcs = ["src/pkg18_mod07.fb"],
+    outs = ["bazel_out/pkg18_mod07.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg19_mod00",
+    srcs = ["src/pkg19_mod00.fb", ":pkg19_mod01", ":pkg19_mod02"],
+    outs = ["bazel_out/pkg19_mod00.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg19_mod01",
+    srcs = ["src/pkg19_mod01.fb", ":pkg19_mod02"],
+    outs = ["bazel_out/pkg19_mod01.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg19_mod02",
+    srcs = ["src/pkg19_mod02.fb", ":pkg19_mod03", ":pkg19_mod04"],
+    outs = ["bazel_out/pkg19_mod02.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg19_mod03",
+    srcs = ["src/pkg19_mod03.fb", ":pkg19_mod04"],
+    outs = ["bazel_out/pkg19_mod03.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg19_mod04",
+    srcs = ["src/pkg19_mod04.fb", ":pkg19_mod05", ":pkg19_mod06"],
+    outs = ["bazel_out/pkg19_mod04.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg19_mod05",
+    srcs = ["src/pkg19_mod05.fb", ":pkg19_mod06"],
+    outs = ["bazel_out/pkg19_mod05.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg19_mod06",
+    srcs = ["src/pkg19_mod06.fb", ":pkg19_mod07"],
+    outs = ["bazel_out/pkg19_mod06.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+
+genrule(
+    name = "pkg19_mod07",
+    srcs = ["src/pkg19_mod07.fb"],
+    outs = ["bazel_out/pkg19_mod07.out"],
+    tools = ["//tools:gen.py"],
+    cmd = "FROST_BAZEL_SLEEP_MS=30 python3 $(location //tools:gen.py) $(SRCS) > $@",
+)
+

@@ -1,0 +1,4 @@
+EXPORT pkg08_mod00
+IMPORT pkg08_mod01
+IMPORT pkg08_mod02
+VALUE 8-0

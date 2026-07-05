@@ -1,0 +1,4 @@
+EXPORT pkg17_mod02
+IMPORT pkg17_mod03
+IMPORT pkg17_mod04
+VALUE 17-2

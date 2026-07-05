@@ -1,0 +1,4 @@
+EXPORT pkg18_mod04
+IMPORT pkg18_mod05
+IMPORT pkg18_mod06
+VALUE 18-4

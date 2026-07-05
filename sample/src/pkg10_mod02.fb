@@ -1,0 +1,4 @@
+EXPORT pkg10_mod02
+IMPORT pkg10_mod03
+IMPORT pkg10_mod04
+VALUE 10-2

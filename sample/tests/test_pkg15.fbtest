@@ -1,0 +1,2 @@
+TEST test_pkg15
+IMPORT pkg15_mod00

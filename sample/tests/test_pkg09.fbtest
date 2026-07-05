@@ -1,0 +1,2 @@
+TEST test_pkg09
+IMPORT pkg09_mod00
