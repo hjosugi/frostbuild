@@ -1,6 +1,7 @@
 # FrostBuild generated state
 .frost/
 .frost-bench/
+bench/results/
 
 # Bazel output trees and workspace symlinks
 bazel-*/

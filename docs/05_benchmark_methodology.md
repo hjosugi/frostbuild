@@ -166,6 +166,16 @@ Reports include host, platform, Python version, CPU count, load average, CPU
 governor, and turbo state. Use `--out bench/baselines/<date>-<host>.json` to
 commit a reproducible baseline artifact.
 
+From a clean clone, run every current benchmark report with:
+
+```bash
+scripts/reproduce.sh
+```
+
+The script writes timestamped reports under `bench/results/` and regenerates the
+sample Frost POC workspace before running `frost.py bench`, so it does not depend
+on stale local output.
+
 ## Current baseline
 
 The committed `bench/baselines/2026-07-05-E14.json` was captured on

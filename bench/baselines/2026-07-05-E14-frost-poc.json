@@ -1,0 +1,25 @@
+{
+  "cache_lookup_latency_ms_p50": 0.2999,
+  "changed_file": "src/pkg05_mod07.fb",
+  "jobs": 8,
+  "micro_partition_incremental_s": 0.2877,
+  "micro_pruned_count": 152,
+  "micro_selected_count": 9,
+  "micro_selected_targets": [
+    "app",
+    "pkg05_mod00",
+    "pkg05_mod01",
+    "pkg05_mod02",
+    "pkg05_mod03",
+    "pkg05_mod04",
+    "pkg05_mod05",
+    "pkg05_mod06",
+    "pkg05_mod07"
+  ],
+  "naive_full_rebuild_s": 0.6703,
+  "naive_target_count": 161,
+  "note": "This is a deterministic simulation benchmark. Use scripts/compare_bazel.sh for real Bazel if installed.",
+  "speedup_naive_over_micro": 2.33,
+  "warm_full_build_s": 0.6743,
+  "workspace": "/mnt/data/github.com/hjosugi/frost-build/sample"
+}

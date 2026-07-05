@@ -118,6 +118,41 @@ no-op, leaf incremental, and hot-header rebuild scenarios, records CPU
 governor/turbo/load metadata, and emits JSON. Baseline reports live in
 `bench/baselines/`.
 
+Published baseline:
+
+```text
+Build tool JSON: bench/baselines/2026-07-05-E14.json
+Frost POC JSON:  bench/baselines/2026-07-05-E14-frost-poc.json
+Host: E14, Linux 7.1.2, x86_64, 8 jobs, CPU governor performance, turbo enabled
+```
+
+Frost POC simulation from the linked JSON:
+
+| Selected | Pruned | Micro incremental | Naive rebuild | Speedup |
+| ---: | ---: | ---: | ---: | ---: |
+| 9 | 152 | 0.2877 s | 0.6703 s | 2.33x |
+
+Median build-tool timings from the linked JSON:
+
+| Tool | Targets | Clean | No-op | Leaf incremental | Hot header |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Ninja | 1,000 | 1065.252 ms | 5.867 ms | 7.519 ms | 1041.167 ms |
+| Make | 1,000 | 1229.647 ms | 129.719 ms | 126.531 ms | 1266.797 ms |
+| Ninja | 10,000 | 11655.407 ms | 49.755 ms | 57.099 ms | 11618.390 ms |
+| Make | 10,000 | 30857.041 ms | 2104.566 ms | 2144.258 ms | 31991.726 ms |
+
+Reproduce all current benchmark reports from a clean clone:
+
+```bash
+scripts/reproduce.sh
+```
+
+For a quick smoke run:
+
+```bash
+FROST_BENCH_SIZES=10 FROST_BENCH_ITERATIONS=1 scripts/reproduce.sh
+```
+
 ## What this POC implements
 
 ```text
