@@ -1,0 +1,30 @@
+name: Spam guard
+
+on:
+  issue_comment:
+    types: [created, edited]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "delete | minimize | report-only"
+        required: false
+        default: delete
+
+permissions:
+  issues: write
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check comment(s) for malware-link spam
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SPAM_GUARD_ACTION: ${{ github.event.inputs.action || 'delete' }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            python3 scripts/spam_guard.py scan
+          else
+            python3 scripts/spam_guard.py event
+          fi
