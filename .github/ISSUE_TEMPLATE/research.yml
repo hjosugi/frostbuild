@@ -1,0 +1,40 @@
+name: Research
+description: 設計調査・技術検証 (完了条件 = docs/ への判断メモ + 採否の記録)
+labels: ["kind:research"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        research issue の完了条件は「docs/ に判断メモを残し、採用/非採用と根拠を記録すること」です。採用する場合は実装 issue を別途切ります。
+  - type: textarea
+    id: background
+    attributes:
+      label: 背景
+      description: 何を判断するための調査か。関連する issue / DESIGN.md セクションを参照する。
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: スコープ
+      description: 調査対象・比較軸・検証方法 (計測するなら benchmark harness 経由で)。
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: 判断メモの置き場所 (docs/NN_xxx.md) と、記録すべき結論を明記する。
+      value: |
+        - [ ] docs/ に結論と根拠が記録されている
+        - [ ] 採用分は実装 issue として切られている
+    validations:
+      required: true
+  - type: textarea
+    id: deps
+    attributes:
+      label: 依存
+      value: |
+        - なし
+    validations:
+      required: false

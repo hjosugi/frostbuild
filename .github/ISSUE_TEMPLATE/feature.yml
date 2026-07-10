@@ -1,0 +1,40 @@
+name: Feature
+description: 機能追加・改善 (背景 / スコープ / Acceptance Criteria / 依存)
+labels: ["kind:feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        該当する `area:*` label (area:core, area:cache, area:planner, area:scheduler, area:executor, area:store, area:daemon, area:cli, area:bench, area:ci, area:docs) を作成後に付与してください。
+  - type: textarea
+    id: background
+    attributes:
+      label: 背景
+      description: なぜ必要か。DESIGN.md の該当セクションがあれば参照する。
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: スコープ
+      description: やること・やらないことを箇条書きで。
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: 完了判定をチェックボックスで。性能主張は benchmark harness の JSON 出力に紐づけること。
+      value: |
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: deps
+    attributes:
+      label: 依存
+      description: "依存する issue を列挙する (例: `- #7`)。なければ「なし」。"
+      value: |
+        - なし
+    validations:
+      required: false

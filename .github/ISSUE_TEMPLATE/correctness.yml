@@ -1,0 +1,39 @@
+name: Correctness / Bug
+description: 誤った build 結果・incremental の不整合・crash の報告
+labels: ["correctness"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        速さの主張は正しさが前提です。over-build (無駄な再実行) も under-build (再実行漏れ) も correctness bug として扱います。
+  - type: textarea
+    id: repro
+    attributes:
+      label: 再現手順
+      description: クリーンな状態からの最小再現手順。可能なら workspace 生成コマンドも含める。
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期待される挙動
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 実際の挙動
+      description: 実行された action 集合・出力・error message など。
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: 環境
+      description: OS / kernel / filesystem / frost の commit hash。
+      value: |
+        - OS:
+        - Filesystem:
+        - Commit:
+    validations:
+      required: true
