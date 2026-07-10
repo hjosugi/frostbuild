@@ -2,6 +2,10 @@
 .frost/
 .frost-bench/
 bench/results/
+sample_c/gen/
+
+# Rust build artifacts
+target/
 
 # Bazel output trees and workspace symlinks
 bazel-*/

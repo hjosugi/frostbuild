@@ -1,6 +1,6 @@
-# FrostBuild POC
+# FrostBuild
 
-FrostBuild is a small proof-of-concept for this idea:
+FrostBuild is a build system built around this idea:
 
 ```text
 Nix-like correctness
@@ -9,22 +9,47 @@ Nix-like correctness
 = faster incremental builds for large polyglot monorepos
 ```
 
-This zip contains:
+Repository layout:
 
 ```text
-frost.py                     Python prototype build engine
-sample/                      synthetic workspace with 161 build targets + Bazel files
-scripts/run_poc_benchmark.sh run local POC benchmark
-scripts/compare_bazel.sh     optional Bazel comparison if bazel is installed
-frost-bench                  median benchmark harness for generated Ninja/Make workspaces
-docs/                        build tool knowledge, papers, and 2x strategy
-zig_skeleton/                Zig implementation skeleton and design note
+crates/                      Rust implementation: the real `frost` binary
+  frostbuild-core/           manifest, build graph, hashing, journal, depfile
+  frostbuild-exec/           parallel scheduler + process executor
+  frostbuild-cli/            `frost` CLI (build / plan / clean / graph)
+sample_c/                    real C demo workspace for the Rust engine
+frost.py                     Python PoC (reference implementation, simulation)
+sample/                      synthetic workspace for the PoC + Bazel files
+frost-bench                  median benchmark harness for Ninja/Make workspaces
+scripts/                     benchmark + reproduction scripts
+docs/                        design notes, papers, manifest spec
+zig_skeleton/                historical Zig skeleton (superseded by crates/)
 ```
 
-## Quick start
+## Rust engine quick start
+
+The Rust `frost` binary executes real compilers with content-hash based
+incremental rebuilds (action cache + depfile ingestion + early cutoff):
 
 ```bash
-cd frostbuild_poc
+cargo build --release
+./target/release/frost -C sample_c build
+./sample_c/.frost/bin/app          # -> frost: 42
+./target/release/frost -C sample_c build           # no-op: 0 executed
+./target/release/frost -C sample_c build --explain # why each action ran
+./target/release/frost -C sample_c plan            # dry-run prediction
+```
+
+Supported today: `cc_binary` / `cc_library` / `genrule` targets, parallel
+execution (`-j`), `--keep-going`, header dependency discovery via
+`-MD` depfiles, `plan` (dry run with reasons), `graph --dot`, and
+`clean`. The manifest format is specified in
+[docs/06_manifest_spec.md](docs/06_manifest_spec.md).
+
+## Python PoC quick start
+
+The original PoC simulates builds to demonstrate micro-partition pruning:
+
+```bash
 python3 frost.py bench --workspace sample --jobs 8
 ```
 

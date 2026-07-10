@@ -1,3 +1,10 @@
+pub mod depfile;
+pub mod graph;
+pub mod hashcache;
+pub mod journal;
+pub mod manifest;
+pub mod paths;
+
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
@@ -78,6 +85,14 @@ impl ActionKey {
         let payload = self.canonical_payload(workspace_root);
         format!("{:016x}", fnv1a64(payload.as_bytes()))
     }
+
+    /// Full-strength content digest of the canonical payload. This is the
+    /// action cache key: any change to command, environment, toolchain, or
+    /// input digests changes this value.
+    pub fn digest(&self, workspace_root: &Path) -> String {
+        let payload = self.canonical_payload(workspace_root);
+        blake3::hash(payload.as_bytes()).to_hex().to_string()
+    }
 }
 
 fn write_field(payload: &mut String, key: &str, value: &str) {
@@ -118,6 +133,7 @@ mod tests {
 
         assert_eq!(a.canonical_payload(root), b.canonical_payload(root));
         assert_eq!(a.stable_id(root), b.stable_id(root));
+        assert_eq!(a.digest(root), b.digest(root));
     }
 
     #[test]
@@ -129,5 +145,16 @@ mod tests {
             .with_env("FROSTBUILD_FLAGS", "--debug");
 
         assert_ne!(release.stable_id(root), debug.stable_id(root));
+        assert_ne!(release.digest(root), debug.digest(root));
+    }
+
+    #[test]
+    fn input_digest_change_changes_digest() {
+        let root = Path::new("/repo");
+        let a =
+            ActionKey::new("builder", "app", ["cc"], "/repo", "tool").with_input("src/a.c", "aaa");
+        let b =
+            ActionKey::new("builder", "app", ["cc"], "/repo", "tool").with_input("src/a.c", "bbb");
+        assert_ne!(a.digest(root), b.digest(root));
     }
 }

@@ -1,8 +1,26 @@
 [workspace]
-members = ["crates/frostbuild-core"]
+members = [
+    "crates/frostbuild-core",
+    "crates/frostbuild-exec",
+    "crates/frostbuild-cli",
+]
 resolver = "2"
 
 [workspace.package]
+version = "0.1.0"
 edition = "2021"
 license = "0BSD"
-repository = "https://github.com/hjosugi/frostbuild"
+repository = "https://github.com/hjosugi/frost-build"
+
+[workspace.dependencies]
+anyhow = "1"
+blake3 = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+clap = { version = "4", features = ["derive"] }
+frostbuild-core = { path = "crates/frostbuild-core" }
+frostbuild-exec = { path = "crates/frostbuild-exec" }
+
+[profile.release]
+lto = "thin"

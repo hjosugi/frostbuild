@@ -1,0 +1,26 @@
+# Real C demo workspace for the Rust `frost` binary.
+# Build it with:  frost -C sample_c build
+
+[workspace]
+default_targets = ["app"]
+
+[toolchain]
+cc = "cc"
+cflags = ["-O2", "-Wall"]
+
+[target.gen_config]
+kind = "genrule"
+cmd = "sh tools/gen_config.sh ${out}"
+inputs = ["tools/gen_config.sh"]
+outputs = ["gen/config.h"]
+includes = ["gen"]
+
+[target.util]
+kind = "cc_library"
+srcs = ["src/util.c"]
+includes = ["include"]
+
+[target.app]
+kind = "cc_binary"
+srcs = ["src/main.c"]
+deps = ["util", "gen_config"]
