@@ -1,3 +1,6 @@
+<!-- i18n: language-switcher -->
+[English](README.md) | [日本語](README.ja.md)
+
 # Zig skeleton
 
 This is a non-runnable design skeleton for a future Zig implementation.

@@ -1,3 +1,6 @@
+<!-- i18n: language-switcher -->
+[English](05_benchmark_methodology.md) | [日本語](05_benchmark_methodology.ja.md)
+
 # Benchmark methodology
 
 ## What to benchmark

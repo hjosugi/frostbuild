@@ -1,3 +1,6 @@
+<!-- i18n: language-switcher -->
+[English](02_two_x_strategy.md) | [日本語](02_two_x_strategy.ja.md)
+
 # How to be 2x faster than current tools
 
 ## First: universal 2x is impossible

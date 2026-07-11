@@ -1,3 +1,6 @@
+<!-- i18n: language-switcher -->
+[English](03_papers_and_references.md) | [日本語](03_papers_and_references.ja.md)
+
 # Papers and references
 
 ## Build Systems à la Carte

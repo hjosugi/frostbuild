@@ -1,3 +1,6 @@
+<!-- i18n: language-switcher -->
+[English](00_world_fastest_build_tools.md) | [日本語](00_world_fastest_build_tools.ja.md)
+
 # 現在の高速 build tool の見取り図
 
 ## 結論

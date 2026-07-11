@@ -1,3 +1,6 @@
+<!-- i18n: language-switcher -->
+[English](01_architecture_nix_bazel_micro_partition.md) | [日本語](01_architecture_nix_bazel_micro_partition.ja.md)
+
 # Nix + Bazel + Micro-partition architecture
 
 ## Core idea

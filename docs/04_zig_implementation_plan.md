@@ -1,3 +1,6 @@
+<!-- i18n: language-switcher -->
+[English](04_zig_implementation_plan.md) | [日本語](04_zig_implementation_plan.ja.md)
+
 # Zig implementation plan
 
 ## Is Zig a good choice?

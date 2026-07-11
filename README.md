@@ -1,3 +1,6 @@
+<!-- i18n: language-switcher -->
+[English](README.md) | [日本語](README.ja.md)
+
 # FrostBuild POC
 
 FrostBuild is a small proof-of-concept for this idea:
