@@ -15,13 +15,13 @@ history, specific hardware, a release tag, or an external service.
 | #34, #35 | REAPI cache decision and Rust Ninja subset importer |
 | #39–#43 | DESIGN/manifest/README/contribution docs, six crates, toolchain pin, forms and milestone assignment |
 | #45, #46 | four fuzz targets, proptest, nightly fuzz, cargo-deny, Dependabot and SHA-pinned actions |
-| #47 | SemVer/CHANGELOG/install docs and tag-triggered musl binaries/checksums. Gate: first real tag/release |
+| #47 | Completed by v0.1.0: SemVer/CHANGELOG/install docs and tag-triggered musl binaries/checksums |
 | #48, #49, #51 | process-group cancellation, partial-output cleanup, explain/trace and compilation database |
 | #52–#54 | platform/language decisions and authoritative Rust/reference Python/historical Zig roles |
 | #57–#61 | profiles, C++, hermetic globs, multi-package labels and cached test runner |
 | #62 | deterministic double-run mode and macro/output diagnosis E2E |
 | #64 | RE execution gaps, Merkle/output-tree requirements and executor experiment plan. Gate: external v2 experiment |
 
-Release/tag, long-running CI-noise records, historical ML replay and a remote
-executor experiment are not represented as completed; they require external
-evidence rather than more local implementation.
+Long-running CI-noise records, historical ML replay and a remote executor
+experiment are not represented as completed; they require external evidence
+rather than more local implementation.
