@@ -3,6 +3,7 @@ use std::io::Read;
 use std::path::Path;
 
 use anyhow::{Context, Result};
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 
 /// Digest recorded for an input path that does not exist on disk. Missing
@@ -87,6 +88,54 @@ impl HashCache {
         Ok(hash)
     }
 
+    /// Resolve a fileset with cached stat checks and hash misses in parallel.
+    pub fn digest_many(
+        &mut self,
+        workspace_root: &Path,
+        paths: &[String],
+    ) -> Result<std::collections::BTreeMap<String, String>> {
+        let mut ready = std::collections::BTreeMap::new();
+        let mut misses = Vec::new();
+        for rel in paths {
+            let full = resolve(workspace_root, rel);
+            let Ok(meta) = std::fs::metadata(&full) else {
+                self.dirty |= self.entries.remove(rel).is_some();
+                ready.insert(rel.clone(), MISSING.to_string());
+                continue;
+            };
+            let stat = stat_triple(&meta);
+            if let Some(entry) = self.entries.get(rel) {
+                if (entry.mtime_ns, entry.size, entry.ino) == stat {
+                    ready.insert(rel.clone(), entry.hash.clone());
+                    continue;
+                }
+            }
+            misses.push((rel.clone(), full, stat));
+        }
+        let hashed: Result<Vec<_>> = misses
+            .into_par_iter()
+            .map(|(rel, full, stat)| {
+                hash_file(&full)
+                    .with_context(|| format!("failed to hash {}", full.display()))
+                    .map(|hash| (rel, stat, hash))
+            })
+            .collect();
+        for (rel, stat, hash) in hashed? {
+            self.entries.insert(
+                rel.clone(),
+                Entry {
+                    mtime_ns: stat.0,
+                    size: stat.1,
+                    ino: stat.2,
+                    hash: hash.clone(),
+                },
+            );
+            ready.insert(rel, hash);
+            self.dirty = true;
+        }
+        Ok(ready)
+    }
+
     /// Drop the cached stat for a path we just (re)wrote, forcing a re-hash.
     /// Needed for action outputs: a fast rewrite can land in the same mtime
     /// granule with the same size.
@@ -128,13 +177,17 @@ fn stat_triple(meta: &std::fs::Metadata) -> (i128, u64, u64) {
 pub fn hash_file(path: &Path) -> Result<String> {
     let mut file = std::fs::File::open(path)?;
     let mut hasher = blake3::Hasher::new();
-    let mut buf = vec![0u8; 1024 * 1024];
+    let mut buf = vec![0u8; 4 * 1024 * 1024];
     loop {
         let n = file.read(&mut buf)?;
         if n == 0 {
             break;
         }
-        hasher.update(&buf[..n]);
+        if n >= 128 * 1024 {
+            hasher.update_rayon(&buf[..n]);
+        } else {
+            hasher.update(&buf[..n]);
+        }
     }
     Ok(hasher.finalize().to_hex().to_string())
 }

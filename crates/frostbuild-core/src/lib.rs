@@ -1,5 +1,7 @@
+pub mod cas;
 pub mod depfile;
 pub mod graph;
+pub mod graph_store;
 pub mod hashcache;
 pub mod journal;
 pub mod manifest;
@@ -116,6 +118,7 @@ fn fnv1a64(bytes: &[u8]) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
 
     #[test]
     fn canonical_payload_sorts_env_and_inputs() {
@@ -156,5 +159,19 @@ mod tests {
         let b =
             ActionKey::new("builder", "app", ["cc"], "/repo", "tool").with_input("src/a.c", "bbb");
         assert_ne!(a.digest(root), b.digest(root));
+    }
+
+    proptest! {
+        #[test]
+        fn action_key_is_invariant_to_input_insertion_order(
+            entries in prop::collection::btree_map("[a-z]{1,8}", "[0-9a-f]{1,16}", 0..32)
+        ) {
+            let root = Path::new("/repo");
+            let mut forward = ActionKey::new("builder", "target", ["cc"], root, "tool");
+            let mut reverse = ActionKey::new("builder", "target", ["cc"], root, "tool");
+            for (path, digest) in &entries { forward = forward.with_input(path, digest); }
+            for (path, digest) in entries.iter().rev() { reverse = reverse.with_input(path, digest); }
+            prop_assert_eq!(forward.digest(root), reverse.digest(root));
+        }
     }
 }

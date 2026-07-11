@@ -1,0 +1,39 @@
+[package]
+name = "frostbuild-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+frostbuild-core = { path = "../crates/frostbuild-core" }
+
+[[bin]]
+name = "manifest"
+path = "fuzz_targets/manifest.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "depfile"
+path = "fuzz_targets/depfile.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "journal"
+path = "fuzz_targets/journal.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "graph_store"
+path = "fuzz_targets/graph_store.rs"
+test = false
+doc = false
+
+[workspace]
+members = ["."]

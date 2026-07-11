@@ -1,113 +1,98 @@
-# frost.toml manifest specification (v1)
+# `frost.toml` manifest specification (v1)
 
-This is the manifest format understood by the Rust `frost` binary
-(`crates/frostbuild-cli`). It supersedes the simulation-only format used by
-the Python PoC (`frost.py`), which remains supported by the PoC only.
+Unknown fields are errors. Paths are UTF-8, workspace/package-relative, use `/`,
+and may not contain empty, `..`, or absolute components. `srcs` and genrule
+`inputs` accept deterministic sorted `*`, `?`, `[]`, and `**` globs. `.frost`,
+`.git`, `.gitignore`, and `.frostignore` matches are excluded.
 
-A workspace is a directory containing a single `frost.toml` at its root.
-All paths in the manifest are workspace-relative, use forward slashes, and
-must not contain `..` or be absolute. Unknown fields anywhere in the
-manifest are a hard error (so typos fail loudly instead of being ignored).
+## Workspace and packages
 
-## `[workspace]`
+A legacy single-file workspace contains one root `frost.toml` and uses bare
+target names. When the root contains `[workspace]`, Frost discovers nested
+`frost.toml` files (not through directory symlinks). Nested paths are package
+relative. Labels are `//path/to/package:name`; `:name` and `name` resolve in the
+current package, while `//:name` addresses a root target. Visibility is a v1
+non-goal.
 
 ```toml
 [workspace]
-name = "demo"                 # optional, informational
-default_targets = ["app"]     # optional
+name = "demo"
+default_targets = ["//apps/cli:cli"]
 ```
 
-`default_targets` names the targets built by a bare `frost build`. When
-omitted, it defaults to all `cc_binary` targets, or to all targets if there
-are no binaries. Every listed name must exist.
-
-## `[toolchain]`
+## Toolchain and profiles
 
 ```toml
 [toolchain]
-cc = "cc"                     # C compiler, default "cc" (resolved via PATH)
-ar = "ar"                     # archiver, default "ar"
-cflags = ["-O2", "-Wall"]     # prepended to every compile
-ldflags = []                  # prepended to every link
+cc = "cc"          # defaults shown
+cxx = "c++"
+ar = "ar"
+cflags = ["-Wall"]
+cxxflags = ["-std=c++20"]
+ldflags = []
+
+[profile.debug]
+cflags = ["-g"]
+
+[profile.release]
+cflags = ["-O3", "-DNDEBUG"]
+ldflags = ["-s"]
 ```
 
-The resolved compiler binary is fingerprinted (path, size, mtime) into every
-action key, so swapping the compiler invalidates the action cache
-(full closure hashing is tracked in issue #28).
+`frost build --profile NAME` appends profile flags and writes
+`.frost/{obj,lib,bin}/NAME/…`. Profiles coexist and have separate journal keys.
+C sources use `cc`; `.cc/.cpp/.cxx/.C/.c++` use `cxx`. Any C++ source makes a
+binary link with `cxx`. Compiler, C++ compiler, archiver and sysroot identity are
+fingerprinted into action keys. C++20 modules are not v1 functionality.
 
-## `[target.NAME]`
-
-Target names must match `[A-Za-z0-9_-]+`. Three kinds exist.
-
-### `cc_library`
+## C/C++ targets
 
 ```toml
 [target.util]
-kind = "cc_library"
-srcs = ["src/util.c"]         # required, one compile action per file
-deps = []                     # other targets
-includes = ["include"]        # exported -I dirs (visible to dependents)
-cflags = []                   # extra flags for this target's compiles
+kind = "cc_library"              # or cc_binary / cc_test
+srcs = ["src/**/*.cpp"]           # required
+deps = ["//generated:headers"]
+includes = ["include"]            # transitively exported -I paths
+cflags = ["-Werror"]
+ldflags = ["-lm"]                 # binary/test only
 ```
 
-Each `srcs` entry compiles to `.frost/obj/NAME/<src>.o` with
-`-MD -MF <obj>.d`; the depfile is ingested after each run, so header
-dependencies are discovered automatically and precisely. Objects are
-archived into `.frost/lib/libNAME.a`.
+Each translation unit gets `-MD -MF`; discovered headers become content inputs.
+Generated outputs begin as order-only edges, so an unused generated header does
+not invalidate every TU. Libraries use deterministic archives. `cc_test` links
+like a binary and adds a cached execution action.
 
-### `cc_binary`
-
-```toml
-[target.app]
-kind = "cc_binary"
-srcs = ["src/main.c"]
-deps = ["util"]
-ldflags = ["-lm"]             # extra link flags for this target
-```
-
-Links its own objects plus the archives of all (transitive) `cc_library`
-deps into `.frost/bin/NAME`.
-
-### `genrule`
+## Genrules and shell tests
 
 ```toml
-[target.gen_config]
+[target.generate]
 kind = "genrule"
-cmd = "sh tools/gen_config.sh ${out}"
-inputs = ["tools/gen_config.sh"]
-outputs = ["gen/config.h"]
-includes = ["gen"]            # optional: export dirs to dependents
+cmd = "tool ${in} -o ${out}"
+inputs = ["schema/*.json"]
+outputs = ["generated/model.c"]
+deps = []
+includes = ["generated"]
+
+[target.integration]
+kind = "test"
+cmd = "scripts/integration.sh"
+inputs = ["scripts/integration.sh"]
+deps = ["app"]
 ```
 
-Runs `cmd` via `/bin/sh -c` with the workspace root as cwd. Substitutions:
-`${in}` (inputs, space-joined), `${out}` (first output), `${outs}` (all
-outputs, space-joined). Every declared output must exist after the command
-succeeds, or the action fails. Two targets may not declare the same output.
+Genrule substitutions are `${in}`, `${out}`, `${outs}` and execute through
+`/bin/sh -c` at the workspace root. Authors must shell-quote intentionally.
+All genrule outputs must exist after success and output ownership is unique.
+Shell tests receive dependency outputs as content inputs and write a success
+stamp. `frost test --no-cache` forces successful tests to rerun.
 
-Paths containing spaces are not supported in genrule substitutions
-(tracked with the other path edge cases in issue #50).
+## Incrementality and diagnostics
 
-## Include and dependency propagation
+The BLAKE3 action key covers canonical argv/cwd, environment whitelist,
+toolchain closure, declared and discovered content. The binary journal is
+append-only and ignores incomplete crash tails. The CAS restores missing output
+without execution; byte-identical output cuts off downstream work.
 
-`includes` are exported transitively: a target sees its own `includes` plus
-those of everything in its dep closure. Library archives propagate to the
-linking binary. Genrule outputs propagate as compile inputs of dependent
-cc targets, which orders code generation before compilation on the first
-build; subsequent builds narrow this via depfiles.
-
-Dependency cycles between targets are a hard error, reported with the
-cycle path.
-
-## Incrementality semantics
-
-The action key is the blake3 digest of: command line, cwd, toolchain
-fingerprint, and the content digests of every declared and discovered
-input. An action is skipped when its key matches the journal
-(`.frost/journal.json`) and its recorded outputs are intact on disk.
-Because keys depend on input *content* (not mtimes), an action that
-re-runs but reproduces byte-identical outputs stops the rebuild from
-propagating downstream (early cutoff).
-
-`frost plan` prints what would run and why; `frost build --explain` prints
-the reason each action ran (which input changed, command change, or
-missing output).
+`frost plan`, `build --explain`, `explain TARGET`, `graph --dot`, `compdb`, and
+`build --trace FILE` expose planning and execution. `--sandbox` hides undeclared
+workspace paths on Linux; `--check-determinism` reruns selected actions.

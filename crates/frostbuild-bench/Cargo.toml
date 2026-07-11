@@ -1,0 +1,10 @@
+[package]
+name = "frostbuild-bench"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "frost-bench-rs"
+path = "src/main.rs"

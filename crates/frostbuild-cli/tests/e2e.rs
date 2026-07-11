@@ -49,7 +49,7 @@ impl Workspace {
     }
 
     fn run_app(&self) -> String {
-        let out = Command::new(self.dir.join(".frost/bin/app"))
+        let out = Command::new(self.dir.join(".frost/bin/debug/app"))
             .output()
             .expect("run built app");
         assert!(out.status.success(), "built app should run");
@@ -183,15 +183,14 @@ fn deleted_output_is_rebuilt() {
     let (ok, out) = ws.build_explain();
     assert!(ok, "clean build failed:\n{out}");
 
-    std::fs::remove_file(ws.dir.join(".frost/bin/app")).unwrap();
+    std::fs::remove_file(ws.dir.join(".frost/bin/debug/app")).unwrap();
 
     let (ok, out) = ws.build_explain();
     assert!(ok, "rebuild failed:\n{out}");
     assert!(
-        out.contains("ran link:app :: output missing or modified"),
-        "{out}"
+        out.contains("0 executed, 5 cached"),
+        "CAS restore expected:\n{out}"
     );
-    assert!(out.contains("1 executed, 4 cached"), "{out}");
     assert_eq!(ws.run_app(), "frost: 42\n");
 }
 
@@ -244,12 +243,15 @@ fn clean_removes_outputs_and_full_rebuild_works() {
 
     let (ok, out) = ws.frost(&["clean"]);
     assert!(ok, "clean failed:\n{out}");
-    assert!(!ws.dir.join(".frost/bin/app").exists());
+    assert!(!ws.dir.join(".frost/bin/debug/app").exists());
     assert!(!ws.dir.join("gen/config.h").exists());
 
     let (ok, out) = ws.build_explain();
     assert!(ok, "rebuild after clean failed:\n{out}");
-    assert!(out.contains("5 executed"), "{out}");
+    assert!(
+        out.contains("5 cached"),
+        "CAS should restore outputs:\n{out}"
+    );
 }
 
 #[test]
@@ -259,4 +261,207 @@ fn graph_dot_lists_target_edges() {
     assert!(ok, "graph failed:\n{out}");
     assert!(out.contains("\"app\" -> \"util\""), "{out}");
     assert!(out.contains("digraph frost"), "{out}");
+}
+
+#[test]
+fn profiles_coexist_and_switch_back_is_cached() {
+    let ws = Workspace::new("profiles");
+    let mut manifest = std::fs::read_to_string(ws.dir.join("frost.toml")).unwrap();
+    manifest.push_str(
+        "\n[profile.debug]\ncflags = [\"-g\"]\n\n[profile.release]\ncflags = [\"-O3\"]\n",
+    );
+    ws.write("frost.toml", &manifest);
+    let (ok, out) = ws.frost(&["build", "--profile", "debug"]);
+    assert!(ok, "{out}");
+    let (ok, out) = ws.frost(&["build", "--profile", "release"]);
+    assert!(ok, "{out}");
+    assert!(ws.dir.join(".frost/bin/debug/app").exists());
+    assert!(ws.dir.join(".frost/bin/release/app").exists());
+    let (ok, out) = ws.frost(&["build", "--profile", "debug"]);
+    assert!(ok && out.contains("0 executed, 5 cached"), "{out}");
+}
+
+#[test]
+fn cxx_glob_test_and_compdb_are_usable() {
+    let ws = Workspace::new("cxx-test");
+    ws.write("src/math.cpp", "int answer() { return 42; }\n");
+    ws.write(
+        "src/math_test.cpp",
+        "extern int answer(); int main() { return answer() == 42 ? 0 : 1; }\n",
+    );
+    let mut manifest = std::fs::read_to_string(ws.dir.join("frost.toml")).unwrap();
+    manifest.push_str("\n[target.math_test]\nkind = \"cc_test\"\nsrcs = [\"src/math*.cpp\"]\n");
+    ws.write("frost.toml", &manifest);
+    let (ok, out) = ws.frost(&["test", "math_test", "--explain"]);
+    assert!(ok && out.contains("tests: 1 passed"), "{out}");
+    let (ok, out) = ws.frost(&["test", "math_test"]);
+    assert!(ok && out.contains("1 cached"), "{out}");
+    let (ok, out) = ws.frost(&["compdb"]);
+    assert!(ok, "{out}");
+    let db: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(ws.dir.join("compile_commands.json")).unwrap())
+            .unwrap();
+    assert!(db
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|entry| entry["file"] == "src/math.cpp"));
+}
+
+#[test]
+fn multi_package_labels_build_across_packages() {
+    let ws = Workspace::new("packages");
+    std::fs::create_dir_all(ws.dir.join("lib")).unwrap();
+    std::fs::create_dir_all(ws.dir.join("app")).unwrap();
+    ws.write(
+        "frost.toml",
+        "[workspace]\ndefault_targets = [\"//app:app\"]\n",
+    );
+    ws.write("lib/lib.c", "int package_value(void) { return 7; }\n");
+    ws.write(
+        "lib/frost.toml",
+        "[target.lib]\nkind = \"cc_library\"\nsrcs = [\"lib.c\"]\n",
+    );
+    ws.write(
+        "app/main.c",
+        "int package_value(void); int main(void) { return package_value() == 7 ? 0 : 1; }\n",
+    );
+    ws.write(
+        "app/frost.toml",
+        "[target.app]\nkind = \"cc_binary\"\nsrcs = [\"main.c\"]\ndeps = [\"//lib:lib\"]\n",
+    );
+    let (ok, out) = ws.frost(&["build"]);
+    assert!(ok, "{out}");
+    let status = Command::new(ws.dir.join(".frost/bin/debug/app_app"))
+        .status()
+        .unwrap();
+    assert!(status.success());
+}
+
+#[test]
+fn generated_header_is_order_only_for_unrelated_translation_units() {
+    let ws = Workspace::new("order-only");
+    let (ok, out) = ws.build_explain();
+    assert!(ok, "{out}");
+    let script = std::fs::read_to_string(ws.dir.join("tools/gen_config.sh")).unwrap();
+    ws.write("tools/gen_config.sh", &script.replace("frost:", "ice:"));
+    let (ok, out) = ws.build_explain();
+    assert!(ok, "{out}");
+    assert!(out.contains("ran compile:app:src/main.c"), "{out}");
+    assert!(
+        !out.contains("ran compile:util:src/util.c"),
+        "unrelated TU rebuilt:\n{out}"
+    );
+    assert_eq!(ws.run_app(), "ice: 42\n");
+}
+
+#[test]
+fn determinism_check_names_macro_and_output() {
+    let ws = Workspace::new("determinism");
+    ws.write(
+        "src/nondeterministic.c",
+        "const char *stamp = __TIME__; int main(void) { return stamp[0] == 0; }\n",
+    );
+    let mut manifest = std::fs::read_to_string(ws.dir.join("frost.toml")).unwrap();
+    manifest.push_str(
+        "\n[target.nondeterministic]\nkind = \"cc_binary\"\nsrcs = [\"src/nondeterministic.c\"]\n",
+    );
+    ws.write("frost.toml", &manifest);
+    let (ok, out) = ws.frost(&["build", "nondeterministic", "--check-determinism"]);
+    assert!(!ok, "nondeterministic action must fail the check");
+    assert!(
+        out.contains("non-deterministic action compile:nondeterministic"),
+        "{out}"
+    );
+    assert!(out.contains(".frost/obj/debug/nondeterministic"), "{out}");
+}
+
+#[test]
+fn daemon_build_status_and_stop() {
+    let ws = Workspace::new("daemon");
+    let (ok, out) = ws.frost(&["build", "--daemon"]);
+    assert!(ok, "{out}");
+    let (ok, out) = ws.frost(&["build", "--daemon"]);
+    assert!(ok && out.contains("0 executed, 5 cached"), "{out}");
+
+    // The daemon must not trust only watcher state: build outputs live under
+    // .frost (which the watcher intentionally ignores). The engine still has
+    // to validate outputs and restore a manually deleted artifact from CAS.
+    std::fs::remove_file(ws.dir.join(".frost/bin/debug/app")).unwrap();
+    let (ok, out) = ws.frost(&["build", "--daemon", "--explain"]);
+    assert!(ok && out.contains("0 executed, 5 cached"), "{out}");
+    assert_eq!(ws.run_app(), "frost: 42\n");
+
+    ws.append("src/util.c", "\n/* daemon watcher change */\n");
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    let (ok, out) = ws.frost(&["build", "--daemon"]);
+    assert!(
+        ok && out.contains("1 executed"),
+        "source change missed:\n{out}"
+    );
+    let (ok, out) = ws.frost(&["daemon", "status"]);
+    assert!(ok && out.contains("running"), "{out}");
+    let (ok, out) = ws.frost(&["daemon", "stop"]);
+    assert!(ok && out.contains("stopped"), "{out}");
+}
+
+#[test]
+fn completed_action_survives_killed_build() {
+    let ws = Workspace::new("journal-kill");
+    ws.write(
+        "frost.toml",
+        "[workspace]\ndefault_targets = [\"slow\"]\n\n[target.fast]\nkind = \"genrule\"\ncmd = \"printf done > ${out}\"\noutputs = [\"gen/fast.txt\"]\n\n[target.slow]\nkind = \"genrule\"\ncmd = \"sleep 10; printf done > ${out}\"\noutputs = [\"gen/slow.txt\"]\ndeps = [\"fast\"]\n",
+    );
+    let mut child = Command::new(frost_bin())
+        .arg("-C")
+        .arg(&ws.dir)
+        .arg("build")
+        .spawn()
+        .unwrap();
+    for _ in 0..200 {
+        if frostbuild_core::journal::Journal::load(&ws.dir)
+            .actions
+            .contains_key("genrule:fast@debug")
+        {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    assert!(frostbuild_core::journal::Journal::load(&ws.dir)
+        .actions
+        .contains_key("genrule:fast@debug"));
+    child.kill().unwrap();
+    let _ = child.wait();
+    let (ok, out) = ws.frost(&["plan"]);
+    assert!(ok, "{out}");
+    assert!(
+        !out.contains("would run genrule:fast"),
+        "completed action was lost:\n{out}"
+    );
+    assert!(out.contains("would run genrule:slow"), "{out}");
+}
+
+#[test]
+fn sandbox_rejects_undeclared_workspace_header() {
+    if !Path::new("/usr/bin/bwrap").exists() {
+        return;
+    }
+    let ws = Workspace::new("sandbox");
+    ws.write("secret.h", "#define SECRET 0\n");
+    ws.write(
+        "src/sandbox.c",
+        "#include \"../secret.h\"\nint main(void) { return SECRET; }\n",
+    );
+    let mut manifest = std::fs::read_to_string(ws.dir.join("frost.toml")).unwrap();
+    manifest.push_str("\n[target.sandbox_app]\nkind = \"cc_binary\"\nsrcs = [\"src/sandbox.c\"]\n");
+    ws.write("frost.toml", &manifest);
+    let (ok, out) = ws.frost(&["build", "sandbox_app"]);
+    assert!(ok, "non-sandbox control build failed:\n{out}");
+    let (ok, out) = ws.frost(&["clean", "--cache"]);
+    assert!(ok, "{out}");
+    let (ok, out) = ws.frost(&["build", "sandbox_app", "--sandbox"]);
+    assert!(
+        !ok && out.contains("secret.h"),
+        "undeclared header was not diagnosed:\n{out}"
+    );
 }

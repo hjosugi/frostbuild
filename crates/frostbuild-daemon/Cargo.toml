@@ -1,19 +1,20 @@
 [package]
-name = "frostbuild-cli"
+name = "frostbuild-daemon"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[lib]
+path = "src/lib.rs"
+
 [[bin]]
-name = "frost"
+name = "frostd"
 path = "src/main.rs"
 
 [dependencies]
 anyhow.workspace = true
-clap.workspace = true
-frostbuild-core.workspace = true
-frostbuild-exec.workspace = true
-frostbuild-daemon.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+clap.workspace = true
+notify.workspace = true

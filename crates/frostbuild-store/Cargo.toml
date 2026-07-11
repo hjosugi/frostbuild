@@ -1,14 +1,9 @@
 [package]
-name = "frostbuild-exec"
+name = "frostbuild-store"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
 [dependencies]
-anyhow.workspace = true
-blake3.workspace = true
 frostbuild-core.workspace = true
-ctrlc.workspace = true
-libc.workspace = true
-rayon.workspace = true

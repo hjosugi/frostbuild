@@ -1,238 +1,141 @@
 # FrostBuild
 
-FrostBuild is a build system built around this idea:
+FrostBuild is a production-oriented Rust build engine for correct, low-latency
+incremental C/C++ builds in large monorepos. The core idea is to maximize work
+that never reaches execution: micro-partition pruning, constructive traces,
+depfile-narrowed inputs, early cutoff and content-addressed output restoration.
 
-```text
-Nix-like correctness
-+ Bazel/Buck2-like dependency graph and action cache
-+ Snowflake-like micro-partition metadata pruning
-= faster incremental builds for large polyglot monorepos
-```
+The normative architecture is [DESIGN.md](DESIGN.md); the manifest specification
+is [docs/06_manifest_spec.md](docs/06_manifest_spec.md).
 
-Repository layout:
-
-```text
-crates/                      Rust implementation: the real `frost` binary
-  frostbuild-core/           manifest, build graph, hashing, journal, depfile
-  frostbuild-exec/           parallel scheduler + process executor
-  frostbuild-cli/            `frost` CLI (build / plan / clean / graph)
-sample_c/                    real C demo workspace for the Rust engine
-frost.py                     Python PoC (reference implementation, simulation)
-sample/                      synthetic workspace for the PoC + Bazel files
-frost-bench                  median benchmark harness for Ninja/Make workspaces
-scripts/                     benchmark + reproduction scripts
-docs/                        design notes, papers, manifest spec
-zig_skeleton/                historical Zig skeleton (superseded by crates/)
-```
-
-## Rust engine quick start
-
-The Rust `frost` binary executes real compilers with content-hash based
-incremental rebuilds (action cache + depfile ingestion + early cutoff):
+## Quick start
 
 ```bash
-cargo build --release
+cargo build --release --locked
 ./target/release/frost -C sample_c build
-./sample_c/.frost/bin/app          # -> frost: 42
-./target/release/frost -C sample_c build           # no-op: 0 executed
-./target/release/frost -C sample_c build --explain # why each action ran
-./target/release/frost -C sample_c plan            # dry-run prediction
+./sample_c/.frost/bin/debug/app                 # frost: 42
+./target/release/frost -C sample_c build        # fully cached
+./target/release/frost -C sample_c build --explain
+./target/release/frost -C sample_c plan
+./target/release/frost -C sample_c graph --dot
 ```
 
-Supported today: `cc_binary` / `cc_library` / `genrule` targets, parallel
-execution (`-j`), `--keep-going`, header dependency discovery via
-`-MD` depfiles, `plan` (dry run with reasons), `graph --dot`, and
-`clean`. The manifest format is specified in
-[docs/06_manifest_spec.md](docs/06_manifest_spec.md).
-
-## Python PoC quick start
-
-The original PoC simulates builds to demonstrate micro-partition pruning:
+Useful production workflows:
 
 ```bash
-python3 frost.py bench --workspace sample --jobs 8
+# Isolated debug/release trees
+frost -C myrepo build --profile release -j 16
+
+# Build and cache test targets; select only affected tests
+frost -C myrepo test --affected --explain
+frost -C myrepo test --all --no-cache
+
+# Optional workspace sandbox and determinism audit
+frost -C myrepo build --sandbox
+frost -C myrepo build --check-determinism
+
+# IDE, trace and persistent service
+frost -C myrepo compdb
+frost -C myrepo build --trace trace.json
+frost -C myrepo build --daemon
+frost -C myrepo daemon status
 ```
 
-Expected output shape:
+## Implemented engine
 
-```json
-{
-  "micro_partition_incremental_s": 0.34,
-  "naive_full_rebuild_s": 0.90,
-  "speedup_naive_over_micro": 2.6,
-  "micro_selected_count": 9,
-  "micro_pruned_count": 152,
-  "naive_target_count": 161
-}
-```
+- real C/C++ compilation, libraries, binaries, `cc_test`, shell tests, genrules
+- deterministic glob expansion and multi-package `//package:target` labels
+- debug/release/custom profiles with independent output/cache identities
+- dynamic GCC/Clang depfile ingestion and generated-file order-only edges
+- parallel critical-path scheduler, captured diagnostics and `--keep-going`
+- stat cache, parallel BLAKE3 hashing and toolchain closure fingerprinting
+- append-only crash-tolerant binary journal with per-action flush
+- immutable local CAS, hardlink/copy materialization and bounded GC
+- early cutoff, affected test selection and opt-in determinism checking
+- mmap/versioned graph cache, `plan`, `explain`, Chrome trace and compdb
+- Unix-socket daemon, recursive watcher, protocol versioning and fallback
+- opt-in Linux bubblewrap sandbox and process-group cancellation
+- Ninja subset importer and reproducible Ninja/Make/Frost benchmark harness
 
-The benchmark is a deterministic simulation. It is not claiming that this prototype beats Bazel on real languages. It demonstrates the core strategy: for a local change, rebuild a small affected micro-partition closure instead of the full project closure.
+Remote cache/execution remain v2 protocol work; the local model is deliberately
+REAPI-translatable. See [remote cache](docs/07_remote_cache_study.md) and
+[remote execution](docs/11_remote_execution_study.md).
 
-## Commands
-
-Generate a fresh sample workspace:
-
-```bash
-python3 frost.py init-sample --out sample --groups 20 --modules-per-group 8 --cost-ms 30 --force
-```
-
-Show the cold plan:
-
-```bash
-python3 frost.py plan --workspace sample --dry-run
-```
-
-Build:
-
-```bash
-python3 frost.py build --workspace sample --jobs 8
-```
-
-Change one source file:
-
-```bash
-printf '\n# local change\n' >> sample/src/pkg05_mod07.fb
-```
-
-Show the incremental micro-partition plan:
-
-```bash
-python3 frost.py plan --workspace sample --dry-run
-```
-
-Run incremental build:
-
-```bash
-python3 frost.py build --workspace sample --jobs 8
-```
-
-Run affected tests:
-
-```bash
-python3 frost.py test --workspace sample --jobs 8
-```
-
-Clean local output while preserving the local action cache/CAS:
-
-```bash
-python3 frost.py clean --workspace sample
-```
-
-Remove output and cache state:
-
-```bash
-python3 frost.py clean --workspace sample --cache
-```
-
-Optional Bazel comparison:
-
-```bash
-bash scripts/compare_bazel.sh
-```
-
-This requires `bazel` to be installed. If Bazel is missing, the script prints a skip message.
-
-Run the standard build-tool baseline harness:
-
-```bash
-./frost-bench run --suite standard --tools ninja,make --sizes 1000,10000 --iterations 5 --jobs 8
-```
-
-The harness generates temporary Ninja and Make workspaces, measures clean,
-no-op, leaf incremental, and hot-header rebuild scenarios, records CPU
-governor/turbo/load metadata, and emits JSON. Baseline reports live in
-`bench/baselines/`.
-
-Published baseline:
+## Repository layout
 
 ```text
-Build tool JSON: bench/baselines/2026-07-05-E14.json
-Frost POC JSON:  bench/baselines/2026-07-05-E14-frost-poc.json
-Host: E14, Linux 7.1.2, x86_64, 8 jobs, CPU governor performance, turbo enabled
+crates/frostbuild-core/     manifest, graph, hashing, journal, graph store, CAS
+crates/frostbuild-store/    stable persistence facade
+crates/frostbuild-exec/     scheduler, executor, sandbox, cancellation
+crates/frostbuild-daemon/   watcher, framed socket protocol, frostd
+crates/frostbuild-cli/      frost command and end-to-end correctness tests
+crates/frostbuild-bench/    benchmark binary entry point
+sample_c/                   real compiler sample workspace
+bench/                      checked-in benchmark baselines
+docs/                       design decisions and research outcomes
+.github/                    CI, security and release automation
+frost.py, sample/           Python reference model and synthetic comparison data
+zig_skeleton/               historical, superseded implementation sketch
 ```
 
-Frost POC simulation from the linked JSON:
+The Rust workspace is authoritative. `frost.py` is retained only as a reference
+model for algorithm/benchmark comparison and retires from user-facing workflows
+once the Rust correctness suite covers every reference scenario. The Zig
+skeleton is historical and is not an implementation choice.
 
-| Selected | Pruned | Micro incremental | Naive rebuild | Speedup |
-| ---: | ---: | ---: | ---: | ---: |
-| 9 | 152 | 0.2877 s | 0.6703 s | 2.33x |
+## Manifest sketch
 
-Median build-tool timings from the linked JSON:
+```toml
+[workspace]
+default_targets = ["app"]
 
-| Tool | Targets | Clean | No-op | Leaf incremental | Hot header |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Ninja | 1,000 | 1065.252 ms | 5.867 ms | 7.519 ms | 1041.167 ms |
-| Make | 1,000 | 1229.647 ms | 129.719 ms | 126.531 ms | 1266.797 ms |
-| Ninja | 10,000 | 11655.407 ms | 49.755 ms | 57.099 ms | 11618.390 ms |
-| Make | 10,000 | 30857.041 ms | 2104.566 ms | 2144.258 ms | 31991.726 ms |
+[toolchain]
+cc = "cc"
+cxx = "c++"
+cflags = ["-Wall"]
 
-Reproduce all current benchmark reports from a clean clone:
+[profile.release]
+cflags = ["-O3", "-DNDEBUG"]
+
+[target.util]
+kind = "cc_library"
+srcs = ["src/**/*.c"]
+includes = ["include"]
+
+[target.app]
+kind = "cc_binary"
+srcs = ["src/main.cpp"]
+deps = ["util"]
+```
+
+Package manifests below a root `[workspace]` use package-relative paths and may
+depend on labels such as `//libs/util:util`, `:local`, or a local bare name.
+
+## Verification and benchmarks
 
 ```bash
-scripts/reproduce.sh
+cargo test --workspace --all-targets --locked
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo fmt --all -- --check
+python3 -m unittest discover -s tests
+
+./frost-bench run --suite standard \
+  --tools frost,ninja,make --sizes 1000,10000 --iterations 5 --jobs 8
 ```
 
-For a quick smoke run:
+Results include host/load metadata and medians. Existing baseline JSON is in
+`bench/baselines/`; `scripts/reproduce.sh` reproduces the published runs. A 2x
+claim is workload-specific, never universal, and must be backed by harness JSON.
 
-```bash
-FROST_BENCH_SIZES=10 FROST_BENCH_ITERATIONS=1 scripts/reproduce.sh
-```
+## Installation and versioning
 
-## What this POC implements
+Before 1.0, FrostBuild follows SemVer with breaking changes allowed in minor
+versions. Build locally with Cargo, use `cargo install --path crates/frostbuild-cli`,
+or download the static Linux binary and checksum from a tagged GitHub release.
 
-```text
-1. Target graph
-2. Reverse dependency graph
-3. Source content hashes
-4. Local action cache
-5. Content-addressed store for outputs
-6. Affected-target pruning from changed source files
-7. Parallel execution over the selected DAG
-8. Optional Bazel workspace for comparison
-```
+Contributions follow [CONTRIBUTING.md](CONTRIBUTING.md). Research decisions for
+predictive selection, learned scheduling, platform support and language adapters
+live in `docs/` and keep safe behavior as the default.
 
-## What this POC does not implement yet
-
-```text
-1. Real compiler integration
-2. Real Nix sandboxing
-3. Remote execution
-4. Remote cache protocol
-5. Syscall tracing
-6. Fine-grained symbol-level dependency inference
-7. Safe production-grade regression test selection
-8. Zig production engine
-```
-
-## Why this can be 2x faster in the right workload
-
-2x is not universally guaranteed. If a build has one unavoidable huge action, no build planner can make it 2x faster without improving that compiler or linker. If a no-op build is already near zero, there is no room for 2x.
-
-But for a large monorepo where most commits touch a small area, a micro-partition planner can beat project-level rebuild by pruning most work before execution.
-
-Example in this sample:
-
-```text
-total build targets: 161
-changed source:      src/pkg05_mod07.fb
-affected targets:    9
-pruned targets:      152
-```
-
-That is the main performance lever.
-
-## Best next step
-
-To turn this into a serious tool:
-
-```text
-Phase 1: keep Python planner, add real adapters for TS/Rust/Go
-Phase 2: implement engine core in Zig or Rust
-Phase 3: add remote CAS/action cache
-Phase 4: add Nix-backed toolchain environments
-Phase 5: add syscall-trace and static-analysis based test selection
-```
-
-## License
-
-0BSD. You can use, copy, modify, and distribute this project for almost any purpose.
+The [issue implementation matrix](docs/13_issue_implementation_matrix.md) maps
+the roadmap to code and identifies acceptance gates needing external evidence.

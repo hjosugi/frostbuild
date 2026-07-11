@@ -17,8 +17,8 @@
   ],
   "naive_full_rebuild_s": 0.8869,
   "naive_target_count": 161,
-  "note": "This is a deterministic simulation benchmark. Use scripts/compare_bazel.sh for real Bazel if installed.",
+  "note": "Historical deterministic Python reference benchmark.",
   "speedup_naive_over_micro": 2.52,
   "warm_full_build_s": 1.0325,
-  "workspace": "/mnt/data/frostbuild_poc/sample"
+  "workspace": "sample"
 }

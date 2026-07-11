@@ -1,19 +1,21 @@
 use std::collections::BTreeMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context, Result};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::paths::validate_rel_path;
 
 pub const MANIFEST_FILE: &str = "frost.toml";
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum TargetKind {
     CcBinary,
     CcLibrary,
+    CcTest,
     Genrule,
+    Test,
 }
 
 impl TargetKind {
@@ -21,7 +23,9 @@ impl TargetKind {
         match self {
             TargetKind::CcBinary => "cc_binary",
             TargetKind::CcLibrary => "cc_library",
+            TargetKind::CcTest => "cc_test",
             TargetKind::Genrule => "genrule",
+            TargetKind::Test => "test",
         }
     }
 }
@@ -39,9 +43,23 @@ struct RawWorkspace {
 #[serde(deny_unknown_fields)]
 struct RawToolchain {
     cc: Option<String>,
+    cxx: Option<String>,
     ar: Option<String>,
     #[serde(default)]
     cflags: Vec<String>,
+    #[serde(default)]
+    cxxflags: Vec<String>,
+    #[serde(default)]
+    ldflags: Vec<String>,
+}
+
+#[derive(Debug, Default, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RawProfile {
+    #[serde(default)]
+    cflags: Vec<String>,
+    #[serde(default)]
+    cxxflags: Vec<String>,
     #[serde(default)]
     ldflags: Vec<String>,
 }
@@ -65,6 +83,8 @@ struct RawTarget {
     inputs: Vec<String>,
     #[serde(default)]
     outputs: Vec<String>,
+    /// Tests may opt out of sandboxing when they intentionally inspect the host.
+    sandbox: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -75,18 +95,29 @@ struct RawManifest {
     #[serde(default)]
     toolchain: RawToolchain,
     #[serde(default)]
+    profile: BTreeMap<String, RawProfile>,
+    #[serde(default)]
     target: BTreeMap<String, RawTarget>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Toolchain {
     pub cc: String,
+    pub cxx: String,
     pub ar: String,
     pub cflags: Vec<String>,
+    pub cxxflags: Vec<String>,
     pub ldflags: Vec<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct Profile {
+    pub cflags: Vec<String>,
+    pub cxxflags: Vec<String>,
+    pub ldflags: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Target {
     pub name: String,
     pub kind: TargetKind,
@@ -100,13 +131,19 @@ pub struct Target {
     pub cmd: Option<String>,
     pub inputs: Vec<String>,
     pub outputs: Vec<String>,
+    pub sandbox: bool,
+    /// Package directory relative to the workspace root (empty for root).
+    pub package: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Manifest {
     pub default_targets: Vec<String>,
     pub toolchain: Toolchain,
+    pub profiles: BTreeMap<String, Profile>,
     pub targets: BTreeMap<String, Target>,
+    /// Manifests which contributed to this workspace, used by graph caching.
+    pub manifest_paths: Vec<String>,
 }
 
 impl Manifest {
@@ -116,7 +153,68 @@ impl Manifest {
             .with_context(|| format!("missing {} at {}", MANIFEST_FILE, path.display()))?;
         let raw: RawManifest =
             toml::from_str(&text).with_context(|| format!("failed to parse {}", path.display()))?;
-        Self::from_raw(raw)
+        let root_has_workspace = toml::from_str::<toml::Value>(&text)
+            .ok()
+            .and_then(|v| v.get("workspace").cloned())
+            .is_some();
+        let mut manifest = Self::from_raw_unvalidated(raw)?;
+        for target in manifest.targets.values_mut() {
+            target.deps = target
+                .deps
+                .iter()
+                .map(|dep| dep.strip_prefix("//:").unwrap_or(dep).to_string())
+                .collect();
+        }
+        manifest.default_targets = manifest
+            .default_targets
+            .iter()
+            .map(|name| name.strip_prefix("//:").unwrap_or(name).to_string())
+            .collect();
+        manifest.manifest_paths.push(MANIFEST_FILE.to_string());
+        expand_manifest_paths(&mut manifest, workspace_root, "")?;
+
+        if root_has_workspace {
+            let mut packages = discover_package_manifests(workspace_root)?;
+            packages.sort();
+            for rel in packages {
+                let package = rel
+                    .parent()
+                    .unwrap_or_else(|| Path::new(""))
+                    .to_str()
+                    .context("non-UTF-8 package path is not supported")?
+                    .replace('\\', "/");
+                if package.is_empty() {
+                    continue;
+                }
+                let package_text = std::fs::read_to_string(workspace_root.join(&rel))
+                    .with_context(|| format!("failed to read {}", rel.display()))?;
+                let package_raw: RawManifest = toml::from_str(&package_text)
+                    .with_context(|| format!("failed to parse {}", rel.display()))?;
+                let mut child = Self::from_raw_unvalidated(package_raw)?;
+                expand_manifest_paths(&mut child, workspace_root, &package)?;
+                for (local, mut target) in child.targets {
+                    let canonical = format!("//{package}:{local}");
+                    target.name = canonical.clone();
+                    target.package = package.clone();
+                    target.deps = target
+                        .deps
+                        .iter()
+                        .map(|dep| resolve_label(dep, &package))
+                        .collect();
+                    if manifest.targets.insert(canonical.clone(), target).is_some() {
+                        bail!("duplicate target label {canonical:?}");
+                    }
+                }
+                manifest.manifest_paths.push(
+                    rel.to_str()
+                        .context("non-UTF-8 manifest path is not supported")?
+                        .replace('\\', "/"),
+                );
+            }
+        }
+        validate_dependencies(&manifest.targets)?;
+        validate_default_targets(&manifest)?;
+        Ok(manifest)
     }
 
     pub fn parse_str(text: &str) -> Result<Self> {
@@ -125,26 +223,21 @@ impl Manifest {
     }
 
     fn from_raw(raw: RawManifest) -> Result<Self> {
-        if raw.target.is_empty() {
+        let manifest = Self::from_raw_unvalidated(raw)?;
+        if manifest.targets.is_empty() {
             bail!("manifest declares no [target.*] sections");
         }
+        validate_dependencies(&manifest.targets)?;
+        validate_default_targets(&manifest)?;
+        Ok(manifest)
+    }
 
+    fn from_raw_unvalidated(raw: RawManifest) -> Result<Self> {
         let mut targets = BTreeMap::new();
         for (name, spec) in raw.target {
             let target =
                 build_target(&name, spec).with_context(|| format!("invalid target {name:?}"))?;
             targets.insert(name, target);
-        }
-
-        for target in targets.values() {
-            for dep in &target.deps {
-                if dep == &target.name {
-                    bail!("target {:?} depends on itself", target.name);
-                }
-                if !targets.contains_key(dep) {
-                    bail!("target {:?} has unknown dep {dep:?}", target.name);
-                }
-            }
         }
 
         let default_targets = if raw.workspace.default_targets.is_empty() {
@@ -159,11 +252,6 @@ impl Manifest {
                 binaries
             }
         } else {
-            for name in &raw.workspace.default_targets {
-                if !targets.contains_key(name) {
-                    bail!("workspace.default_targets names unknown target {name:?}");
-                }
-            }
             raw.workspace.default_targets
         };
 
@@ -171,11 +259,28 @@ impl Manifest {
             default_targets,
             toolchain: Toolchain {
                 cc: raw.toolchain.cc.unwrap_or_else(|| "cc".to_string()),
+                cxx: raw.toolchain.cxx.unwrap_or_else(|| "c++".to_string()),
                 ar: raw.toolchain.ar.unwrap_or_else(|| "ar".to_string()),
                 cflags: raw.toolchain.cflags,
+                cxxflags: raw.toolchain.cxxflags,
                 ldflags: raw.toolchain.ldflags,
             },
+            profiles: raw
+                .profile
+                .into_iter()
+                .map(|(name, p)| {
+                    (
+                        name,
+                        Profile {
+                            cflags: p.cflags,
+                            cxxflags: p.cxxflags,
+                            ldflags: p.ldflags,
+                        },
+                    )
+                })
+                .collect(),
             targets,
+            manifest_paths: Vec::new(),
         })
     }
 }
@@ -198,7 +303,7 @@ fn build_target(name: &str, spec: RawTarget) -> Result<Target> {
     let outputs = validate_paths(&spec.outputs).context("outputs")?;
 
     match spec.kind {
-        TargetKind::CcBinary | TargetKind::CcLibrary => {
+        TargetKind::CcBinary | TargetKind::CcLibrary | TargetKind::CcTest => {
             if srcs.is_empty() {
                 bail!("{} requires non-empty srcs", spec.kind.as_str());
             }
@@ -209,11 +314,11 @@ fn build_target(name: &str, spec: RawTarget) -> Result<Target> {
                 );
             }
         }
-        TargetKind::Genrule => {
+        TargetKind::Genrule | TargetKind::Test => {
             if spec.cmd.as_deref().map(str::trim).unwrap_or("").is_empty() {
                 bail!("genrule requires a non-empty cmd");
             }
-            if outputs.is_empty() {
+            if spec.kind == TargetKind::Genrule && outputs.is_empty() {
                 bail!("genrule requires non-empty outputs");
             }
             if !srcs.is_empty() {
@@ -236,7 +341,139 @@ fn build_target(name: &str, spec: RawTarget) -> Result<Target> {
         cmd: spec.cmd,
         inputs,
         outputs,
+        sandbox: spec.sandbox.unwrap_or(true),
+        package: String::new(),
     })
+}
+
+fn discover_package_manifests(root: &Path) -> Result<Vec<PathBuf>> {
+    fn walk(root: &Path, dir: &Path, out: &mut Vec<PathBuf>) -> Result<()> {
+        for entry in std::fs::read_dir(dir)? {
+            let entry = entry?;
+            let name = entry.file_name();
+            if matches!(name.to_str(), Some(".git" | ".frost" | "target")) {
+                continue;
+            }
+            let ty = entry.file_type()?;
+            if ty.is_dir() && !ty.is_symlink() {
+                walk(root, &entry.path(), out)?;
+            } else if ty.is_file() && name == MANIFEST_FILE {
+                out.push(entry.path().strip_prefix(root).unwrap().to_path_buf());
+            }
+        }
+        Ok(())
+    }
+    let mut out = Vec::new();
+    walk(root, root, &mut out)?;
+    Ok(out)
+}
+
+fn resolve_label(raw: &str, package: &str) -> String {
+    if let Some(root) = raw.strip_prefix("//:") {
+        root.to_string()
+    } else if raw.starts_with("//") {
+        raw.to_string()
+    } else {
+        format!("//{package}:{}", raw.trim_start_matches(':'))
+    }
+}
+
+fn prefix_path(package: &str, path: &str) -> String {
+    if package.is_empty() {
+        path.to_string()
+    } else {
+        format!("{package}/{path}")
+    }
+}
+
+fn has_glob(path: &str) -> bool {
+    path.bytes().any(|b| matches!(b, b'*' | b'?' | b'['))
+}
+
+fn expand_paths(root: &Path, package: &str, paths: &[String]) -> Result<Vec<String>> {
+    let mut expanded = Vec::new();
+    let mut ignore_builder = ignore::gitignore::GitignoreBuilder::new(root);
+    for file in [".gitignore", ".frostignore"] {
+        let path = root.join(file);
+        if path.exists() {
+            ignore_builder.add(path);
+        }
+    }
+    let ignored = ignore_builder.build()?;
+    for path in paths {
+        let rel = prefix_path(package, path);
+        if !has_glob(path) {
+            expanded.push(rel);
+            continue;
+        }
+        let pattern = root.join(&rel).to_string_lossy().to_string();
+        let matches = glob::glob(&pattern).with_context(|| format!("invalid glob {path:?}"))?;
+        for item in matches {
+            let item = item.with_context(|| format!("failed to expand glob {path:?}"))?;
+            if !item.is_file() {
+                continue;
+            }
+            let relative = item
+                .strip_prefix(root)
+                .context("glob escaped workspace")?
+                .to_str()
+                .context("non-UTF-8 source path is not supported")?
+                .replace('\\', "/");
+            if !relative.starts_with(".frost/")
+                && !relative.starts_with(".git/")
+                && !ignored
+                    .matched_path_or_any_parents(&item, false)
+                    .is_ignore()
+            {
+                expanded.push(relative);
+            }
+        }
+    }
+    expanded.sort();
+    expanded.dedup();
+    Ok(expanded)
+}
+
+fn expand_manifest_paths(manifest: &mut Manifest, root: &Path, package: &str) -> Result<()> {
+    for target in manifest.targets.values_mut() {
+        target.package = package.to_string();
+        target.srcs = expand_paths(root, package, &target.srcs)?;
+        target.inputs = expand_paths(root, package, &target.inputs)?;
+        target.includes = target
+            .includes
+            .iter()
+            .map(|p| prefix_path(package, p))
+            .collect();
+        target.outputs = target
+            .outputs
+            .iter()
+            .map(|p| prefix_path(package, p))
+            .collect();
+    }
+    Ok(())
+}
+
+fn validate_dependencies(targets: &BTreeMap<String, Target>) -> Result<()> {
+    for target in targets.values() {
+        for dep in &target.deps {
+            if dep == &target.name {
+                bail!("target {:?} depends on itself", target.name);
+            }
+            if !targets.contains_key(dep) {
+                bail!("target {:?} has unknown dep {dep:?}", target.name);
+            }
+        }
+    }
+    Ok(())
+}
+
+fn validate_default_targets(manifest: &Manifest) -> Result<()> {
+    for name in &manifest.default_targets {
+        if !manifest.targets.contains_key(name) {
+            bail!("workspace.default_targets names unknown target {name:?}");
+        }
+    }
+    Ok(())
 }
 
 fn validate_paths(raw: &[String]) -> Result<Vec<String>> {

@@ -1,5 +1,8 @@
 # Zig implementation plan
 
+> Historical document. The production implementation is Rust under `crates/`.
+> The Zig skeleton remains only as the original design exploration.
+
 ## Is Zig a good choice?
 
 Yes, Zig is a reasonable choice for the engine core if the goal is a small, fast, predictable binary.
@@ -137,4 +140,5 @@ frost query 'changed(src/pkg05_mod07) -> affected_tests'
 
 See `zig_skeleton/src/main.zig`.
 
-It is intentionally only a skeleton because this environment does not include the Zig compiler. The runnable POC is `frost.py`.
+It is intentionally only a historical skeleton. The runnable product is the
+Rust `frost` binary; `frost.py` is a reference model.

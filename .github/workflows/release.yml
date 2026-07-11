@@ -1,0 +1,28 @@
+name: Release
+on:
+  push:
+    tags: ["v*.*.*"]
+permissions:
+  contents: write
+jobs:
+  linux-musl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable
+        with:
+          targets: x86_64-unknown-linux-musl
+      - run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - run: cargo build --release --locked --target x86_64-unknown-linux-musl -p frostbuild-cli -p frostbuild-daemon
+      - run: |
+          mkdir dist
+          cp target/x86_64-unknown-linux-musl/release/frost dist/
+          cp target/x86_64-unknown-linux-musl/release/frostd dist/
+          (cd dist && sha256sum frost frostd > SHA256SUMS)
+          dist/frost --version
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          files: |
+            dist/frost
+            dist/frostd
+            dist/SHA256SUMS

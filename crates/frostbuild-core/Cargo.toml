@@ -14,3 +14,11 @@ blake3.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 toml.workspace = true
+glob.workspace = true
+memmap2.workspace = true
+postcard.workspace = true
+rayon.workspace = true
+ignore.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true

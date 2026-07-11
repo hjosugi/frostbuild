@@ -1,6 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use anyhow::{bail, Result};
+use serde::{Deserialize, Serialize};
 
 use crate::manifest::{Manifest, TargetKind};
 
@@ -11,21 +12,22 @@ pub const OBJ_DIR: &str = ".frost/obj";
 pub const LIB_DIR: &str = ".frost/lib";
 pub const BIN_DIR: &str = ".frost/bin";
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct FileNode {
     pub path: String,
     pub producer: Option<ActionId>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ActionKind {
     Compile,
     Archive,
     Link,
     Genrule,
+    Test,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ActionNode {
     /// Stable identifier, e.g. `compile:app:src/main.c`. Journal entries are
     /// keyed by this, so it must not depend on hashes or ordering.
@@ -34,15 +36,18 @@ pub struct ActionNode {
     pub desc: String,
     pub kind: ActionKind,
     pub target: String,
+    pub sandbox: bool,
     pub argv: Vec<String>,
     pub inputs: Vec<FileId>,
+    /// Enforce producer completion without adding content to the action key.
+    pub order_only_inputs: Vec<FileId>,
     pub outputs: Vec<FileId>,
     /// Workspace-relative path of the Makefile-style depfile this action
     /// writes (compile actions only).
     pub depfile: Option<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TargetNode {
     pub name: String,
     pub kind: TargetKind,
@@ -51,18 +56,35 @@ pub struct TargetNode {
     pub outputs: Vec<FileId>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct BuildGraph {
     pub files: Vec<FileNode>,
     pub actions: Vec<ActionNode>,
     pub targets: BTreeMap<String, TargetNode>,
+    pub profile: String,
+    #[serde(skip)]
     file_ids: HashMap<String, FileId>,
 }
 
 impl BuildGraph {
     pub fn from_manifest(manifest: &Manifest) -> Result<Self> {
+        Self::from_manifest_with_profile(manifest, "debug")
+    }
+
+    pub fn from_manifest_with_profile(manifest: &Manifest, profile: &str) -> Result<Self> {
+        if profile.is_empty()
+            || !profile
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+        {
+            bail!("invalid profile name {profile:?}");
+        }
         let order = toposort_targets(manifest)?;
-        let mut graph = BuildGraph::default();
+        let mut graph = BuildGraph {
+            profile: profile.to_string(),
+            ..BuildGraph::default()
+        };
+        let profile_flags = manifest.profiles.get(profile).cloned().unwrap_or_default();
 
         // Transitive exported include dirs and library outputs, per target.
         let mut exported_includes: HashMap<String, Vec<String>> = HashMap::new();
@@ -114,8 +136,10 @@ impl BuildGraph {
                         desc: format!("GEN {name}"),
                         kind: ActionKind::Genrule,
                         target: name.clone(),
+                        sandbox: target.sandbox,
                         argv: vec!["/bin/sh".into(), "-c".into(), expanded],
                         inputs,
+                        order_only_inputs: Vec::new(),
                         outputs: outputs.clone(),
                         depfile: None,
                     })?;
@@ -129,9 +153,45 @@ impl BuildGraph {
                     extend_unique(&mut exp_inc, &includes);
                     exported_includes.insert(name.clone(), exp_inc);
                 }
-                TargetKind::CcBinary | TargetKind::CcLibrary => {
+                TargetKind::Test => {
+                    let mut inputs = target
+                        .inputs
+                        .iter()
+                        .map(|p| graph.file(p))
+                        .collect::<Vec<_>>();
+                    for dep in &target.deps {
+                        inputs.extend(dep_outputs(&graph, dep));
+                    }
+                    let stamp = format!(".frost/test/{profile}/{}/passed", path_key(name));
+                    let stamp_id = graph.file(&stamp);
+                    let command = format!(
+                        "{} && mkdir -p {} && : > {}",
+                        target.cmd.as_deref().unwrap(),
+                        shell_quote(&format!(".frost/test/{profile}/{}", path_key(name))),
+                        shell_quote(&stamp)
+                    );
+                    let action = graph.push_action(ActionNode {
+                        id: format!("test:{name}"),
+                        desc: format!("TEST {name}"),
+                        kind: ActionKind::Test,
+                        target: name.clone(),
+                        sandbox: target.sandbox,
+                        argv: vec!["/bin/sh".into(), "-c".into(), command],
+                        inputs,
+                        order_only_inputs: Vec::new(),
+                        outputs: vec![stamp_id],
+                        depfile: None,
+                    })?;
+                    target_node.actions.push(action);
+                    target_node.outputs = vec![stamp_id];
+                    exported_libs.insert(name.clone(), libs);
+                    exported_includes.insert(name.clone(), own_includes);
+                    genrule_outputs.insert(name.clone(), gen_outs);
+                }
+                TargetKind::CcBinary | TargetKind::CcLibrary | TargetKind::CcTest => {
                     let tc = &manifest.toolchain;
                     let mut cflags: Vec<String> = tc.cflags.clone();
+                    cflags.extend(profile_flags.cflags.iter().cloned());
                     cflags.extend(target.cflags.iter().cloned());
                     let mut include_flags = Vec::new();
                     for dir in &own_includes {
@@ -142,10 +202,16 @@ impl BuildGraph {
                     let mut objs: Vec<String> = Vec::new();
                     let mut obj_ids: Vec<FileId> = Vec::new();
                     for src in &target.srcs {
-                        let obj = format!("{OBJ_DIR}/{name}/{src}.o");
+                        let is_cxx = is_cxx_source(src);
+                        let driver = if is_cxx { &tc.cxx } else { &tc.cc };
+                        let obj = format!("{OBJ_DIR}/{profile}/{}/{src}.o", path_key(name));
                         let depfile = format!("{obj}.d");
-                        let mut argv = vec![tc.cc.clone()];
+                        let mut argv = vec![driver.clone()];
                         argv.extend(cflags.iter().cloned());
+                        if is_cxx {
+                            argv.extend(tc.cxxflags.iter().cloned());
+                            argv.extend(profile_flags.cxxflags.iter().cloned());
+                        }
                         argv.extend(include_flags.iter().cloned());
                         argv.extend([
                             "-MD".into(),
@@ -156,21 +222,22 @@ impl BuildGraph {
                             "-o".into(),
                             obj.clone(),
                         ]);
-                        let mut inputs = vec![graph.file(src)];
+                        let inputs = vec![graph.file(src)];
                         // Generated headers from (transitive) genrule deps
                         // must exist before we compile; the depfile narrows
                         // this to the actually-used set on later builds.
-                        for gen in &gen_outs {
-                            inputs.push(graph.file(gen));
-                        }
+                        let order_only_inputs =
+                            gen_outs.iter().map(|gen| graph.file(gen)).collect();
                         let obj_id = graph.file(&obj);
                         let action = graph.push_action(ActionNode {
                             id: format!("compile:{name}:{src}"),
                             desc: format!("CC {src} ({name})"),
                             kind: ActionKind::Compile,
                             target: name.clone(),
+                            sandbox: target.sandbox,
                             argv,
                             inputs,
+                            order_only_inputs,
                             outputs: vec![obj_id],
                             depfile: Some(depfile),
                         })?;
@@ -181,8 +248,8 @@ impl BuildGraph {
 
                     match target.kind {
                         TargetKind::CcLibrary => {
-                            let lib = format!("{LIB_DIR}/lib{name}.a");
-                            let mut argv = vec![tc.ar.clone(), "rcs".into(), lib.clone()];
+                            let lib = format!("{LIB_DIR}/{profile}/lib{}.a", path_key(name));
+                            let mut argv = vec![tc.ar.clone(), "rcsD".into(), lib.clone()];
                             argv.extend(objs.iter().cloned());
                             let lib_id = graph.file(&lib);
                             let action = graph.push_action(ActionNode {
@@ -190,8 +257,10 @@ impl BuildGraph {
                                 desc: format!("AR lib{name}.a"),
                                 kind: ActionKind::Archive,
                                 target: name.clone(),
+                                sandbox: target.sandbox,
                                 argv,
                                 inputs: obj_ids.clone(),
+                                order_only_inputs: Vec::new(),
                                 outputs: vec![lib_id],
                                 depfile: None,
                             })?;
@@ -201,12 +270,18 @@ impl BuildGraph {
                             extend_unique(&mut exp, &libs);
                             exported_libs.insert(name.clone(), exp);
                         }
-                        TargetKind::CcBinary => {
-                            let bin = format!("{BIN_DIR}/{name}");
-                            let mut argv = vec![tc.cc.clone()];
+                        TargetKind::CcBinary | TargetKind::CcTest => {
+                            let bin = format!("{BIN_DIR}/{profile}/{}", path_key(name));
+                            let link_driver = if target.srcs.iter().any(|s| is_cxx_source(s)) {
+                                &tc.cxx
+                            } else {
+                                &tc.cc
+                            };
+                            let mut argv = vec![link_driver.clone()];
                             argv.extend(objs.iter().cloned());
                             argv.extend(libs.iter().cloned());
                             argv.extend(tc.ldflags.iter().cloned());
+                            argv.extend(profile_flags.ldflags.iter().cloned());
                             argv.extend(target.ldflags.iter().cloned());
                             argv.extend(["-o".into(), bin.clone()]);
                             let mut inputs = obj_ids.clone();
@@ -219,16 +294,46 @@ impl BuildGraph {
                                 desc: format!("LINK {name}"),
                                 kind: ActionKind::Link,
                                 target: name.clone(),
+                                sandbox: target.sandbox,
                                 argv,
                                 inputs,
+                                order_only_inputs: Vec::new(),
                                 outputs: vec![bin_id],
                                 depfile: None,
                             })?;
                             target_node.actions.push(action);
                             target_node.outputs = vec![bin_id];
                             exported_libs.insert(name.clone(), libs);
+                            if target.kind == TargetKind::CcTest {
+                                let stamp =
+                                    format!(".frost/test/{profile}/{}/passed", path_key(name));
+                                let stamp_id = graph.file(&stamp);
+                                let command = format!(
+                                    "{} && mkdir -p {} && : > {}",
+                                    shell_quote(&bin),
+                                    shell_quote(&format!(
+                                        ".frost/test/{profile}/{}",
+                                        path_key(name)
+                                    )),
+                                    shell_quote(&stamp)
+                                );
+                                let test = graph.push_action(ActionNode {
+                                    id: format!("test:{name}"),
+                                    desc: format!("TEST {name}"),
+                                    kind: ActionKind::Test,
+                                    target: name.clone(),
+                                    sandbox: target.sandbox,
+                                    argv: vec!["/bin/sh".into(), "-c".into(), command],
+                                    inputs: vec![bin_id],
+                                    order_only_inputs: Vec::new(),
+                                    outputs: vec![stamp_id],
+                                    depfile: None,
+                                })?;
+                                target_node.actions.push(test);
+                                target_node.outputs = vec![stamp_id];
+                            }
                         }
-                        TargetKind::Genrule => unreachable!(),
+                        TargetKind::Genrule | TargetKind::Test => unreachable!(),
                     }
 
                     let mut exp_inc = target.includes.clone();
@@ -290,7 +395,11 @@ impl BuildGraph {
             if !selected.insert(a) {
                 continue;
             }
-            for &input in &self.actions[a].inputs {
+            for &input in self.actions[a]
+                .inputs
+                .iter()
+                .chain(&self.actions[a].order_only_inputs)
+            {
                 if let Some(producer) = self.files[input].producer {
                     stack.push(producer);
                 }
@@ -305,7 +414,9 @@ impl BuildGraph {
             let shape = match target.kind {
                 TargetKind::CcBinary => "box",
                 TargetKind::CcLibrary => "ellipse",
+                TargetKind::CcTest => "box3d",
                 TargetKind::Genrule => "diamond",
+                TargetKind::Test => "component",
             };
             out.push_str(&format!("  \"{}\" [shape={shape}];\n", target.name));
             for dep in &target.deps {
@@ -315,6 +426,28 @@ impl BuildGraph {
         out.push_str("}\n");
         out
     }
+}
+
+fn path_key(label: &str) -> String {
+    label.trim_start_matches("//").replace([':', '/'], "_")
+}
+
+fn is_cxx_source(path: &str) -> bool {
+    matches!(
+        PathExt::extension(path),
+        Some("cc" | "cpp" | "cxx" | "C" | "c++")
+    )
+}
+
+struct PathExt;
+impl PathExt {
+    fn extension(path: &str) -> Option<&str> {
+        path.rsplit_once('.').map(|(_, ext)| ext)
+    }
+}
+
+fn shell_quote(value: &str) -> String {
+    format!("'{}'", value.replace('\'', "'\\''"))
 }
 
 fn dep_outputs(graph: &BuildGraph, dep: &str) -> Vec<FileId> {
@@ -451,7 +584,7 @@ mod tests {
         assert!(compile.argv.contains(&"-Iinclude".to_string()));
         assert!(compile.argv.contains(&"-Igen".to_string()));
         let input_paths: Vec<&str> = compile
-            .inputs
+            .order_only_inputs
             .iter()
             .map(|&f| graph.files[f].path.as_str())
             .collect();
@@ -462,7 +595,7 @@ mod tests {
     fn link_orders_after_archive() {
         let graph = BuildGraph::from_manifest(&demo_manifest()).unwrap();
         let link = graph.actions.iter().find(|a| a.id == "link:app").unwrap();
-        let lib = format!("{LIB_DIR}/libutil.a");
+        let lib = format!("{LIB_DIR}/debug/libutil.a");
         assert!(link.argv.contains(&lib));
         let input_paths: Vec<&str> = link
             .inputs

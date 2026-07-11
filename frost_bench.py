@@ -20,7 +20,7 @@ from typing import Any
 
 SCHEMA = "frost-bench-standard-v1"
 STANDARD_SCENARIOS = ("clean", "noop", "incremental_leaf", "hot_header", "cache_hit_rebuild")
-SUPPORTED_TOOLS = ("ninja", "make")
+SUPPORTED_TOOLS = ("ninja", "make", "frost")
 
 
 @dataclasses.dataclass(frozen=True)
@@ -136,6 +136,7 @@ def generate_workspace(root: pathlib.Path, size: int) -> None:
         (root / "src" / f"{target_name(index)}.txt").write_text(f"value={index}\n", encoding="utf-8")
     write_ninja(root, size)
     write_makefile(root, size)
+    write_frost_toml(root, size)
 
 
 def write_ninja(root: pathlib.Path, size: int) -> None:
@@ -172,11 +173,47 @@ def write_makefile(root: pathlib.Path, size: int) -> None:
     (root / "Makefile").write_text("\n".join(lines), encoding="utf-8")
 
 
+def write_frost_toml(root: pathlib.Path, size: int) -> None:
+    lines = [
+        "[workspace]",
+        f"default_targets = [{json.dumps(target_name(size - 1))}]",
+        "",
+    ]
+    for index in range(size):
+        name = target_name(index)
+        deps = [target_name(index - 1)] if index > 0 else []
+        lines.append(f"[target.{name}]")
+        lines.append('kind = "genrule"')
+        lines.append('cmd = "cat ${in} > ${out}"')
+        lines.append("deps = [" + ", ".join(json.dumps(dep) for dep in deps) + "]")
+        lines.append(
+            "inputs = ["
+            + ", ".join(json.dumps(path) for path in [f"src/{name}.txt", "include/hot.h"])
+            + "]"
+        )
+        lines.append(f"outputs = [{json.dumps(f'.frost/out/{name}.out')}]")
+        lines.append("")
+    (root / "frost.toml").write_text("\n".join(lines), encoding="utf-8")
+
+
 def clean_outputs(root: pathlib.Path) -> None:
     out = root / "out"
     if out.exists():
         shutil.rmtree(out)
     out.mkdir()
+
+
+def clean_tool_outputs(root: pathlib.Path, spec: ToolSpec, *, cache: bool = False) -> None:
+    if spec.name == "frost":
+        frost_dir = root / ".frost"
+        if cache and frost_dir.exists():
+            shutil.rmtree(frost_dir)
+        else:
+            out = frost_dir / "out"
+            if out.exists():
+                shutil.rmtree(out)
+        return
+    clean_outputs(root)
 
 
 def append_marker(path: pathlib.Path, marker: str) -> None:
@@ -187,6 +224,39 @@ def append_marker(path: pathlib.Path, marker: str) -> None:
 def tool_specs(names: list[str]) -> list[ToolSpec]:
     specs = []
     for name in names:
+        if name == "frost":
+            repo = pathlib.Path(__file__).resolve().parent
+            configured = os.environ.get("FROST_BIN")
+            candidates = [
+                pathlib.Path(configured) if configured else None,
+                repo / "target/release/frost",
+                repo / "target/debug/frost",
+            ]
+            executable = next((path for path in candidates if path and path.is_file()), None)
+            if executable is None and shutil.which("cargo"):
+                try:
+                    metadata = json.loads(
+                        subprocess.check_output(
+                            ["cargo", "metadata", "--format-version=1", "--no-deps"],
+                            cwd=repo,
+                            text=True,
+                            stderr=subprocess.DEVNULL,
+                        )
+                    )
+                    target = pathlib.Path(metadata["target_directory"])
+                    executable = next(
+                        (path for path in [target / "release/frost", target / "debug/frost"] if path.is_file()),
+                        None,
+                    )
+                except (OSError, subprocess.SubprocessError, KeyError, json.JSONDecodeError):
+                    executable = None
+            specs.append(
+                ToolSpec(
+                    name=name,
+                    argv=(executable.as_posix(), "build", "--workspace", ".") if executable else (),
+                )
+            )
+            continue
         executable = shutil.which(name)
         if executable is None:
             specs.append(ToolSpec(name=name, argv=()))
@@ -200,7 +270,10 @@ def tool_specs(names: list[str]) -> list[ToolSpec]:
 def run_tool(root: pathlib.Path, spec: ToolSpec, jobs: int) -> float:
     if not spec.argv:
         raise FileNotFoundError(spec.name)
-    cmd = [*spec.argv, "-j", str(max(1, jobs))]
+    if spec.name == "frost":
+        cmd = [*spec.argv, "--jobs", str(max(1, jobs))]
+    else:
+        cmd = [*spec.argv, "-j", str(max(1, jobs))]
     start = time.perf_counter()
     subprocess.run(cmd, cwd=root, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return (time.perf_counter() - start) * 1000
@@ -234,7 +307,7 @@ def measure_tool(root: pathlib.Path, spec: ToolSpec, size: int, iterations: int,
 
     clean_samples = []
     for _ in range(iterations):
-        clean_outputs(root)
+        clean_tool_outputs(root, spec, cache=True)
         clean_samples.append(run_tool(root, spec, jobs))
     scenarios["clean"] = summarize(clean_samples)
 
@@ -259,9 +332,17 @@ def measure_tool(root: pathlib.Path, spec: ToolSpec, size: int, iterations: int,
         append_marker(header, "hot-header")
         header_samples.append(run_tool(root, spec, jobs))
     scenarios["hot_header"] = summarize(header_samples)
-    scenarios["cache_hit_rebuild"] = scenario_not_applicable(
-        f"{spec.name} has no content-addressed action cache in this harness",
-    )
+    if spec.name == "frost":
+        cache_hit_samples = []
+        run_tool(root, spec, jobs)
+        for _ in range(iterations):
+            clean_tool_outputs(root, spec, cache=False)
+            cache_hit_samples.append(run_tool(root, spec, jobs))
+        scenarios["cache_hit_rebuild"] = summarize(cache_hit_samples)
+    else:
+        scenarios["cache_hit_rebuild"] = scenario_not_applicable(
+            f"{spec.name} has no content-addressed action cache in this harness",
+        )
 
     return {
         "tool": spec.name,

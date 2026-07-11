@@ -3,9 +3,11 @@ from __future__ import annotations
 import os
 import pathlib
 import shutil
+import socket
 import tempfile
 import time
 import unittest
+import dataclasses
 from types import SimpleNamespace
 from unittest import mock
 
@@ -144,6 +146,120 @@ cost_ms = 1
             frost.catalog_reverse_closure(catalog, {"t9998"}),
             ws.reverse_closure({"t9998"}),
         )
+
+    def test_stat_cache_skips_hash_when_stat_matches(self) -> None:
+        first = frost.all_source_hashes(self.ws)
+        self.assertIn("src/lib.fb", first)
+
+        with mock.patch("frost.sha256_file", side_effect=AssertionError("hash should be cached")):
+            second = frost.all_source_hashes(self.ws)
+
+        self.assertEqual(first, second)
+
+    def test_depfile_ingestion_records_dynamic_inputs(self) -> None:
+        header = self.root / "src/lib.h"
+        header.write_text("#define LIB 1\n", encoding="utf-8")
+        depfile = self.root / ".frost/out/lib.d"
+        depfile.parent.mkdir(parents=True, exist_ok=True)
+        depfile.write_text(".frost/out/lib.out: src/lib.fb src/lib.h\n", encoding="utf-8")
+        self.ws.targets["lib"] = dataclasses.replace(self.ws.targets["lib"], depfile=".frost/out/lib.d")
+
+        result = frost.execute_plan(self.ws, {"lib"}, jobs=1)
+
+        self.assertEqual(result["executed"], 1)
+        self.assertEqual(frost.load_dynamic_deps(self.ws)["lib"], ["src/lib.fb", "src/lib.h"])
+
+    def test_sandbox_denies_undeclared_read(self) -> None:
+        (self.root / "src/lib.fb").write_text("EXPORT lib\nREAD secrets.txt\n", encoding="utf-8")
+
+        with self.assertRaises(frost.ActionExecutionError):
+            frost.execute_plan(self.ws, {"lib"}, jobs=1, sandbox=True)
+
+    def test_keep_going_runs_independent_work_after_failure(self) -> None:
+        (self.root / "src/lib.fb").write_text("EXPORT lib\nFAIL\n", encoding="utf-8")
+        (self.root / "src/other.fb").write_text("EXPORT other\n", encoding="utf-8")
+        self.ws.targets["other"] = frost.Target(
+            name="other",
+            kind="build",
+            src="src/other.fb",
+            deps=(),
+            out=".frost/out/other.out",
+            cost_ms=1,
+        )
+
+        result = frost.execute_plan(self.ws, {"lib", "other"}, jobs=2, keep_going=True)
+
+        self.assertEqual(result["failed"], 1)
+        self.assertEqual(result["executed"], 1)
+
+    def test_comment_only_change_reexecutes_leaf_but_downstream_is_cache_hit(self) -> None:
+        frost.execute_plan(self.ws, {"lib", "app"}, jobs=1)
+        (self.root / "src/lib.fb").write_text("EXPORT lib\n# comment only\n", encoding="utf-8")
+        plan = frost.build_plan(self.ws, {"app"}, {"build"}, explicit_changed=None, force_all=False)
+
+        result = frost.execute_plan(self.ws, plan.selected_targets, jobs=1)
+
+        self.assertEqual(plan.selected_targets, {"lib", "app"})
+        self.assertEqual(result["executed"], 1)
+        self.assertEqual(result["cache_hit"], 1)
+
+    def test_affected_test_selection_uses_test_roots(self) -> None:
+        (self.root / "tests").mkdir()
+        (self.root / "tests/lib.fbtest").write_text("TEST lib\nIMPORT lib\n", encoding="utf-8")
+        self.ws.targets["lib_test"] = frost.Target(
+            name="lib_test",
+            kind="test",
+            src="tests/lib.fbtest",
+            deps=("lib",),
+            out=".frost/out/lib_test.ok",
+            cost_ms=1,
+        )
+        frost.execute_plan(self.ws, {"lib", "app", "lib_test"}, jobs=1)
+        (self.root / "src/lib.fb").write_text("EXPORT lib\nVALUE changed\n", encoding="utf-8")
+
+        plan = frost.build_plan(self.ws, frost.test_roots(self.ws, None), {"build", "test"}, None, False)
+
+        self.assertIn("lib_test", plan.selected_targets)
+        self.assertIn("lib", plan.selected_targets)
+        self.assertNotIn("app", plan.selected_targets)
+
+    def test_toolchain_compiler_hash_changes_action_key(self) -> None:
+        compiler = self.root / "cc"
+        compiler.write_text("compiler v1\n", encoding="utf-8")
+        self.ws.toolchain_compiler_path = "cc"
+        key_a = frost.action_key(self.ws, self.ws.targets["lib"])
+
+        compiler.write_text("compiler version 2 with different size\n", encoding="utf-8")
+        key_b = frost.action_key(self.ws, self.ws.targets["lib"])
+
+        self.assertNotEqual(key_a, key_b)
+
+    def test_graph_dot_and_ninja_importer(self) -> None:
+        dot = frost.graph_dot(self.ws, {"app"})
+        self.assertIn('"lib" -> "app"', dot)
+
+        ninja = self.root / "build.ninja"
+        ninja.write_text(
+            "rule cc\n  command = cc -c $in -o $out\n"
+            "build out/lib.o: cc src/lib.c\n"
+            "build out/app.o: cc out/lib.o src/app.c\n"
+            "default out/app.o\n",
+            encoding="utf-8",
+        )
+        parsed = frost.parse_ninja_subset(ninja)
+        toml = frost.ninja_subset_to_frost_toml(parsed)
+
+        self.assertIn("target.out_lib_o", toml)
+        self.assertIn('deps = ["out_lib_o"]', toml)
+
+    def test_daemon_frame_round_trip(self) -> None:
+        left, right = socket.socketpair()
+        try:
+            frost.send_frame(left, {"ok": True})
+            self.assertEqual(frost.recv_frame(right), {"ok": True})
+        finally:
+            left.close()
+            right.close()
 
 
 class JobserverTestCase(unittest.TestCase):

@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::io::{Read, Write};
 use std::path::Path;
 
 use anyhow::{Context, Result};
@@ -21,6 +22,8 @@ pub struct JournalEntry {
     /// path -> content digest of every declared output after the run.
     pub outputs: BTreeMap<String, String>,
     pub duration_ms: u64,
+    #[serde(default)]
+    pub reason: String,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -29,19 +32,59 @@ pub struct Journal {
     pub actions: BTreeMap<String, JournalEntry>,
 }
 
-const JOURNAL_REL_PATH: &str = ".frost/journal.json";
+pub const JOURNAL_REL_PATH: &str = ".frost/journal.bin";
+const LEGACY_JOURNAL_REL_PATH: &str = ".frost/journal.json";
+const MAGIC: &[u8; 8] = b"FRSTJR01";
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Record {
+    id: String,
+    entry: JournalEntry,
+}
 
 impl Journal {
     pub fn load(workspace_root: &Path) -> Self {
-        // The file stores just the action map, keeping the on-disk format
-        // minimal ahead of the binary journal planned in issue #19. A missing
-        // or corrupt journal degrades to a full rebuild, never an error.
         let path = workspace_root.join(JOURNAL_REL_PATH);
-        let actions: BTreeMap<String, JournalEntry> = std::fs::read_to_string(&path)
-            .ok()
-            .and_then(|text| serde_json::from_str(&text).ok())
-            .unwrap_or_default();
+        let mut actions = BTreeMap::new();
+        if let Ok(mut file) = std::fs::File::open(&path) {
+            let mut bytes = Vec::new();
+            if file.read_to_end(&mut bytes).is_ok() {
+                actions = decode_bytes(&bytes);
+            }
+        }
+        if actions.is_empty() {
+            let legacy = workspace_root.join(LEGACY_JOURNAL_REL_PATH);
+            actions = std::fs::read_to_string(&legacy)
+                .ok()
+                .and_then(|text| serde_json::from_str(&text).ok())
+                .unwrap_or_default();
+        }
         Self { actions }
+    }
+
+    /// Append one completed action. A torn final frame is ignored on load.
+    pub fn record(&mut self, workspace_root: &Path, id: String, entry: JournalEntry) -> Result<()> {
+        let path = workspace_root.join(JOURNAL_REL_PATH);
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        let new_file = !path.exists() || std::fs::metadata(&path)?.len() == 0;
+        let mut file = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&path)?;
+        if new_file {
+            file.write_all(MAGIC)?;
+        }
+        let payload = postcard::to_allocvec(&Record {
+            id: id.clone(),
+            entry: entry.clone(),
+        })?;
+        file.write_all(&(payload.len() as u32).to_le_bytes())?;
+        file.write_all(&payload)?;
+        file.flush()?;
+        self.actions.insert(id, entry);
+        Ok(())
     }
 
     pub fn save(&self, workspace_root: &Path) -> Result<()> {
@@ -49,13 +92,50 @@ impl Journal {
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)?;
         }
-        let tmp = path.with_extension("json.tmp");
-        let text = serde_json::to_string_pretty(&self.actions)?;
-        std::fs::write(&tmp, text)?;
+        let tmp = path.with_extension("bin.tmp");
+        let mut file = std::fs::File::create(&tmp)?;
+        file.write_all(MAGIC)?;
+        for (id, entry) in &self.actions {
+            let payload = postcard::to_allocvec(&Record {
+                id: id.clone(),
+                entry: entry.clone(),
+            })?;
+            file.write_all(&(payload.len() as u32).to_le_bytes())?;
+            file.write_all(&payload)?;
+        }
+        file.flush()?;
         std::fs::rename(&tmp, &path)
             .with_context(|| format!("failed to persist {}", path.display()))?;
         Ok(())
     }
+}
+
+/// Total decoder used by startup and fuzzing. Invalid/torn data yields the
+/// prefix of fully validated records, never a panic or false record.
+pub fn decode_bytes(bytes: &[u8]) -> BTreeMap<String, JournalEntry> {
+    let mut actions = BTreeMap::new();
+    if !bytes.starts_with(MAGIC) {
+        return actions;
+    }
+    let mut cursor = MAGIC.len();
+    while cursor + 4 <= bytes.len() {
+        let len = u32::from_le_bytes(bytes[cursor..cursor + 4].try_into().unwrap()) as usize;
+        cursor += 4;
+        let Some(end) = cursor.checked_add(len) else {
+            break;
+        };
+        if end > bytes.len() {
+            break;
+        }
+        match postcard::from_bytes::<Record>(&bytes[cursor..end]) {
+            Ok(record) => {
+                actions.insert(record.id, record.entry);
+            }
+            Err(_) => break,
+        }
+        cursor = end;
+    }
+    actions
 }
 
 #[cfg(test)]
@@ -76,6 +156,7 @@ mod tests {
                 discovered: vec!["include/util.h".into()],
                 outputs: BTreeMap::from([(".frost/obj/app/src/main.c.o".into(), "h2".into())]),
                 duration_ms: 12,
+                reason: "input changed: src/main.c".into(),
             },
         );
         journal.save(&dir).unwrap();
@@ -93,8 +174,32 @@ mod tests {
             std::env::temp_dir().join(format!("frost-journal-corrupt-{}", std::process::id()));
         std::fs::create_dir_all(dir.join(".frost")).unwrap();
         assert!(Journal::load(&dir).actions.is_empty());
-        std::fs::write(dir.join(".frost/journal.json"), "{ not json").unwrap();
+        std::fs::write(dir.join(JOURNAL_REL_PATH), b"FRSTJR01\xff\xff").unwrap();
         assert!(Journal::load(&dir).actions.is_empty());
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn incomplete_tail_preserves_completed_records() {
+        let dir = std::env::temp_dir().join(format!("frost-journal-tail-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let entry = JournalEntry {
+            key: "k".into(),
+            inputs: BTreeMap::new(),
+            discovered: Vec::new(),
+            outputs: BTreeMap::new(),
+            duration_ms: 1,
+            reason: "first".into(),
+        };
+        let mut journal = Journal::default();
+        journal.record(&dir, "a".into(), entry).unwrap();
+        let mut file = std::fs::OpenOptions::new()
+            .append(true)
+            .open(dir.join(JOURNAL_REL_PATH))
+            .unwrap();
+        file.write_all(&100u32.to_le_bytes()).unwrap();
+        file.write_all(b"partial").unwrap();
+        assert!(Journal::load(&dir).actions.contains_key("a"));
         std::fs::remove_dir_all(&dir).ok();
     }
 }

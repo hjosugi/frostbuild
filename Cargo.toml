@@ -3,6 +3,9 @@ members = [
     "crates/frostbuild-core",
     "crates/frostbuild-exec",
     "crates/frostbuild-cli",
+    "crates/frostbuild-store",
+    "crates/frostbuild-daemon",
+    "crates/frostbuild-bench",
 ]
 resolver = "2"
 
@@ -14,13 +17,24 @@ repository = "https://github.com/hjosugi/frost-build"
 
 [workspace.dependencies]
 anyhow = "1"
-blake3 = "1"
+blake3 = { version = "1", features = ["rayon"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 toml = "0.8"
 clap = { version = "4", features = ["derive"] }
+glob = "0.3"
+memmap2 = "0.9"
+postcard = { version = "1", features = ["alloc"] }
+rayon = "1"
+ctrlc = { version = "3", features = ["termination"] }
+libc = "0.2"
+notify = "8"
+ignore = "0.4"
+proptest = "1"
 frostbuild-core = { path = "crates/frostbuild-core" }
 frostbuild-exec = { path = "crates/frostbuild-exec" }
+frostbuild-store = { path = "crates/frostbuild-store" }
+frostbuild-daemon = { path = "crates/frostbuild-daemon" }
 
 [profile.release]
 lto = "thin"

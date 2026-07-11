@@ -1,8 +1,11 @@
-# Zig skeleton
+# Zig skeleton (historical)
+
+The authoritative implementation is the Rust workspace in `../crates/`. This
+directory is retained only as historical design input.
 
 This is a non-runnable design skeleton for a future Zig implementation.
 
-The runnable POC is the Python prototype at `../frost.py`.
+The Python prototype at `../frost.py` is a comparison/reference model only.
 
 Suggested future command:
 
