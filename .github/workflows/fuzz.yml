@@ -9,5 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable
-      - run: cargo install cargo-fuzz --locked
-      - run: for target in manifest depfile journal graph_store; do cargo fuzz run "$target" -- -max_total_time=60; done
+        with:
+          toolchain: nightly
+      - run: cargo +nightly install cargo-fuzz --locked
+      - run: for target in manifest depfile journal graph_store; do cargo +nightly fuzz run "$target" -- -max_total_time=60; done
