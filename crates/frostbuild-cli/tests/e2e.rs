@@ -579,3 +579,54 @@ fn sandbox_rejects_undeclared_workspace_header() {
         "undeclared header was not diagnosed:\n{out}"
     );
 }
+
+#[test]
+fn strategies_are_selectable_and_measured() {
+    let ws = Workspace::new("strategies");
+    for (scheduler, estimator) in [
+        ("critical-path", "journal"),
+        ("critical-path", "learned"),
+        ("fifo", "static"),
+        ("fifo", "heuristic"),
+    ] {
+        let dir = ws.dir.join(".frost");
+        let _ = std::fs::remove_dir_all(&dir);
+        let (ok, out) = ws.frost(&[
+            "build",
+            "--scheduler",
+            scheduler,
+            "--estimator",
+            estimator,
+            "--stats",
+        ]);
+        assert!(ok, "{scheduler}/{estimator} failed:\n{out}");
+        // Every strategy runs the same actions and reports what it cost, so a
+        // comparison never depends on rerunning with a stopwatch.
+        assert!(out.contains("5 executed"), "{out}");
+        assert!(
+            out.contains(&format!("strategy    {scheduler} / {estimator}")),
+            "stats must name the strategy in effect:\n{out}"
+        );
+        assert!(out.contains("utilization"), "{out}");
+        assert!(out.contains("critical"), "{out}");
+    }
+}
+
+#[test]
+fn action_reading_stdin_does_not_hang_the_build() {
+    let ws = Workspace::new("stdin");
+    // `cat` with no operand reads stdin. If actions inherit the terminal this
+    // blocks forever and the build looks slow rather than broken.
+    ws.append(
+        "frost.toml",
+        "\n[target.reads_stdin]\nkind = \"genrule\"\n\
+         cmd = \"cat > ${out}\"\noutputs = [\"gen/stdin.txt\"]\n",
+    );
+    let (ok, out) = ws.frost(&["build", "reads_stdin"]);
+    assert!(ok, "build must finish rather than block on stdin:\n{out}");
+    assert_eq!(
+        std::fs::read_to_string(ws.dir.join("gen/stdin.txt")).unwrap(),
+        "",
+        "stdin is empty, so the action produces an empty file"
+    );
+}

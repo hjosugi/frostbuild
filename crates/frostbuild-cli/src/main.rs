@@ -60,6 +60,10 @@ enum Cmd {
         /// Write a Chrome/Perfetto trace JSON
         #[arg(long)]
         trace: Option<PathBuf>,
+        /// Report scheduling measurements: makespan, worker utilization and
+        /// distance from the estimated critical path
+        #[arg(long)]
+        stats: bool,
         /// Execute through the per-workspace frostd service
         #[arg(long)]
         daemon: bool,
@@ -242,6 +246,7 @@ fn run(cli: Cli) -> Result<i32> {
             sandbox,
             check_determinism,
             trace,
+            stats,
             daemon,
             scheduler,
             estimator,
@@ -259,6 +264,7 @@ fn run(cli: Cli) -> Result<i32> {
                 sandbox,
                 check_determinism: check_determinism.is_some(),
                 trace,
+                stats,
                 test_mode: false,
                 daemon,
                 affected: false,
@@ -296,6 +302,7 @@ fn run(cli: Cli) -> Result<i32> {
                 sandbox,
                 check_determinism: false,
                 trace: None,
+                stats: false,
                 test_mode: true,
                 daemon,
                 affected,
@@ -736,6 +743,7 @@ struct BuildRequest {
     sandbox: bool,
     check_determinism: bool,
     trace: Option<PathBuf>,
+    stats: bool,
     test_mode: bool,
     daemon: bool,
     affected: bool,
@@ -799,6 +807,9 @@ fn run_build_via_daemon(root: &std::path::Path, request: &BuildRequest) -> Resul
     ]);
     args.extend(["--profile".into(), request.profile.clone()]);
     args.extend(["--platform".into(), request.platform.clone()]);
+    if request.stats {
+        args.push("--stats".into());
+    }
     if let Some(trace) = &request.trace {
         args.extend(["--trace".into(), trace.to_string_lossy().into_owned()]);
     }
@@ -893,7 +904,16 @@ fn run_build(root: &std::path::Path, request: BuildRequest) -> Result<i32> {
         no_cache: request.no_cache,
         sandbox: request.sandbox,
         check_determinism: request.check_determinism,
-        critical_path: matches!(request.scheduler, SchedulerArg::CriticalPath),
+        scheduler: match request.scheduler {
+            SchedulerArg::CriticalPath => frostbuild_exec::Scheduler::CriticalPath,
+            SchedulerArg::Fifo => frostbuild_exec::Scheduler::Fifo,
+        },
+        estimator: match request.estimator {
+            EstimatorArg::Heuristic => frostbuild_exec::Estimator::Heuristic,
+            EstimatorArg::Journal => frostbuild_exec::Estimator::Journal,
+            EstimatorArg::Static => frostbuild_exec::Estimator::Static,
+            EstimatorArg::Learned => frostbuild_exec::Estimator::Learned,
+        },
         ..BuildOptions::default()
     };
 
@@ -935,6 +955,27 @@ fn run_build(root: &std::path::Path, request: BuildRequest) -> Result<i32> {
         graph.actions.len()
     ));
     println!("{summary}");
+    if request.stats {
+        let st = &report.stats;
+        println!(
+            "  strategy    {} / {}  (-j {})",
+            st.scheduler, st.estimator, st.jobs
+        );
+        println!(
+            "  makespan    {} ms   busy {} ms across {} executed actions",
+            st.makespan_ms, st.busy_ms, st.executed
+        );
+        println!(
+            "  utilization {:.1}% of worker capacity",
+            st.utilization_pct()
+        );
+        if let Some(ratio) = st.critical_path_ratio() {
+            println!(
+                "  critical    {} ms estimated  ({:.2}x makespan; 1.00x means the graph, not the ordering, is the limit)",
+                st.critical_path_ms, ratio
+            );
+        }
+    }
     if failed > 0 {
         println!("failure summary (first 10):");
         for result in report
