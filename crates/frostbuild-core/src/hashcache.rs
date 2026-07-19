@@ -28,14 +28,18 @@ pub struct HashCache {
     dirty: bool,
 }
 
-const CACHE_REL_PATH: &str = ".frost/hashcache.json";
+pub const CACHE_REL_PATH: &str = ".frost/hashcache.bin";
+/// Pre-0.2 JSON cache location, removed opportunistically on save.
+pub const LEGACY_CACHE_REL_PATH: &str = ".frost/hashcache.json";
+const CACHE_MAGIC: &[u8; 8] = b"FRSTHC01";
 
 impl HashCache {
     pub fn load(workspace_root: &Path) -> Self {
         let path = workspace_root.join(CACHE_REL_PATH);
-        let entries = std::fs::read_to_string(&path)
+        let entries = std::fs::read(&path)
             .ok()
-            .and_then(|text| serde_json::from_str(&text).ok())
+            .filter(|bytes| bytes.len() >= 8 && &bytes[..8] == CACHE_MAGIC)
+            .and_then(|bytes| postcard::from_bytes(&bytes[8..]).ok())
             .unwrap_or_default();
         Self {
             entries,
@@ -51,11 +55,13 @@ impl HashCache {
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)?;
         }
-        let tmp = path.with_extension("json.tmp");
-        let text = serde_json::to_string(&self.entries)?;
-        std::fs::write(&tmp, text)?;
+        let tmp = path.with_extension("bin.tmp");
+        let mut bytes = CACHE_MAGIC.to_vec();
+        bytes.extend(postcard::to_allocvec(&self.entries)?);
+        std::fs::write(&tmp, bytes)?;
         std::fs::rename(&tmp, &path)
             .with_context(|| format!("failed to persist {}", path.display()))?;
+        let _ = std::fs::remove_file(workspace_root.join(LEGACY_CACHE_REL_PATH));
         Ok(())
     }
 

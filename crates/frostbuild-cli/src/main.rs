@@ -309,13 +309,10 @@ fn run(cli: Cli) -> Result<i32> {
             profile,
             platform,
         } => {
-            let manifest = Manifest::load(&root)?;
-            let graph =
-                GraphStore::load_or_compile_configured(&root, &manifest, &profile, &platform)?;
-            let requested = resolve_targets(&manifest, targets)?;
+            let graph = load_graph(&root, &profile, &platform)?;
+            let requested = resolve_targets(&graph, targets)?;
             let closure = graph.action_closure(&requested)?;
-            let toolchain =
-                toolchain_closure_fingerprint_cached(&root, &manifest.toolchain_for(&platform)?)?;
+            let toolchain = toolchain_closure_fingerprint_cached(&root, &graph.toolchain)?;
             let opts = BuildOptions {
                 jobs: default_jobs(),
                 keep_going: true,
@@ -354,13 +351,11 @@ fn run(cli: Cli) -> Result<i32> {
             profile,
             platform,
         } => {
-            let manifest = Manifest::load(&root)?;
             let active_profile = profile.as_deref().unwrap_or("debug");
             let active_platform = platform
                 .as_deref()
                 .unwrap_or(frostbuild_core::manifest::HOST_PLATFORM);
-            let graph =
-                BuildGraph::from_manifest_configured(&manifest, active_profile, active_platform)?;
+            let graph = load_graph(&root, active_profile, active_platform)?;
 
             // Narrow the removal to the requested platform/profile subtree;
             // with neither given, the whole output trees go.
@@ -398,6 +393,7 @@ fn run(cli: Cli) -> Result<i32> {
                 for rel in [
                     frostbuild_core::journal::JOURNAL_REL_PATH,
                     ".frost/journal.json",
+                    ".frost/hashcache.bin",
                     ".frost/hashcache.json",
                 ] {
                     let path = root.join(rel);
@@ -415,9 +411,7 @@ fn run(cli: Cli) -> Result<i32> {
             profile,
             platform,
         } => {
-            let manifest = Manifest::load(&root)?;
-            let graph =
-                GraphStore::load_or_compile_configured(&root, &manifest, &profile, &platform)?;
+            let graph = load_graph(&root, &profile, &platform)?;
             if dot {
                 print!("{}", graph.to_dot());
             } else {
@@ -437,9 +431,7 @@ fn run(cli: Cli) -> Result<i32> {
             profile,
             platform,
         } => {
-            let manifest = Manifest::load(&root)?;
-            let graph =
-                GraphStore::load_or_compile_configured(&root, &manifest, &profile, &platform)?;
+            let graph = load_graph(&root, &profile, &platform)?;
             let entries = graph
                 .actions
                 .iter()
@@ -476,16 +468,14 @@ fn run(cli: Cli) -> Result<i32> {
             profile,
             platform,
         } => {
-            let manifest = Manifest::load(&root)?;
-            let graph =
-                GraphStore::load_or_compile_configured(&root, &manifest, &profile, &platform)?;
-            let target = resolve_targets(&manifest, vec![target])?.remove(0);
+            let graph = load_graph(&root, &profile, &platform)?;
+            let target = resolve_targets(&graph, vec![target])?.remove(0);
             let closure = graph.action_closure(std::slice::from_ref(&target))?;
             let current = Engine::new(
                 &root,
                 &graph,
                 closure,
-                toolchain_closure_fingerprint_cached(&root, &manifest.toolchain_for(&platform)?)?,
+                toolchain_closure_fingerprint_cached(&root, &graph.toolchain)?,
                 BuildOptions {
                     dry_run: true,
                     keep_going: true,
@@ -525,10 +515,9 @@ fn run(cli: Cli) -> Result<i32> {
             Ok(0)
         }
         Cmd::Query { function } => {
-            let manifest = Manifest::load(&root)?;
             // The target-level graph is configuration-free: deps are
             // unconditional, so any profile/platform yields the same shape.
-            let graph = GraphStore::load_or_compile(&root, &manifest, "debug")?;
+            let graph = load_graph(&root, "debug", frostbuild_core::manifest::HOST_PLATFORM)?;
             let (query, names) = match &function {
                 QueryCmd::Deps { target, .. } => {
                     (format!("deps({target})"), graph.deps_closure(target)?)
@@ -834,24 +823,17 @@ fn run_build(root: &std::path::Path, request: BuildRequest) -> Result<i32> {
     if request.daemon {
         return run_build_via_daemon(root, &request);
     }
-    let manifest = Manifest::load(root)?;
-    let graph = GraphStore::load_or_compile_configured(
-        root,
-        &manifest,
-        &request.profile,
-        &request.platform,
-    )?;
-    let toolchain =
-        toolchain_closure_fingerprint_cached(root, &manifest.toolchain_for(&request.platform)?)?;
+    let graph = load_graph(root, &request.profile, &request.platform)?;
+    let toolchain = toolchain_closure_fingerprint_cached(root, &graph.toolchain)?;
     let mut requested = if request.test_mode && request.targets.is_empty() {
-        manifest
+        graph
             .targets
             .values()
             .filter(|target| matches!(target.kind, TargetKind::CcTest | TargetKind::Test))
             .map(|target| target.name.clone())
             .collect::<Vec<_>>()
     } else {
-        resolve_targets(&manifest, request.targets)?
+        resolve_targets(&graph, request.targets)?
     };
     if request.test_mode && requested.is_empty() {
         bail!("workspace declares no cc_test or test targets");
@@ -859,7 +841,7 @@ fn run_build(root: &std::path::Path, request: BuildRequest) -> Result<i32> {
     for name in &requested {
         if request.test_mode
             && !matches!(
-                manifest.targets[name].kind,
+                graph.targets[name].kind,
                 TargetKind::CcTest | TargetKind::Test
             )
         {
@@ -1029,13 +1011,24 @@ fn write_trace(
     Ok(())
 }
 
-fn resolve_targets(manifest: &Manifest, requested: Vec<String>) -> Result<Vec<String>> {
+/// Load the configured graph, taking the manifest-free warm path when the
+/// sources stamp proves the workspace inputs are unchanged; otherwise fall
+/// back to a full manifest load and (re)compile.
+fn load_graph(root: &std::path::Path, profile: &str, platform: &str) -> Result<BuildGraph> {
+    if let Some(graph) = GraphStore::load_cached(root, profile, platform) {
+        return Ok(graph);
+    }
+    let manifest = Manifest::load(root)?;
+    GraphStore::load_or_compile_configured(root, &manifest, profile, platform)
+}
+
+fn resolve_targets(graph: &BuildGraph, requested: Vec<String>) -> Result<Vec<String>> {
     if requested.is_empty() {
-        return Ok(manifest.default_targets.clone());
+        return Ok(graph.default_targets.clone());
     }
     for name in &requested {
-        if !manifest.targets.contains_key(name) {
-            let known: Vec<&str> = manifest.targets.keys().map(String::as_str).collect();
+        if !graph.targets.contains_key(name) {
+            let known: Vec<&str> = graph.targets.keys().map(String::as_str).collect();
             bail!(
                 "unknown target {name:?} (known targets: {})",
                 known.join(", ")

@@ -4,7 +4,7 @@ use std::rc::Rc;
 use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
 
-use crate::manifest::{Manifest, TargetKind, HOST_PLATFORM};
+use crate::manifest::{Manifest, TargetKind, Toolchain, HOST_PLATFORM};
 
 pub type FileId = usize;
 pub type ActionId = usize;
@@ -66,6 +66,11 @@ pub struct BuildGraph {
     /// Platform this graph was configured for; `host` uses the root
     /// `[toolchain]` and historical (platform-free) output paths.
     pub platform: String,
+    /// Platform-resolved toolchain, embedded so warm invocations can compute
+    /// the toolchain fingerprint without re-parsing the manifest.
+    pub toolchain: Toolchain,
+    /// Workspace default targets, embedded for the same reason.
+    pub default_targets: Vec<String>,
     #[serde(skip)]
     file_ids: HashMap<String, FileId>,
 }
@@ -103,6 +108,8 @@ impl BuildGraph {
         let mut graph = BuildGraph {
             profile: profile.to_string(),
             platform: platform.to_string(),
+            toolchain: toolchain.clone(),
+            default_targets: manifest.default_targets.clone(),
             ..BuildGraph::default()
         };
         let profile_flags = manifest.profiles.get(profile).cloned().unwrap_or_default();

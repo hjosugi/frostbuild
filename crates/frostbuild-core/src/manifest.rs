@@ -128,7 +128,7 @@ struct RawManifest {
     target: BTreeMap<String, RawTarget>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Toolchain {
     pub cc: String,
     pub cxx: String,
