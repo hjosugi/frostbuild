@@ -1,4 +1,5 @@
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::rc::Rc;
 
 use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
@@ -106,24 +107,25 @@ impl BuildGraph {
         };
         let profile_flags = manifest.profiles.get(profile).cloned().unwrap_or_default();
 
-        // Transitive exported include dirs and library outputs, per target.
-        let mut exported_includes: HashMap<String, Vec<String>> = HashMap::new();
-        let mut exported_libs: HashMap<String, Vec<String>> = HashMap::new();
-        let mut genrule_outputs: HashMap<String, Vec<String>> = HashMap::new();
+        // Transitive exported include dirs, library outputs and genrule
+        // outputs, per target — held as structurally shared sets so deep
+        // dependency chains stay O(targets + edges) to propagate. Flattening
+        // happens only where a flat list is genuinely needed (compile -I
+        // flags, order-only generated inputs, link lines) — see #78.
+        let mut exported_includes: HashMap<String, Rc<SharedSet>> = HashMap::new();
+        let mut exported_libs: HashMap<String, Rc<SharedSet>> = HashMap::new();
+        let mut genrule_outputs: HashMap<String, Rc<SharedSet>> = HashMap::new();
 
         for name in &order {
             let target = &manifest.targets[name];
 
-            let mut includes: Vec<String> = Vec::new();
-            let mut libs: Vec<String> = Vec::new();
-            let mut gen_outs: Vec<String> = Vec::new();
-            for dep in &target.deps {
-                extend_unique(&mut includes, &exported_includes[dep]);
-                extend_unique(&mut libs, &exported_libs[dep]);
-                extend_unique(&mut gen_outs, &genrule_outputs[dep]);
-            }
-            let mut own_includes = target.includes.clone();
-            extend_unique(&mut own_includes, &includes);
+            let dep_sets = |map: &HashMap<String, Rc<SharedSet>>| -> Vec<Rc<SharedSet>> {
+                target.deps.iter().map(|dep| map[dep].clone()).collect()
+            };
+            let include_set =
+                SharedSet::join(target.includes.clone(), dep_sets(&exported_includes));
+            let lib_parents = dep_sets(&exported_libs);
+            let gen_parents = dep_sets(&genrule_outputs);
 
             let mut target_node = TargetNode {
                 name: name.clone(),
@@ -165,13 +167,12 @@ impl BuildGraph {
                     })?;
                     target_node.actions.push(action);
                     target_node.outputs = outputs;
-                    let mut exp = target.outputs.clone();
-                    extend_unique(&mut exp, &gen_outs);
-                    genrule_outputs.insert(name.clone(), exp);
-                    exported_libs.insert(name.clone(), libs);
-                    let mut exp_inc = target.includes.clone();
-                    extend_unique(&mut exp_inc, &includes);
-                    exported_includes.insert(name.clone(), exp_inc);
+                    genrule_outputs.insert(
+                        name.clone(),
+                        SharedSet::join(target.outputs.clone(), gen_parents),
+                    );
+                    exported_libs.insert(name.clone(), SharedSet::join(Vec::new(), lib_parents));
+                    exported_includes.insert(name.clone(), include_set);
                 }
                 TargetKind::Test => {
                     let mut inputs = target
@@ -204,12 +205,15 @@ impl BuildGraph {
                     })?;
                     target_node.actions.push(action);
                     target_node.outputs = vec![stamp_id];
-                    exported_libs.insert(name.clone(), libs);
-                    exported_includes.insert(name.clone(), own_includes);
-                    genrule_outputs.insert(name.clone(), gen_outs);
+                    exported_libs.insert(name.clone(), SharedSet::join(Vec::new(), lib_parents));
+                    exported_includes.insert(name.clone(), include_set);
+                    genrule_outputs.insert(name.clone(), SharedSet::join(Vec::new(), gen_parents));
                 }
                 TargetKind::CcBinary | TargetKind::CcLibrary | TargetKind::CcTest => {
                     let tc = &toolchain;
+                    let own_includes = include_set.flatten();
+                    let libs = SharedSet::join(Vec::new(), lib_parents.clone()).flatten();
+                    let gen_outs = SharedSet::join(Vec::new(), gen_parents.clone()).flatten();
                     let mut cflags: Vec<String> = tc.cflags.clone();
                     cflags.extend(profile_flags.cflags.iter().cloned());
                     cflags.extend(target.cflags.iter().cloned());
@@ -288,9 +292,10 @@ impl BuildGraph {
                             })?;
                             target_node.actions.push(action);
                             target_node.outputs = vec![lib_id];
-                            let mut exp = vec![lib.clone()];
-                            extend_unique(&mut exp, &libs);
-                            exported_libs.insert(name.clone(), exp);
+                            exported_libs.insert(
+                                name.clone(),
+                                SharedSet::join(vec![lib.clone()], lib_parents.clone()),
+                            );
                         }
                         TargetKind::CcBinary | TargetKind::CcTest => {
                             let bin = format!("{BIN_DIR}/{tree}/{}", path_key(name));
@@ -325,7 +330,10 @@ impl BuildGraph {
                             })?;
                             target_node.actions.push(action);
                             target_node.outputs = vec![bin_id];
-                            exported_libs.insert(name.clone(), libs);
+                            exported_libs.insert(
+                                name.clone(),
+                                SharedSet::join(Vec::new(), lib_parents.clone()),
+                            );
                             if target.kind == TargetKind::CcTest {
                                 let stamp = format!(".frost/test/{tree}/{}/passed", path_key(name));
                                 let stamp_id = graph.file(&stamp);
@@ -354,10 +362,8 @@ impl BuildGraph {
                         TargetKind::Genrule | TargetKind::Test => unreachable!(),
                     }
 
-                    let mut exp_inc = target.includes.clone();
-                    extend_unique(&mut exp_inc, &includes);
-                    exported_includes.insert(name.clone(), exp_inc);
-                    genrule_outputs.insert(name.clone(), gen_outs);
+                    exported_includes.insert(name.clone(), include_set);
+                    genrule_outputs.insert(name.clone(), SharedSet::join(Vec::new(), gen_parents));
                 }
             }
 
@@ -476,11 +482,43 @@ fn dep_outputs(graph: &BuildGraph, dep: &str) -> Vec<FileId> {
         .unwrap_or_default()
 }
 
-fn extend_unique(dst: &mut Vec<String>, src: &[String]) {
-    for s in src {
-        if !dst.iter().any(|d| d == s) {
-            dst.push(s.clone());
+/// Persistent ordered string set: own entries plus references to parent sets,
+/// shared structurally across targets so transitive export propagation costs
+/// O(targets + edges) instead of materializing a flat closure per target (#78).
+///
+/// `flatten` walks own entries first, then parents in declaration order
+/// (iterative preorder, first occurrence wins) — exactly the ordering the
+/// historical flattened-Vec code produced, so action argv and cache keys are
+/// unchanged by the representation.
+struct SharedSet {
+    own: Vec<String>,
+    parents: Vec<Rc<SharedSet>>,
+}
+
+impl SharedSet {
+    fn join(own: Vec<String>, parents: Vec<Rc<SharedSet>>) -> Rc<Self> {
+        Rc::new(Self { own, parents })
+    }
+
+    fn flatten(self: &Rc<Self>) -> Vec<String> {
+        let mut out = Vec::new();
+        let mut seen: HashSet<String> = HashSet::new();
+        let mut visited: HashSet<*const SharedSet> = HashSet::new();
+        let mut stack: Vec<Rc<SharedSet>> = vec![Rc::clone(self)];
+        while let Some(node) = stack.pop() {
+            if !visited.insert(Rc::as_ptr(&node)) {
+                continue;
+            }
+            for value in &node.own {
+                if seen.insert(value.clone()) {
+                    out.push(value.clone());
+                }
+            }
+            for parent in node.parents.iter().rev() {
+                stack.push(Rc::clone(parent));
+            }
         }
+        out
     }
 }
 
