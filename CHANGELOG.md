@@ -5,6 +5,35 @@ All notable changes follow Keep a Changelog and Semantic Versioning. Before
 
 ## [Unreleased]
 
+### Added
+
+- `frost simulate`: compares every scheduler/estimator pair over a sweep of
+  worker counts by planning the build rather than running it. Durations come
+  from the journal, ordering from the same `Schedule` the engine uses, and no
+  cache is touched, so the comparison is deterministic and safe to run
+  mid-session. `--json` for CI gating.
+- `build --stats`: makespan, worker utilization and distance from the
+  estimated critical path, so a real run can calibrate the simulator.
+- `frostbuild-bench` is now a measurement library (`Sweep`, `Point`,
+  `render_table`) rather than a stub binary.
+
+### Changed
+
+- `--scheduler` and `--estimator` are real. `--estimator` was previously
+  accepted and then ignored: every build used journal-or-constant regardless
+  of the flag. `learned` now differs from `journal` where it matters — an
+  action with no history gets the median duration of its kind from this
+  workspace's journal instead of a hardcoded constant.
+
+### Fixed
+
+- The critical-path scheduler degraded after the first wave: actions unlocked
+  later were re-prioritized by a cruder key than the one used to build the
+  initial ready queue.
+- Actions inherited stdin, so a command that reads it (`cat > out` when
+  `${in}` expanded to nothing) blocked forever with no diagnostic. Actions now
+  get `/dev/null`.
+
 ## [0.2.0] - 2026-07-19
 
 ### Added

@@ -5,6 +5,17 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[lib]
+name = "frostbuild_bench"
+path = "src/lib.rs"
+
 [[bin]]
 name = "frost-bench-rs"
 path = "src/main.rs"
+
+[dependencies]
+frostbuild-core.workspace = true
+frostbuild-exec.workspace = true
+
+[dev-dependencies]
+frostbuild-core.workspace = true

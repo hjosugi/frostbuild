@@ -35,6 +35,7 @@ frostbuild-core = { version = "0.2.0", path = "crates/frostbuild-core" }
 frostbuild-exec = { version = "0.2.0", path = "crates/frostbuild-exec" }
 frostbuild-store = { version = "0.2.0", path = "crates/frostbuild-store" }
 frostbuild-daemon = { version = "0.2.0", path = "crates/frostbuild-daemon" }
+frostbuild-bench = { version = "0.2.0", path = "crates/frostbuild-bench" }
 
 [profile.release]
 lto = "thin"

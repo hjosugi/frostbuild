@@ -335,6 +335,10 @@ checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 [[package]]
 name = "frostbuild-bench"
 version = "0.2.0"
+dependencies = [
+ "frostbuild-core",
+ "frostbuild-exec",
+]
 
 [[package]]
 name = "frostbuild-cli"
@@ -342,6 +346,7 @@ version = "0.2.0"
 dependencies = [
  "anyhow",
  "clap",
+ "frostbuild-bench",
  "frostbuild-core",
  "frostbuild-daemon",
  "frostbuild-exec",

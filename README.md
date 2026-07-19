@@ -37,6 +37,10 @@ frost -C myrepo test --all --no-cache
 frost -C myrepo build --sandbox
 frost -C myrepo build --check-determinism
 
+# Which scheduling strategy suits this graph? (plans, never builds)
+frost -C myrepo simulate --jobs 1,4,16
+frost -C myrepo build --stats -j 16          # then calibrate against a real run
+
 # Graph queries: what does a change affect?
 frost -C myrepo query rdeps util
 frost -C myrepo query deps app --json
@@ -63,6 +67,8 @@ frost -C myrepo daemon status
 - early cutoff, affected test selection and opt-in determinism checking
 - mmap/versioned graph cache, `plan`, `explain`, Chrome trace and compdb
 - `query deps/rdeps/somepath` over the target graph with JSON output
+- `simulate`: deterministic scheduler comparison from journal durations, and
+  `build --stats` to calibrate it against a real run
 - Unix-socket daemon, recursive watcher, protocol versioning and fallback
 - opt-in Linux bubblewrap sandbox and process-group cancellation
 - Ninja subset importer and reproducible Ninja/Make/Frost benchmark harness

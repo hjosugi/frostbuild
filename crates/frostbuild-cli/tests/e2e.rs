@@ -630,3 +630,40 @@ fn action_reading_stdin_does_not_hang_the_build() {
         "stdin is empty, so the action produces an empty file"
     );
 }
+
+#[test]
+fn simulate_compares_strategies_without_building() {
+    let ws = Workspace::new("simulate");
+    let (ok, out) = ws.build_explain();
+    assert!(ok, "{out}");
+    let before = std::fs::read(ws.dir.join(".frost/journal.bin")).unwrap();
+
+    let (ok, out) = ws.frost(&["simulate", "--jobs", "1,4"]);
+    assert!(ok, "{out}");
+    assert!(out.contains("critical path"), "{out}");
+    assert!(out.contains("critical-path / journal"), "{out}");
+    assert!(out.contains("fifo / journal"), "{out}");
+    assert!(out.contains("-j 4"), "{out}");
+    assert!(out.contains("fastest:"), "{out}");
+
+    // Simulation must not touch build state: it is safe to run mid-session.
+    assert_eq!(
+        std::fs::read(ws.dir.join(".frost/journal.bin")).unwrap(),
+        before,
+        "simulate must not write to the journal"
+    );
+
+    let (ok, json) = ws.frost(&["simulate", "--json"]);
+    assert!(ok, "{json}");
+    let parsed: serde_json::Value = serde_json::from_str(json.trim()).unwrap();
+    assert_eq!(parsed["actions"], 5);
+    let points = parsed["points"].as_array().unwrap();
+    assert!(!points.is_empty());
+    let cp = parsed["critical_path_ms"].as_u64().unwrap();
+    for p in points {
+        assert!(
+            p["makespan_ms"].as_u64().unwrap() >= cp,
+            "no schedule beats the critical path: {p}"
+        );
+    }
+}
