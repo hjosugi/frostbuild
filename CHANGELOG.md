@@ -5,6 +5,21 @@ All notable changes follow Keep a Changelog and Semantic Versioning. Before
 
 ## [Unreleased]
 
+### Fixed
+
+- The daemon could not start from a workspace more than a few directories
+  deep. Its socket lived inside the workspace, and a Unix socket address is
+  capped near 100 bytes, so `frost daemon start` failed with `SUN_LEN` and no
+  mention of paths. The socket is now a short, stable name in the user's
+  runtime directory, derived from the workspace path so each workspace still
+  gets its own daemon.
+- A daemon killed rather than shut down left a socket file that blocked every
+  later start. A stale socket is now detected and replaced; a live one reports
+  that the daemon is already running.
+- `frost build --daemon` slept 20 ms after every successful build, to let the
+  watcher deliver events for the build's own writes before clearing a counter
+  that only `daemon status` reads. Every build paid it. Removed.
+
 ### Performance
 
 - 10k-target no-op build: 285 ms -> 176 ms (-38%), closing the gap to Ninja
