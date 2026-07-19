@@ -44,6 +44,10 @@ enum Cmd {
         /// Build profile; outputs and caches are isolated per profile
         #[arg(long, default_value = "debug")]
         profile: String,
+        /// Target platform from [platform.<name>] for cross/device builds;
+        /// outputs and caches are isolated per platform
+        #[arg(long, default_value = frostbuild_core::manifest::HOST_PLATFORM)]
+        platform: String,
         /// Disable successful test-result cache
         #[arg(long)]
         no_cache: bool,
@@ -83,6 +87,8 @@ enum Cmd {
         explain: bool,
         #[arg(long, default_value = "debug")]
         profile: String,
+        #[arg(long, default_value = frostbuild_core::manifest::HOST_PLATFORM)]
+        platform: String,
         #[arg(long)]
         sandbox: bool,
         #[arg(long)]
@@ -97,6 +103,8 @@ enum Cmd {
         targets: Vec<String>,
         #[arg(long, default_value = "debug")]
         profile: String,
+        #[arg(long, default_value = frostbuild_core::manifest::HOST_PLATFORM)]
+        platform: String,
     },
     /// Remove build outputs (--cache also removes the journal and hash cache)
     Clean {
@@ -104,6 +112,8 @@ enum Cmd {
         cache: bool,
         #[arg(long)]
         profile: Option<String>,
+        #[arg(long)]
+        platform: Option<String>,
     },
     /// Print the target dependency graph
     Graph {
@@ -112,6 +122,8 @@ enum Cmd {
         dot: bool,
         #[arg(long, default_value = "debug")]
         profile: String,
+        #[arg(long, default_value = frostbuild_core::manifest::HOST_PLATFORM)]
+        platform: String,
     },
     /// Export JSON Compilation Database for clangd/IDE integrations
     Compdb {
@@ -119,12 +131,16 @@ enum Cmd {
         output: PathBuf,
         #[arg(long, default_value = "debug")]
         profile: String,
+        #[arg(long, default_value = frostbuild_core::manifest::HOST_PLATFORM)]
+        platform: String,
     },
     /// Explain the most recently recorded decision for a target
     Explain {
         target: String,
         #[arg(long, default_value = "debug")]
         profile: String,
+        #[arg(long, default_value = frostbuild_core::manifest::HOST_PLATFORM)]
+        platform: String,
     },
     /// Manage the per-workspace Unix-socket daemon
     Daemon {
@@ -193,6 +209,7 @@ fn run(cli: Cli) -> Result<i32> {
             explain,
             verbose,
             profile,
+            platform,
             no_cache,
             sandbox,
             check_determinism,
@@ -209,6 +226,7 @@ fn run(cli: Cli) -> Result<i32> {
                 explain,
                 verbose,
                 profile,
+                platform,
                 no_cache,
                 sandbox,
                 check_determinism: check_determinism.is_some(),
@@ -231,6 +249,7 @@ fn run(cli: Cli) -> Result<i32> {
             no_cache,
             explain,
             profile,
+            platform,
             sandbox,
             daemon,
             scheduler,
@@ -244,6 +263,7 @@ fn run(cli: Cli) -> Result<i32> {
                 explain,
                 verbose: false,
                 profile,
+                platform,
                 no_cache,
                 sandbox,
                 check_determinism: false,
@@ -256,12 +276,18 @@ fn run(cli: Cli) -> Result<i32> {
                 estimator,
             },
         ),
-        Cmd::Plan { targets, profile } => {
+        Cmd::Plan {
+            targets,
+            profile,
+            platform,
+        } => {
             let manifest = Manifest::load(&root)?;
-            let graph = GraphStore::load_or_compile(&root, &manifest, &profile)?;
+            let graph =
+                GraphStore::load_or_compile_configured(&root, &manifest, &profile, &platform)?;
             let requested = resolve_targets(&manifest, targets)?;
             let closure = graph.action_closure(&requested)?;
-            let toolchain = toolchain_closure_fingerprint_cached(&root, &manifest.toolchain)?;
+            let toolchain =
+                toolchain_closure_fingerprint_cached(&root, &manifest.toolchain_for(&platform)?)?;
             let opts = BuildOptions {
                 jobs: default_jobs(),
                 keep_going: true,
@@ -295,16 +321,32 @@ fn run(cli: Cli) -> Result<i32> {
             );
             Ok(0)
         }
-        Cmd::Clean { cache, profile } => {
+        Cmd::Clean {
+            cache,
+            profile,
+            platform,
+        } => {
             let manifest = Manifest::load(&root)?;
             let active_profile = profile.as_deref().unwrap_or("debug");
-            let graph = BuildGraph::from_manifest_with_profile(&manifest, active_profile)?;
+            let active_platform = platform
+                .as_deref()
+                .unwrap_or(frostbuild_core::manifest::HOST_PLATFORM);
+            let graph =
+                BuildGraph::from_manifest_configured(&manifest, active_profile, active_platform)?;
 
+            // Narrow the removal to the requested platform/profile subtree;
+            // with neither given, the whole output trees go.
+            let subtree = match (&platform, &profile) {
+                (None, None) => None,
+                (None, Some(profile)) => Some(profile.clone()),
+                (Some(platform), None) => Some(platform.clone()),
+                (Some(platform), Some(profile)) => Some(format!("{platform}/{profile}")),
+            };
             let mut removed = 0usize;
             for dir in [OBJ_DIR, LIB_DIR, BIN_DIR] {
-                let path = profile
+                let path = subtree
                     .as_ref()
-                    .map_or_else(|| root.join(dir), |name| root.join(dir).join(name));
+                    .map_or_else(|| root.join(dir), |sub| root.join(dir).join(sub));
                 if path.exists() {
                     std::fs::remove_dir_all(&path)
                         .with_context(|| format!("failed to remove {}", path.display()))?;
@@ -340,9 +382,14 @@ fn run(cli: Cli) -> Result<i32> {
             println!("frost: cleaned ({removed} entries removed)");
             Ok(0)
         }
-        Cmd::Graph { dot, profile } => {
+        Cmd::Graph {
+            dot,
+            profile,
+            platform,
+        } => {
             let manifest = Manifest::load(&root)?;
-            let graph = GraphStore::load_or_compile(&root, &manifest, &profile)?;
+            let graph =
+                GraphStore::load_or_compile_configured(&root, &manifest, &profile, &platform)?;
             if dot {
                 print!("{}", graph.to_dot());
             } else {
@@ -357,9 +404,14 @@ fn run(cli: Cli) -> Result<i32> {
             }
             Ok(0)
         }
-        Cmd::Compdb { output, profile } => {
+        Cmd::Compdb {
+            output,
+            profile,
+            platform,
+        } => {
             let manifest = Manifest::load(&root)?;
-            let graph = GraphStore::load_or_compile(&root, &manifest, &profile)?;
+            let graph =
+                GraphStore::load_or_compile_configured(&root, &manifest, &profile, &platform)?;
             let entries = graph
                 .actions
                 .iter()
@@ -391,16 +443,21 @@ fn run(cli: Cli) -> Result<i32> {
             );
             Ok(0)
         }
-        Cmd::Explain { target, profile } => {
+        Cmd::Explain {
+            target,
+            profile,
+            platform,
+        } => {
             let manifest = Manifest::load(&root)?;
-            let graph = GraphStore::load_or_compile(&root, &manifest, &profile)?;
+            let graph =
+                GraphStore::load_or_compile_configured(&root, &manifest, &profile, &platform)?;
             let target = resolve_targets(&manifest, vec![target])?.remove(0);
             let closure = graph.action_closure(std::slice::from_ref(&target))?;
             let current = Engine::new(
                 &root,
                 &graph,
                 closure,
-                toolchain_closure_fingerprint_cached(&root, &manifest.toolchain)?,
+                toolchain_closure_fingerprint_cached(&root, &manifest.toolchain_for(&platform)?)?,
                 BuildOptions {
                     dry_run: true,
                     keep_going: true,
@@ -425,7 +482,7 @@ fn run(cli: Cli) -> Result<i32> {
                 .iter()
                 .filter(|action| action.target == target)
             {
-                let id = format!("{}@{}", action.id, profile);
+                let id = frostbuild_exec::journal_id(&graph, action);
                 if let Some(entry) = journal.actions.get(&id) {
                     println!(
                         "{} :: {} ({} ms)",
@@ -617,6 +674,7 @@ struct BuildRequest {
     explain: bool,
     verbose: bool,
     profile: String,
+    platform: String,
     no_cache: bool,
     sandbox: bool,
     check_determinism: bool,
@@ -683,6 +741,7 @@ fn run_build_via_daemon(root: &std::path::Path, request: &BuildRequest) -> Resul
         .into(),
     ]);
     args.extend(["--profile".into(), request.profile.clone()]);
+    args.extend(["--platform".into(), request.platform.clone()]);
     if let Some(trace) = &request.trace {
         args.extend(["--trace".into(), trace.to_string_lossy().into_owned()]);
     }
@@ -708,8 +767,14 @@ fn run_build(root: &std::path::Path, request: BuildRequest) -> Result<i32> {
         return run_build_via_daemon(root, &request);
     }
     let manifest = Manifest::load(root)?;
-    let graph = GraphStore::load_or_compile(root, &manifest, &request.profile)?;
-    let toolchain = toolchain_closure_fingerprint_cached(root, &manifest.toolchain)?;
+    let graph = GraphStore::load_or_compile_configured(
+        root,
+        &manifest,
+        &request.profile,
+        &request.platform,
+    )?;
+    let toolchain =
+        toolchain_closure_fingerprint_cached(root, &manifest.toolchain_for(&request.platform)?)?;
     let mut requested = if request.test_mode && request.targets.is_empty() {
         manifest
             .targets
