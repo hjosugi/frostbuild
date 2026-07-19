@@ -426,6 +426,83 @@ impl BuildGraph {
         Ok(selected.into_iter().collect())
     }
 
+    /// Transitive dependency closure of a target, itself included, sorted.
+    pub fn deps_closure(&self, root: &str) -> Result<Vec<String>> {
+        if !self.targets.contains_key(root) {
+            bail!("unknown target {root:?}");
+        }
+        let mut seen = BTreeSet::new();
+        let mut stack = vec![root.to_string()];
+        while let Some(name) = stack.pop() {
+            if !seen.insert(name.clone()) {
+                continue;
+            }
+            stack.extend(self.targets[&name].deps.iter().cloned());
+        }
+        Ok(seen.into_iter().collect())
+    }
+
+    /// Transitive reverse-dependency closure: every target that (transitively)
+    /// depends on `root`, itself included, sorted. This is the monorepo-CI
+    /// primitive ("what does this change affect?").
+    pub fn rdeps_closure(&self, root: &str) -> Result<Vec<String>> {
+        if !self.targets.contains_key(root) {
+            bail!("unknown target {root:?}");
+        }
+        let mut dependents: HashMap<&str, Vec<&str>> = HashMap::new();
+        for target in self.targets.values() {
+            for dep in &target.deps {
+                dependents.entry(dep).or_default().push(&target.name);
+            }
+        }
+        let mut seen = BTreeSet::new();
+        let mut stack = vec![root];
+        while let Some(name) = stack.pop() {
+            if !seen.insert(name.to_string()) {
+                continue;
+            }
+            if let Some(users) = dependents.get(name) {
+                stack.extend(users.iter().copied());
+            }
+        }
+        Ok(seen.into_iter().collect())
+    }
+
+    /// One dependency path from `from` down to `to`, or None when `to` is not
+    /// in the dependency closure of `from`.
+    pub fn somepath(&self, from: &str, to: &str) -> Result<Option<Vec<String>>> {
+        for name in [from, to] {
+            if !self.targets.contains_key(name) {
+                bail!("unknown target {name:?}");
+            }
+        }
+        fn visit<'a>(
+            graph: &'a BuildGraph,
+            current: &'a str,
+            to: &str,
+            path: &mut Vec<String>,
+            seen: &mut BTreeSet<&'a str>,
+        ) -> bool {
+            if !seen.insert(current) {
+                return false;
+            }
+            path.push(current.to_string());
+            if current == to {
+                return true;
+            }
+            for dep in &graph.targets[current].deps {
+                if visit(graph, dep, to, path, seen) {
+                    return true;
+                }
+            }
+            path.pop();
+            false
+        }
+        let mut path = Vec::new();
+        let mut seen = BTreeSet::new();
+        Ok(visit(self, from, to, &mut path, &mut seen).then_some(path))
+    }
+
     pub fn to_dot(&self) -> String {
         let mut out = String::from("digraph frost {\n  rankdir=LR;\n");
         for target in self.targets.values() {
@@ -635,6 +712,23 @@ mod tests {
         assert!(ids.contains(&"archive:util"));
         assert!(!ids.contains(&"link:app"));
         assert!(!ids.contains(&"genrule:gen"));
+    }
+
+    #[test]
+    fn query_closures_and_somepath() {
+        let graph = BuildGraph::from_manifest(&demo_manifest()).unwrap();
+        assert_eq!(
+            graph.deps_closure("app").unwrap(),
+            vec!["app", "gen", "util"]
+        );
+        assert_eq!(graph.deps_closure("util").unwrap(), vec!["util"]);
+        assert_eq!(graph.rdeps_closure("util").unwrap(), vec!["app", "util"]);
+        assert_eq!(
+            graph.somepath("app", "gen").unwrap(),
+            Some(vec!["app".to_string(), "gen".to_string()])
+        );
+        assert_eq!(graph.somepath("util", "gen").unwrap(), None);
+        assert!(graph.deps_closure("nope").is_err());
     }
 
     #[test]

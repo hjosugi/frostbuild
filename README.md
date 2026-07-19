@@ -37,6 +37,11 @@ frost -C myrepo test --all --no-cache
 frost -C myrepo build --sandbox
 frost -C myrepo build --check-determinism
 
+# Graph queries: what does a change affect?
+frost -C myrepo query rdeps util
+frost -C myrepo query deps app --json
+frost -C myrepo query somepath app //libs/util:util
+
 # IDE, trace and persistent service
 frost -C myrepo compdb
 frost -C myrepo build --trace trace.json
@@ -57,6 +62,7 @@ frost -C myrepo daemon status
 - immutable local CAS, hardlink/copy materialization and bounded GC
 - early cutoff, affected test selection and opt-in determinism checking
 - mmap/versioned graph cache, `plan`, `explain`, Chrome trace and compdb
+- `query deps/rdeps/somepath` over the target graph with JSON output
 - Unix-socket daemon, recursive watcher, protocol versioning and fallback
 - opt-in Linux bubblewrap sandbox and process-group cancellation
 - Ninja subset importer and reproducible Ninja/Make/Frost benchmark harness

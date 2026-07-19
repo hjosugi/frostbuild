@@ -142,6 +142,11 @@ enum Cmd {
         #[arg(long, default_value = frostbuild_core::manifest::HOST_PLATFORM)]
         platform: String,
     },
+    /// Query the target dependency graph (configuration-free)
+    Query {
+        #[command(subcommand)]
+        function: QueryCmd,
+    },
     /// Manage the per-workspace Unix-socket daemon
     Daemon {
         #[command(subcommand)]
@@ -153,6 +158,29 @@ enum Cmd {
         ninja: PathBuf,
         #[arg(long, default_value = "frost.toml")]
         output: PathBuf,
+    },
+}
+
+#[derive(Subcommand)]
+enum QueryCmd {
+    /// Transitive dependencies of a target (itself included)
+    Deps {
+        target: String,
+        #[arg(long)]
+        json: bool,
+    },
+    /// Targets that transitively depend on a target ("what does this affect?")
+    Rdeps {
+        target: String,
+        #[arg(long)]
+        json: bool,
+    },
+    /// One dependency path between two targets
+    Somepath {
+        from: String,
+        to: String,
+        #[arg(long)]
+        json: bool,
     },
 }
 
@@ -493,6 +521,46 @@ fn run(cli: Cli) -> Result<i32> {
             }
             if found == 0 {
                 println!("frost: no recorded execution for {target} ({profile})");
+            }
+            Ok(0)
+        }
+        Cmd::Query { function } => {
+            let manifest = Manifest::load(&root)?;
+            // The target-level graph is configuration-free: deps are
+            // unconditional, so any profile/platform yields the same shape.
+            let graph = GraphStore::load_or_compile(&root, &manifest, "debug")?;
+            let (query, names) = match &function {
+                QueryCmd::Deps { target, .. } => {
+                    (format!("deps({target})"), graph.deps_closure(target)?)
+                }
+                QueryCmd::Rdeps { target, .. } => {
+                    (format!("rdeps({target})"), graph.rdeps_closure(target)?)
+                }
+                QueryCmd::Somepath { from, to, .. } => {
+                    let path = graph.somepath(from, to)?;
+                    let Some(path) = path else {
+                        println!("no path from {from} to {to}");
+                        return Ok(1);
+                    };
+                    (format!("somepath({from}, {to})"), path)
+                }
+            };
+            let json = match &function {
+                QueryCmd::Deps { json, .. }
+                | QueryCmd::Rdeps { json, .. }
+                | QueryCmd::Somepath { json, .. } => *json,
+            };
+            if json {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(
+                        &serde_json::json!({ "query": query, "targets": names })
+                    )?
+                );
+            } else {
+                for name in &names {
+                    println!("{name}");
+                }
             }
             Ok(0)
         }

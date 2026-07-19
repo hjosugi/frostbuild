@@ -160,6 +160,32 @@ fn cross_compile_aarch64_device_build() {
 }
 
 #[test]
+fn query_deps_rdeps_somepath() {
+    let ws = Workspace::new("query");
+
+    let (ok, out) = ws.frost(&["query", "deps", "app"]);
+    assert!(ok, "{out}");
+    assert_eq!(
+        out.trim().lines().collect::<Vec<_>>(),
+        ["app", "gen_config", "util"]
+    );
+
+    let (ok, out) = ws.frost(&["query", "rdeps", "util"]);
+    assert!(ok, "{out}");
+    assert_eq!(out.trim().lines().collect::<Vec<_>>(), ["app", "util"]);
+
+    let (ok, out) = ws.frost(&["query", "somepath", "app", "gen_config", "--json"]);
+    assert!(ok, "{out}");
+    let parsed: serde_json::Value = serde_json::from_str(out.trim()).unwrap();
+    assert_eq!(parsed["query"], "somepath(app, gen_config)");
+    assert_eq!(parsed["targets"][0], "app");
+
+    let (ok, out) = ws.frost(&["query", "somepath", "util", "gen_config"]);
+    assert!(!ok, "no-path case exits nonzero");
+    assert!(out.contains("no path"), "{out}");
+}
+
+#[test]
 fn clean_build_then_noop_is_fully_cached() {
     let ws = Workspace::new("noop");
 
