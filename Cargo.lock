@@ -391,7 +391,9 @@ dependencies = [
  "ctrlc",
  "frostbuild-core",
  "libc",
+ "postcard",
  "rayon",
+ "serde",
 ]
 
 [[package]]

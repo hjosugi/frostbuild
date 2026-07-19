@@ -5,6 +5,26 @@ All notable changes follow Keep a Changelog and Semantic Versioning. Before
 
 ## [Unreleased]
 
+### Performance
+
+- 10k-target no-op build: 285 ms -> 176 ms (-38%), closing the gap to Ninja
+  from 6.0x to 3.9x on the same workspace. Three findings, in the order the
+  measurements produced them:
+  - Completing an action woke every worker. On a dependency chain only one
+    action becomes runnable at a time, so `notify_all` cost `actions * jobs`
+    wakeups to do `actions` units of work — 50,925 condvar wakeups for 10,000
+    actions. Workers are now woken one per newly runnable action.
+  - The toolchain fingerprint loaded the workspace-wide content cache, megabytes
+    covering every source file, to digest three compiler binaries. It now keeps
+    its own stamp and re-hashes only when a driver actually changed.
+  - A path that is one action's output and the next action's input was stat'd
+    twice. A build is a single point in time, so the second check reuses the
+    first result; frost invalidates whenever it writes a path itself.
+- The hash cache read path no longer takes a lock, and journal reads take none
+  at all: entries recorded by the previous build are immutable during this one.
+  (Measured at -1.3% on its own — the contention this removed was not the
+  bottleneck. Kept because it is simpler, not because it was the win.)
+
 ### Added
 
 - `frost simulate`: compares every scheduler/estimator pair over a sweep of

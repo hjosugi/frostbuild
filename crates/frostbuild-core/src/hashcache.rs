@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::io::Read;
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::RwLock;
 
 use anyhow::{Context, Result};
 use rayon::prelude::*;
@@ -22,10 +24,33 @@ struct Entry {
 /// Content-hash cache keyed by workspace-relative (or absolute, for system
 /// headers) path, validated by a (mtime, size, inode) stat triple. Avoids
 /// re-hashing unchanged files across builds.
+///
+/// One instance covers one build, and treats that build as a single point in
+/// time: a path digested once is not stat'd again unless [`Self::invalidate`]
+/// says frost rewrote it. Declared outputs always invalidate, so the guarantee
+/// holds for every path frost is responsible for; a write frost was never told
+/// about is an undeclared side effect, which the build model does not admit
+/// and `--sandbox` exists to catch. The next build starts from a fresh
+/// instance and re-stats everything.
+///
+/// Split into an immutable snapshot loaded from disk and the changes made by
+/// this build. Every worker reads the snapshot without synchronizing; a lock
+/// is taken only once something has actually changed. A no-op build changes
+/// nothing, so its stat path — the one that decides whether frost has any
+/// work at all — never contends.
 #[derive(Debug, Default)]
 pub struct HashCache {
-    entries: HashMap<String, Entry>,
-    dirty: bool,
+    /// Loaded from disk; never mutated.
+    snapshot: HashMap<String, Entry>,
+    /// Entries this build recomputed. Reads consult it only after
+    /// [`Self::changed`] flips, which a no-op build never does.
+    updates: RwLock<HashMap<String, Entry>>,
+    changed: AtomicBool,
+    /// Digests already established during this build, so a path that is both
+    /// one action's output and the next action's input is stat'd once rather
+    /// than twice. A build is a single point in time: a path is re-stat'd
+    /// only after frost itself writes it, which clears the entry.
+    settled: RwLock<HashMap<String, String>>,
 }
 
 pub const CACHE_REL_PATH: &str = ".frost/hashcache.bin";
@@ -36,20 +61,73 @@ const CACHE_MAGIC: &[u8; 8] = b"FRSTHC01";
 impl HashCache {
     pub fn load(workspace_root: &Path) -> Self {
         let path = workspace_root.join(CACHE_REL_PATH);
-        let entries = std::fs::read(&path)
+        let snapshot = std::fs::read(&path)
             .ok()
             .filter(|bytes| bytes.len() >= 8 && &bytes[..8] == CACHE_MAGIC)
             .and_then(|bytes| postcard::from_bytes(&bytes[8..]).ok())
             .unwrap_or_default();
         Self {
-            entries,
-            dirty: false,
+            snapshot,
+            ..Self::default()
         }
     }
 
+    /// Cached entry for `rel`, newest first. Lock-free until this build has
+    /// changed something.
+    fn lookup(&self, rel: &str) -> Option<Entry> {
+        if self.changed.load(Ordering::Relaxed) {
+            if let Some(hit) = self.updates.read().unwrap().get(rel) {
+                return Some(hit.clone());
+            }
+        }
+        self.snapshot.get(rel).cloned()
+    }
+
+    fn store(&self, rel: &str, entry: Entry) {
+        self.updates.write().unwrap().insert(rel.to_string(), entry);
+        self.changed.store(true, Ordering::Relaxed);
+    }
+
+    /// Digest already established during this build, if any.
+    fn settled(&self, rel: &str) -> Option<String> {
+        self.settled.read().unwrap().get(rel).cloned()
+    }
+
+    fn settle(&self, rel: &str, hash: &str) {
+        self.settled
+            .write()
+            .unwrap()
+            .insert(rel.to_string(), hash.to_string());
+    }
+
+    fn forget(&self, rel: &str) {
+        // A removed path must not fall back to the snapshot, so remember the
+        // removal explicitly rather than deleting an entry that only exists
+        // in the read-only half.
+        self.updates.write().unwrap().insert(
+            rel.to_string(),
+            Entry {
+                mtime_ns: i128::MIN,
+                size: 0,
+                ino: 0,
+                hash: String::new(),
+            },
+        );
+        self.settled.write().unwrap().remove(rel);
+        self.changed.store(true, Ordering::Relaxed);
+    }
+
     pub fn save(&self, workspace_root: &Path) -> Result<()> {
-        if !self.dirty {
+        if !self.changed.load(Ordering::Relaxed) {
             return Ok(());
+        }
+        let mut merged = self.snapshot.clone();
+        for (path, entry) in self.updates.read().unwrap().iter() {
+            if entry.hash.is_empty() {
+                merged.remove(path);
+            } else {
+                merged.insert(path.clone(), entry.clone());
+            }
         }
         let path = workspace_root.join(CACHE_REL_PATH);
         if let Some(parent) = path.parent() {
@@ -57,7 +135,7 @@ impl HashCache {
         }
         let tmp = path.with_extension("bin.tmp");
         let mut bytes = CACHE_MAGIC.to_vec();
-        bytes.extend(postcard::to_allocvec(&self.entries)?);
+        bytes.extend(postcard::to_allocvec(&merged)?);
         std::fs::write(&tmp, bytes)?;
         std::fs::rename(&tmp, &path)
             .with_context(|| format!("failed to persist {}", path.display()))?;
@@ -67,22 +145,29 @@ impl HashCache {
 
     /// Digest for `rel` (workspace-relative, or absolute e.g. a system
     /// header). Returns [`MISSING`] when the file does not exist.
-    pub fn digest(&mut self, workspace_root: &Path, rel: &str) -> Result<String> {
+    pub fn digest(&self, workspace_root: &Path, rel: &str) -> Result<String> {
+        if let Some(hit) = self.settled(rel) {
+            return Ok(hit);
+        }
         let full = resolve(workspace_root, rel);
         let Ok(meta) = std::fs::metadata(&full) else {
-            self.dirty |= self.entries.remove(rel).is_some();
+            if self.lookup(rel).is_some_and(|e| !e.hash.is_empty()) {
+                self.forget(rel);
+            }
             return Ok(MISSING.to_string());
         };
         let stat = stat_triple(&meta);
-        if let Some(entry) = self.entries.get(rel) {
-            if (entry.mtime_ns, entry.size, entry.ino) == stat {
-                return Ok(entry.hash.clone());
+        if let Some(entry) = self.lookup(rel) {
+            if !entry.hash.is_empty() && (entry.mtime_ns, entry.size, entry.ino) == stat {
+                self.settle(rel, &entry.hash);
+                return Ok(entry.hash);
             }
         }
         let hash =
             hash_file(&full).with_context(|| format!("failed to hash {}", full.display()))?;
-        self.entries.insert(
-            rel.to_string(),
+        self.settle(rel, &hash);
+        self.store(
+            rel,
             Entry {
                 mtime_ns: stat.0,
                 size: stat.1,
@@ -90,29 +175,35 @@ impl HashCache {
                 hash: hash.clone(),
             },
         );
-        self.dirty = true;
         Ok(hash)
     }
 
     /// Resolve a fileset with cached stat checks and hash misses in parallel.
     pub fn digest_many(
-        &mut self,
+        &self,
         workspace_root: &Path,
         paths: &[String],
     ) -> Result<std::collections::BTreeMap<String, String>> {
         let mut ready = std::collections::BTreeMap::new();
         let mut misses = Vec::new();
         for rel in paths {
+            if let Some(hit) = self.settled(rel) {
+                ready.insert(rel.clone(), hit);
+                continue;
+            }
             let full = resolve(workspace_root, rel);
             let Ok(meta) = std::fs::metadata(&full) else {
-                self.dirty |= self.entries.remove(rel).is_some();
+                if self.lookup(rel).is_some_and(|e| !e.hash.is_empty()) {
+                    self.forget(rel);
+                }
                 ready.insert(rel.clone(), MISSING.to_string());
                 continue;
             };
             let stat = stat_triple(&meta);
-            if let Some(entry) = self.entries.get(rel) {
-                if (entry.mtime_ns, entry.size, entry.ino) == stat {
-                    ready.insert(rel.clone(), entry.hash.clone());
+            if let Some(entry) = self.lookup(rel) {
+                if !entry.hash.is_empty() && (entry.mtime_ns, entry.size, entry.ino) == stat {
+                    self.settle(rel, &entry.hash);
+                    ready.insert(rel.clone(), entry.hash);
                     continue;
                 }
             }
@@ -127,8 +218,9 @@ impl HashCache {
             })
             .collect();
         for (rel, stat, hash) in hashed? {
-            self.entries.insert(
-                rel.clone(),
+            self.settle(&rel, &hash);
+            self.store(
+                &rel,
                 Entry {
                     mtime_ns: stat.0,
                     size: stat.1,
@@ -137,7 +229,6 @@ impl HashCache {
                 },
             );
             ready.insert(rel, hash);
-            self.dirty = true;
         }
         Ok(ready)
     }
@@ -145,8 +236,8 @@ impl HashCache {
     /// Drop the cached stat for a path we just (re)wrote, forcing a re-hash.
     /// Needed for action outputs: a fast rewrite can land in the same mtime
     /// granule with the same size.
-    pub fn invalidate(&mut self, rel: &str) {
-        self.dirty |= self.entries.remove(rel).is_some();
+    pub fn invalidate(&self, rel: &str) {
+        self.forget(rel);
     }
 }
 
@@ -206,7 +297,7 @@ mod tests {
     fn missing_file_digests_as_missing() {
         let dir = std::env::temp_dir().join("frost-hashcache-test-missing");
         std::fs::create_dir_all(&dir).unwrap();
-        let mut cache = HashCache::default();
+        let cache = HashCache::default();
         assert_eq!(cache.digest(&dir, "no/such/file").unwrap(), MISSING);
     }
 
@@ -217,14 +308,29 @@ mod tests {
         let file = dir.join("a.txt");
 
         std::fs::write(&file, "one").unwrap();
-        let mut cache = HashCache::default();
+        let cache = HashCache::default();
         let h1 = cache.digest(&dir, "a.txt").unwrap();
-        let h1b = cache.digest(&dir, "a.txt").unwrap();
-        assert_eq!(h1, h1b);
+        assert_eq!(cache.digest(&dir, "a.txt").unwrap(), h1, "repeat is stable");
 
+        // A cache instance covers one build, and a build is one point in
+        // time: a path already digested is not re-stat'd. This is what makes
+        // a file that is one action's output and the next action's input cost
+        // a single stat instead of two.
         std::fs::write(&file, "two-longer").unwrap();
+        assert_eq!(
+            cache.digest(&dir, "a.txt").unwrap(),
+            h1,
+            "a write frost did not make is not observed mid-build"
+        );
+
+        // Whenever frost writes a path it says so, and the next digest is
+        // fresh. Every engine path that produces outputs calls this.
+        cache.invalidate("a.txt");
         let h2 = cache.digest(&dir, "a.txt").unwrap();
-        assert_ne!(h1, h2);
+        assert_ne!(h1, h2, "invalidate restores freshness");
+
+        // A new build sees the current content with no invalidation needed.
+        assert_eq!(HashCache::default().digest(&dir, "a.txt").unwrap(), h2);
 
         std::fs::remove_dir_all(&dir).ok();
     }
@@ -236,11 +342,11 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         std::fs::write(dir.join("a.txt"), "content").unwrap();
 
-        let mut cache = HashCache::load(&dir);
+        let cache = HashCache::load(&dir);
         let h = cache.digest(&dir, "a.txt").unwrap();
         cache.save(&dir).unwrap();
 
-        let mut reloaded = HashCache::load(&dir);
+        let reloaded = HashCache::load(&dir);
         assert_eq!(reloaded.digest(&dir, "a.txt").unwrap(), h);
 
         std::fs::remove_dir_all(&dir).ok();
