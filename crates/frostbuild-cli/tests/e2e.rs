@@ -67,6 +67,12 @@ fn copy_dir(src: &Path, dst: &Path) -> std::io::Result<()> {
     std::fs::create_dir_all(dst)?;
     for entry in std::fs::read_dir(src)? {
         let entry = entry?;
+        // Never inherit build state from the checked-out sample workspace;
+        // every test must start from a genuinely clean tree even if someone
+        // ran frost against sample_c manually.
+        if entry.file_name() == ".frost" {
+            continue;
+        }
         let target = dst.join(entry.file_name());
         if entry.file_type()?.is_dir() {
             copy_dir(&entry.path(), &target)?;
