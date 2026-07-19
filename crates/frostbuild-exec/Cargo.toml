@@ -6,6 +6,8 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+postcard.workspace = true
+serde.workspace = true
 anyhow.workspace = true
 blake3.workspace = true
 frostbuild-core.workspace = true

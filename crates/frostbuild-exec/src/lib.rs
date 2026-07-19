@@ -23,6 +23,7 @@ use frostbuild_core::graph::{ActionId, ActionKind, BuildGraph};
 use frostbuild_core::hashcache::HashCache;
 use frostbuild_core::journal::{Journal, JournalEntry};
 use frostbuild_core::{depfile, ActionKey};
+use serde::{Deserialize, Serialize};
 
 static CANCELLED: AtomicBool = AtomicBool::new(false);
 static RUNNING_PROCESS_GROUPS: OnceLock<Mutex<BTreeSet<i32>>> = OnceLock::new();
@@ -257,7 +258,12 @@ pub struct Engine<'a> {
     estimated_work_ms: u64,
     toolchain_hash: String,
     opts: BuildOptions,
-    cache: Mutex<HashCache>,
+    cache: HashCache,
+    /// Entries recorded by the *previous* build. Immutable for the duration
+    /// of this one — an action only ever consults its own entry, and never a
+    /// record written by this run — so the check path reads it without a lock.
+    previous: Journal,
+    /// Records produced by this build, appended under a lock.
     journal: Mutex<Journal>,
     shared: Mutex<Shared>,
     cv: Condvar,
@@ -511,8 +517,9 @@ impl<'a> Engine<'a> {
             estimated_work_ms,
             toolchain_hash,
             opts,
-            cache: Mutex::new(HashCache::load(root)),
-            journal: Mutex::new(journal),
+            cache: HashCache::load(root),
+            previous: journal,
+            journal: Mutex::new(Journal::default()),
             shared: Mutex::new(Shared {
                 ready,
                 waiting,
@@ -538,14 +545,18 @@ impl<'a> Engine<'a> {
 
         let shared = self.shared.into_inner().unwrap();
         if !self.opts.dry_run {
-            let journal = self.journal.into_inner().unwrap();
+            let recorded = self.journal.into_inner().unwrap();
             let journal_path = self.root.join(frostbuild_core::journal::JOURNAL_REL_PATH);
             if std::fs::metadata(journal_path).is_ok_and(|m| m.len() > 32 * 1024 * 1024) {
-                journal.save(self.root)?;
+                // Compaction rewrites the whole file, so it must carry the
+                // entries this build did not touch as well as the new ones.
+                let mut compacted = self.previous;
+                compacted.actions.extend(recorded.actions);
+                compacted.save(self.root)?;
             }
             let _ = self.cas.gc()?;
         }
-        self.cache.into_inner().unwrap().save(self.root)?;
+        self.cache.save(self.root)?;
 
         let mut results = Vec::with_capacity(self.closure.len());
         for (local, &action_id) in self.closure.iter().enumerate() {
@@ -607,16 +618,32 @@ impl<'a> Engine<'a> {
                 s.abort = true;
                 s.ready.clear();
             }
+            let mut unlocked = 0usize;
             if !s.abort {
                 for &dep in &self.dependents[local] {
                     s.waiting[dep] -= 1;
                     if s.waiting[dep] == 0 {
                         let priority = self.priority(dep);
                         s.ready.push((priority, Reverse(dep)));
+                        unlocked += 1;
                     }
                 }
             }
-            self.cv.notify_all();
+            let finished = s.pending == 0 || s.abort;
+            drop(s);
+            if finished {
+                // Everyone must wake to observe the end and return.
+                self.cv.notify_all();
+            } else {
+                // Wake one worker per action that became runnable. Waking all
+                // of them would send every idle worker to an empty queue: a
+                // dependency chain unlocks one action at a time, so on a chain
+                // of N actions `notify_all` costs N * jobs wakeups to do N
+                // units of work.
+                for _ in 0..unlocked {
+                    self.cv.notify_one();
+                }
+            }
         }
     }
 
@@ -657,13 +684,7 @@ impl<'a> Engine<'a> {
             };
         }
 
-        let previous = {
-            let journal = self.journal.lock().unwrap();
-            journal
-                .actions
-                .get(&journal_id(self.graph, action))
-                .cloned()
-        };
+        let previous = self.previous.actions.get(&journal_id(self.graph, action));
 
         // Declared inputs + inputs discovered by the previous run's depfile.
         let mut input_paths: Vec<String> = action
@@ -742,13 +763,10 @@ impl<'a> Engine<'a> {
             };
         }
 
-        {
-            let mut cache = self.cache.lock().unwrap();
-            for &out in &action.outputs {
-                let path = &self.graph.files[out].path;
-                cache.invalidate(path);
-                let _ = std::fs::remove_file(self.root.join(path));
-            }
+        for &out in &action.outputs {
+            let path = &self.graph.files[out].path;
+            self.cache.invalidate(path);
+            let _ = std::fs::remove_file(self.root.join(path));
         }
 
         let started = Instant::now();
@@ -924,7 +942,7 @@ impl<'a> Engine<'a> {
                 }
             }
             for path in &output_paths {
-                self.cache.lock().unwrap().invalidate(path);
+                self.cache.invalidate(path);
             }
             let second_outputs = match self.digest_all(&output_paths) {
                 Ok(value) => value,
@@ -1003,16 +1021,14 @@ impl<'a> Engine<'a> {
     }
 
     fn digest_all(&self, paths: &[String]) -> Result<BTreeMap<String, String>> {
-        let mut cache = self.cache.lock().unwrap();
-        cache.digest_many(self.root, paths)
+        self.cache.digest_many(self.root, paths)
     }
 
     /// Returns Ok(None) when all recorded outputs are on disk with matching
     /// digests, or Ok(Some(path)) naming the first stale output.
     fn outputs_intact(&self, prev: &JournalEntry) -> Result<Option<String>> {
-        let mut cache = self.cache.lock().unwrap();
         for (path, recorded) in &prev.outputs {
-            let current = cache.digest(self.root, path)?;
+            let current = self.cache.digest(self.root, path)?;
             if &current != recorded {
                 return Ok(Some(path.clone()));
             }
@@ -1042,7 +1058,7 @@ impl<'a> Engine<'a> {
             if !self.cas.materialize(digest, &self.root.join(path))? {
                 return Ok(false);
             }
-            self.cache.lock().unwrap().invalidate(path);
+            self.cache.invalidate(path);
         }
         Ok(true)
     }
@@ -1424,22 +1440,98 @@ pub fn toolchain_closure_fingerprint(
     Ok(hasher.finalize().to_hex().to_string())
 }
 
+/// Stat identity of the toolchain binaries that produced a fingerprint.
+#[derive(Serialize, Deserialize, PartialEq, Eq)]
+struct ToolchainStamp {
+    tools: Vec<(String, i128, u64, u64)>,
+    fingerprint: String,
+}
+
+const TOOLCHAIN_STAMP_PATH: &str = ".frost/toolchain.bin";
+
+/// Fingerprint of the compiler closure, cached by the stat identity of the
+/// three driver binaries.
+///
+/// This used to load the workspace-wide content cache — megabytes covering
+/// every source file — to digest three executables. It now keeps its own
+/// stamp: three stats on the warm path, and the binaries are re-hashed only
+/// when one of them actually changed.
 pub fn toolchain_closure_fingerprint_cached(
     root: &Path,
     toolchain: &frostbuild_core::manifest::Toolchain,
 ) -> Result<String> {
-    let mut cache = HashCache::load(root);
-    let mut hasher = blake3::Hasher::new();
+    let mut tools = Vec::with_capacity(3);
+    let mut resolved_paths = Vec::with_capacity(3);
     for tool in [&toolchain.cc, &toolchain.cxx, &toolchain.ar] {
+        // A manifest may name a driver by a workspace-relative path (a
+        // wrapper script for a cross toolchain, say), which only resolves
+        // against the workspace root, not the process working directory.
         let resolved = resolve_executable(tool)?;
-        let path = resolved.to_string_lossy().into_owned();
+        let resolved = if resolved.is_absolute() {
+            resolved
+        } else {
+            root.join(resolved)
+        };
+        let stat = std::fs::metadata(&resolved)
+            .map(|m| stat_identity(&m))
+            .unwrap_or((0, 0, 0));
+        tools.push((
+            resolved.to_string_lossy().into_owned(),
+            stat.0,
+            stat.1,
+            stat.2,
+        ));
+        resolved_paths.push((tool.clone(), resolved));
+    }
+
+    let stamp_path = root.join(TOOLCHAIN_STAMP_PATH);
+    if let Some(stamp) = std::fs::read(&stamp_path)
+        .ok()
+        .and_then(|b| postcard::from_bytes::<ToolchainStamp>(&b).ok())
+    {
+        if stamp.tools == tools {
+            return Ok(stamp.fingerprint);
+        }
+    }
+
+    let mut hasher = blake3::Hasher::new();
+    for (tool, resolved) in &resolved_paths {
         hasher.update(tool.as_bytes());
         hasher.update(b"\0");
-        hasher.update(cache.digest(root, &path)?.as_bytes());
+        hasher.update(
+            frostbuild_core::hashcache::hash_file(resolved)
+                .with_context(|| format!("compiler {} not accessible", resolved.display()))?
+                .as_bytes(),
+        );
         hasher.update(b"\0");
     }
-    cache.save(root)?;
-    Ok(hasher.finalize().to_hex().to_string())
+    let fingerprint = hasher.finalize().to_hex().to_string();
+    if let Some(parent) = stamp_path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let stamp = ToolchainStamp {
+        tools,
+        fingerprint: fingerprint.clone(),
+    };
+    let tmp = stamp_path.with_extension("bin.tmp");
+    std::fs::write(&tmp, postcard::to_allocvec(&stamp)?)?;
+    std::fs::rename(&tmp, &stamp_path)?;
+    Ok(fingerprint)
+}
+
+#[cfg(unix)]
+fn stat_identity(meta: &std::fs::Metadata) -> (i128, u64, u64) {
+    use std::os::unix::fs::MetadataExt;
+    (
+        i128::from(meta.mtime()) * 1_000_000_000 + i128::from(meta.mtime_nsec()),
+        meta.size(),
+        meta.ino(),
+    )
+}
+
+#[cfg(not(unix))]
+fn stat_identity(meta: &std::fs::Metadata) -> (i128, u64, u64) {
+    (0, meta.len(), 0)
 }
 
 fn resolve_executable(tool: &str) -> Result<PathBuf> {

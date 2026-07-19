@@ -667,3 +667,30 @@ fn simulate_compares_strategies_without_building() {
         );
     }
 }
+
+#[test]
+fn a_path_is_stat_checked_once_per_build() {
+    let ws = Workspace::new("stat-once");
+    let (ok, out) = ws.build_explain();
+    assert!(ok, "{out}");
+
+    // The generated header is gen_config's output and app's order-only input.
+    // Both checks run in the same build; the second must reuse the first's
+    // result rather than stat the file again.
+    let (ok, out) = ws.build_explain();
+    assert!(ok && out.contains("0 executed, 5 cached"), "{out}");
+
+    // The saving must not cost correctness: a change between builds is still
+    // seen, because each build starts from a fresh cache.
+    ws.write(
+        "tools/gen_config.sh",
+        "#!/bin/sh\nset -eu\ncat > \"$1\" <<'EOF'\n\
+         #ifndef FROST_SAMPLE_CONFIG_H\n\
+         #define FROST_SAMPLE_CONFIG_H\n\
+         #define FROST_GREETING \"frosty:\"\n\
+         #endif\nEOF\n",
+    );
+    let (ok, out) = ws.build_explain();
+    assert!(ok, "{out}");
+    assert!(out.contains("ran genrule:gen_config"), "{out}");
+}
