@@ -26,6 +26,9 @@ Useful production workflows:
 # Isolated debug/release trees
 frost -C myrepo build --profile release -j 16
 
+# Cross/device builds: declare [platform.aarch64] in frost.toml, then
+frost -C myrepo build --platform aarch64 --profile release
+
 # Build and cache test targets; select only affected tests
 frost -C myrepo test --affected --explain
 frost -C myrepo test --all --no-cache
@@ -46,6 +49,7 @@ frost -C myrepo daemon status
 - real C/C++ compilation, libraries, binaries, `cc_test`, shell tests, genrules
 - deterministic glob expansion and multi-package `//package:target` labels
 - debug/release/custom profiles with independent output/cache identities
+- `[platform.*]` cross/device toolchains with per-platform trees and caches
 - dynamic GCC/Clang depfile ingestion and generated-file order-only edges
 - parallel critical-path scheduler, captured diagnostics and `--keep-going`
 - stat cache, parallel BLAKE3 hashing and toolchain closure fingerprinting

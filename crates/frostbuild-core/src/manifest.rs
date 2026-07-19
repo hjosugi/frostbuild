@@ -8,6 +8,10 @@ use crate::paths::validate_rel_path;
 
 pub const MANIFEST_FILE: &str = "frost.toml";
 
+/// The implicit platform backed by the root `[toolchain]` table. Building for
+/// it keeps historical output paths and cache identities unchanged.
+pub const HOST_PLATFORM: &str = "host";
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum TargetKind {
@@ -45,6 +49,28 @@ struct RawToolchain {
     cc: Option<String>,
     cxx: Option<String>,
     ar: Option<String>,
+    #[serde(default)]
+    arflags: Option<Vec<String>>,
+    #[serde(default)]
+    cflags: Vec<String>,
+    #[serde(default)]
+    cxxflags: Vec<String>,
+    #[serde(default)]
+    ldflags: Vec<String>,
+}
+
+/// A named build platform: a toolchain overlay for cross/device builds.
+/// Unset drivers inherit from the root `[toolchain]`; flags are appended
+/// after the root toolchain's flags; `sysroot` expands to `--sysroot=`.
+#[derive(Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RawPlatform {
+    cc: Option<String>,
+    cxx: Option<String>,
+    ar: Option<String>,
+    #[serde(default)]
+    arflags: Option<Vec<String>>,
+    sysroot: Option<String>,
     #[serde(default)]
     cflags: Vec<String>,
     #[serde(default)]
@@ -95,6 +121,8 @@ struct RawManifest {
     #[serde(default)]
     toolchain: RawToolchain,
     #[serde(default)]
+    platform: BTreeMap<String, RawPlatform>,
+    #[serde(default)]
     profile: BTreeMap<String, RawProfile>,
     #[serde(default)]
     target: BTreeMap<String, RawTarget>,
@@ -105,6 +133,20 @@ pub struct Toolchain {
     pub cc: String,
     pub cxx: String,
     pub ar: String,
+    pub arflags: Vec<String>,
+    pub cflags: Vec<String>,
+    pub cxxflags: Vec<String>,
+    pub ldflags: Vec<String>,
+}
+
+/// Toolchain overlay declared as `[platform.<name>]`; see `RawPlatform`.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct Platform {
+    pub cc: Option<String>,
+    pub cxx: Option<String>,
+    pub ar: Option<String>,
+    pub arflags: Option<Vec<String>>,
+    pub sysroot: Option<String>,
     pub cflags: Vec<String>,
     pub cxxflags: Vec<String>,
     pub ldflags: Vec<String>,
@@ -140,6 +182,7 @@ pub struct Target {
 pub struct Manifest {
     pub default_targets: Vec<String>,
     pub toolchain: Toolchain,
+    pub platforms: BTreeMap<String, Platform>,
     pub profiles: BTreeMap<String, Profile>,
     pub targets: BTreeMap<String, Target>,
     /// Manifests which contributed to this workspace, used by graph caching.
@@ -222,6 +265,45 @@ impl Manifest {
         Self::from_raw(raw)
     }
 
+    /// Resolves the effective toolchain for a platform: the root `[toolchain]`
+    /// for `host`, otherwise that toolchain with the `[platform.<name>]`
+    /// overlay applied (driver overrides, appended flags, sysroot expansion).
+    pub fn toolchain_for(&self, platform: &str) -> Result<Toolchain> {
+        if platform == HOST_PLATFORM {
+            return Ok(self.toolchain.clone());
+        }
+        let Some(spec) = self.platforms.get(platform) else {
+            let known: Vec<&str> = self.platforms.keys().map(String::as_str).collect();
+            bail!(
+                "unknown platform {platform:?} (declared platforms: {})",
+                if known.is_empty() {
+                    "none".to_string()
+                } else {
+                    known.join(", ")
+                }
+            );
+        };
+        let base = &self.toolchain;
+        let mut resolved = Toolchain {
+            cc: spec.cc.clone().unwrap_or_else(|| base.cc.clone()),
+            cxx: spec.cxx.clone().unwrap_or_else(|| base.cxx.clone()),
+            ar: spec.ar.clone().unwrap_or_else(|| base.ar.clone()),
+            arflags: spec.arflags.clone().unwrap_or_else(|| base.arflags.clone()),
+            cflags: base.cflags.clone(),
+            cxxflags: base.cxxflags.clone(),
+            ldflags: base.ldflags.clone(),
+        };
+        if let Some(sysroot) = &spec.sysroot {
+            let flag = format!("--sysroot={sysroot}");
+            resolved.cflags.push(flag.clone());
+            resolved.ldflags.push(flag);
+        }
+        resolved.cflags.extend(spec.cflags.iter().cloned());
+        resolved.cxxflags.extend(spec.cxxflags.iter().cloned());
+        resolved.ldflags.extend(spec.ldflags.iter().cloned());
+        Ok(resolved)
+    }
+
     fn from_raw(raw: RawManifest) -> Result<Self> {
         let manifest = Self::from_raw_unvalidated(raw)?;
         if manifest.targets.is_empty() {
@@ -255,16 +337,44 @@ impl Manifest {
             raw.workspace.default_targets
         };
 
+        let mut platforms = BTreeMap::new();
+        for (name, spec) in raw.platform {
+            if name == HOST_PLATFORM {
+                bail!("platform name {HOST_PLATFORM:?} is reserved for the root [toolchain]");
+            }
+            if !valid_target_name(&name) {
+                bail!("platform name must match [A-Za-z0-9_-]+, got {name:?}");
+            }
+            platforms.insert(
+                name,
+                Platform {
+                    cc: spec.cc,
+                    cxx: spec.cxx,
+                    ar: spec.ar,
+                    arflags: spec.arflags,
+                    sysroot: spec.sysroot,
+                    cflags: spec.cflags,
+                    cxxflags: spec.cxxflags,
+                    ldflags: spec.ldflags,
+                },
+            );
+        }
+
         Ok(Self {
             default_targets,
             toolchain: Toolchain {
                 cc: raw.toolchain.cc.unwrap_or_else(|| "cc".to_string()),
                 cxx: raw.toolchain.cxx.unwrap_or_else(|| "c++".to_string()),
                 ar: raw.toolchain.ar.unwrap_or_else(|| "ar".to_string()),
+                arflags: raw
+                    .toolchain
+                    .arflags
+                    .unwrap_or_else(|| vec!["rcsD".to_string()]),
                 cflags: raw.toolchain.cflags,
                 cxxflags: raw.toolchain.cxxflags,
                 ldflags: raw.toolchain.ldflags,
             },
+            platforms,
             profiles: raw
                 .profile
                 .into_iter()
@@ -575,6 +685,73 @@ mod tests {
             cost_ms = 30
         "#;
         assert!(Manifest::parse_str(text).is_err());
+    }
+
+    #[test]
+    fn platform_overlay_resolves_toolchain() {
+        let text = r#"
+            [toolchain]
+            cc = "gcc"
+            cxx = "g++"
+            cflags = ["-O2"]
+
+            [platform.aarch64]
+            cc = "aarch64-linux-gnu-gcc"
+            sysroot = "sysroots/aarch64"
+            cflags = ["-mcpu=cortex-a53"]
+            ldflags = ["-static"]
+
+            [target.app]
+            kind = "cc_binary"
+            srcs = ["a.c"]
+        "#;
+        let m = Manifest::parse_str(text).unwrap();
+
+        let host = m.toolchain_for(HOST_PLATFORM).unwrap();
+        assert_eq!(host.cc, "gcc");
+        assert_eq!(host.cflags, vec!["-O2"]);
+        assert_eq!(host.arflags, vec!["rcsD"]);
+
+        let cross = m.toolchain_for("aarch64").unwrap();
+        assert_eq!(cross.cc, "aarch64-linux-gnu-gcc");
+        assert_eq!(cross.cxx, "g++", "unset drivers inherit the root toolchain");
+        assert_eq!(
+            cross.cflags,
+            vec!["-O2", "--sysroot=sysroots/aarch64", "-mcpu=cortex-a53"]
+        );
+        assert_eq!(cross.ldflags, vec!["--sysroot=sysroots/aarch64", "-static"]);
+    }
+
+    #[test]
+    fn unknown_platform_errors_with_candidates() {
+        let m = Manifest::parse_str(
+            r#"
+            [platform.rv64]
+            cc = "riscv64-elf-gcc"
+
+            [target.app]
+            kind = "cc_binary"
+            srcs = ["a.c"]
+            "#,
+        )
+        .unwrap();
+        let err = m.toolchain_for("nope").unwrap_err().to_string();
+        assert!(err.contains("unknown platform"), "{err}");
+        assert!(err.contains("rv64"), "{err}");
+    }
+
+    #[test]
+    fn rejects_reserved_host_platform() {
+        let text = r#"
+            [platform.host]
+            cc = "gcc"
+
+            [target.app]
+            kind = "cc_binary"
+            srcs = ["a.c"]
+        "#;
+        let err = Manifest::parse_str(text).unwrap_err().to_string();
+        assert!(err.contains("reserved"), "{err}");
     }
 
     #[test]

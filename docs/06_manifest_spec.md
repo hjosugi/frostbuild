@@ -45,6 +45,33 @@ C sources use `cc`; `.cc/.cpp/.cxx/.C/.c++` use `cxx`. Any C++ source makes a
 binary link with `cxx`. Compiler, C++ compiler, archiver and sysroot identity are
 fingerprinted into action keys. C++20 modules are not v1 functionality.
 
+`arflags` (default `["rcsD"]`) overrides the archiver invocation for toolchains
+whose `ar` lacks GNU's deterministic flag.
+
+## Platforms (cross / device builds)
+
+```toml
+[platform.aarch64]
+cc = "aarch64-linux-gnu-gcc"     # unset drivers inherit [toolchain]
+cxx = "aarch64-linux-gnu-g++"
+ar = "aarch64-linux-gnu-ar"
+arflags = ["rcsD"]               # optional archiver-flag override
+sysroot = "sysroots/aarch64"     # expands to --sysroot= on cflags/ldflags
+cflags = ["-mcpu=cortex-a53"]    # appended after [toolchain] flags
+ldflags = ["-static"]
+```
+
+A platform is a toolchain overlay named in the root manifest; `host` is
+reserved for the root `[toolchain]`. `frost build --platform NAME` (also on
+`test`, `plan`, `graph`, `compdb`, `explain`, `clean`) selects it and is
+orthogonal to `--profile`: outputs land in `.frost/{obj,lib,bin}/NAME/PROFILE/…`
+and cache/journal identities carry the platform, so host and device builds stay
+warm concurrently and switching between them never rebuilds. The platform's
+resolved drivers are fingerprinted per build, so distinct cross-compilers never
+share cache entries. Hermetic cross toolchains (for example `zig cc -target
+aarch64-linux-musl` behind a wrapper script) work unchanged; genrules and shell
+tests still execute on the host.
+
 ## C/C++ targets
 
 ```toml

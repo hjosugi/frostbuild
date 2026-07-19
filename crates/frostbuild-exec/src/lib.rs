@@ -831,8 +831,15 @@ impl<'a> Engine<'a> {
     }
 }
 
-fn journal_id(graph: &BuildGraph, action: &frostbuild_core::graph::ActionNode) -> String {
-    format!("{}@{}", action.id, graph.profile)
+/// Journal namespace for an action: host builds keep the historical
+/// `id@profile` form; platform builds add the platform segment so each
+/// (platform, profile) pair has an independent cache identity.
+pub fn journal_id(graph: &BuildGraph, action: &frostbuild_core::graph::ActionNode) -> String {
+    if graph.platform == frostbuild_core::manifest::HOST_PLATFORM {
+        format!("{}@{}", action.id, graph.profile)
+    } else {
+        format!("{}@{}@{}", action.id, graph.platform, graph.profile)
+    }
 }
 
 fn default_duration(kind: ActionKind) -> u64 {

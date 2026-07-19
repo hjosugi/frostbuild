@@ -3,7 +3,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
 
-use crate::manifest::{Manifest, TargetKind};
+use crate::manifest::{Manifest, TargetKind, HOST_PLATFORM};
 
 pub type FileId = usize;
 pub type ActionId = usize;
@@ -62,6 +62,9 @@ pub struct BuildGraph {
     pub actions: Vec<ActionNode>,
     pub targets: BTreeMap<String, TargetNode>,
     pub profile: String,
+    /// Platform this graph was configured for; `host` uses the root
+    /// `[toolchain]` and historical (platform-free) output paths.
+    pub platform: String,
     #[serde(skip)]
     file_ids: HashMap<String, FileId>,
 }
@@ -72,6 +75,14 @@ impl BuildGraph {
     }
 
     pub fn from_manifest_with_profile(manifest: &Manifest, profile: &str) -> Result<Self> {
+        Self::from_manifest_configured(manifest, profile, HOST_PLATFORM)
+    }
+
+    pub fn from_manifest_configured(
+        manifest: &Manifest,
+        profile: &str,
+        platform: &str,
+    ) -> Result<Self> {
         if profile.is_empty()
             || !profile
                 .chars()
@@ -79,9 +90,18 @@ impl BuildGraph {
         {
             bail!("invalid profile name {profile:?}");
         }
+        let toolchain = manifest.toolchain_for(platform)?;
+        // The host platform keeps historical single-segment output trees so
+        // existing workspaces, journals and docs stay valid verbatim.
+        let tree = if platform == HOST_PLATFORM {
+            profile.to_string()
+        } else {
+            format!("{platform}/{profile}")
+        };
         let order = toposort_targets(manifest)?;
         let mut graph = BuildGraph {
             profile: profile.to_string(),
+            platform: platform.to_string(),
             ..BuildGraph::default()
         };
         let profile_flags = manifest.profiles.get(profile).cloned().unwrap_or_default();
@@ -162,12 +182,12 @@ impl BuildGraph {
                     for dep in &target.deps {
                         inputs.extend(dep_outputs(&graph, dep));
                     }
-                    let stamp = format!(".frost/test/{profile}/{}/passed", path_key(name));
+                    let stamp = format!(".frost/test/{tree}/{}/passed", path_key(name));
                     let stamp_id = graph.file(&stamp);
                     let command = format!(
                         "{} && mkdir -p {} && : > {}",
                         target.cmd.as_deref().unwrap(),
-                        shell_quote(&format!(".frost/test/{profile}/{}", path_key(name))),
+                        shell_quote(&format!(".frost/test/{tree}/{}", path_key(name))),
                         shell_quote(&stamp)
                     );
                     let action = graph.push_action(ActionNode {
@@ -189,7 +209,7 @@ impl BuildGraph {
                     genrule_outputs.insert(name.clone(), gen_outs);
                 }
                 TargetKind::CcBinary | TargetKind::CcLibrary | TargetKind::CcTest => {
-                    let tc = &manifest.toolchain;
+                    let tc = &toolchain;
                     let mut cflags: Vec<String> = tc.cflags.clone();
                     cflags.extend(profile_flags.cflags.iter().cloned());
                     cflags.extend(target.cflags.iter().cloned());
@@ -204,7 +224,7 @@ impl BuildGraph {
                     for src in &target.srcs {
                         let is_cxx = is_cxx_source(src);
                         let driver = if is_cxx { &tc.cxx } else { &tc.cc };
-                        let obj = format!("{OBJ_DIR}/{profile}/{}/{src}.o", path_key(name));
+                        let obj = format!("{OBJ_DIR}/{tree}/{}/{src}.o", path_key(name));
                         let depfile = format!("{obj}.d");
                         let mut argv = vec![driver.clone()];
                         argv.extend(cflags.iter().cloned());
@@ -248,8 +268,10 @@ impl BuildGraph {
 
                     match target.kind {
                         TargetKind::CcLibrary => {
-                            let lib = format!("{LIB_DIR}/{profile}/lib{}.a", path_key(name));
-                            let mut argv = vec![tc.ar.clone(), "rcsD".into(), lib.clone()];
+                            let lib = format!("{LIB_DIR}/{tree}/lib{}.a", path_key(name));
+                            let mut argv = vec![tc.ar.clone()];
+                            argv.extend(tc.arflags.iter().cloned());
+                            argv.push(lib.clone());
                             argv.extend(objs.iter().cloned());
                             let lib_id = graph.file(&lib);
                             let action = graph.push_action(ActionNode {
@@ -271,7 +293,7 @@ impl BuildGraph {
                             exported_libs.insert(name.clone(), exp);
                         }
                         TargetKind::CcBinary | TargetKind::CcTest => {
-                            let bin = format!("{BIN_DIR}/{profile}/{}", path_key(name));
+                            let bin = format!("{BIN_DIR}/{tree}/{}", path_key(name));
                             let link_driver = if target.srcs.iter().any(|s| is_cxx_source(s)) {
                                 &tc.cxx
                             } else {
@@ -305,16 +327,12 @@ impl BuildGraph {
                             target_node.outputs = vec![bin_id];
                             exported_libs.insert(name.clone(), libs);
                             if target.kind == TargetKind::CcTest {
-                                let stamp =
-                                    format!(".frost/test/{profile}/{}/passed", path_key(name));
+                                let stamp = format!(".frost/test/{tree}/{}/passed", path_key(name));
                                 let stamp_id = graph.file(&stamp);
                                 let command = format!(
                                     "{} && mkdir -p {} && : > {}",
                                     shell_quote(&bin),
-                                    shell_quote(&format!(
-                                        ".frost/test/{profile}/{}",
-                                        path_key(name)
-                                    )),
+                                    shell_quote(&format!(".frost/test/{tree}/{}", path_key(name))),
                                     shell_quote(&stamp)
                                 );
                                 let test = graph.push_action(ActionNode {
@@ -617,6 +635,61 @@ mod tests {
         assert!(ids.contains(&"archive:util"));
         assert!(!ids.contains(&"link:app"));
         assert!(!ids.contains(&"genrule:gen"));
+    }
+
+    #[test]
+    fn platform_isolates_paths_and_selects_toolchain() {
+        let manifest = Manifest::parse_str(
+            r#"
+            [toolchain]
+            cc = "cc"
+
+            [platform.cross]
+            cc = "cross-gcc"
+            ar = "cross-ar"
+            arflags = ["rcs"]
+
+            [target.util]
+            kind = "cc_library"
+            srcs = ["src/util.c"]
+
+            [target.app]
+            kind = "cc_binary"
+            srcs = ["src/main.c"]
+            deps = ["util"]
+            "#,
+        )
+        .unwrap();
+        let graph = BuildGraph::from_manifest_configured(&manifest, "debug", "cross").unwrap();
+        assert_eq!(graph.platform, "cross");
+
+        let compile = graph
+            .actions
+            .iter()
+            .find(|a| a.id == "compile:app:src/main.c")
+            .unwrap();
+        assert_eq!(compile.argv[0], "cross-gcc");
+        let obj = format!("{OBJ_DIR}/cross/debug/app/src/main.c.o");
+        assert!(compile.argv.contains(&obj), "argv: {:?}", compile.argv);
+
+        let archive = graph
+            .actions
+            .iter()
+            .find(|a| a.id == "archive:util")
+            .unwrap();
+        assert_eq!(archive.argv[0], "cross-ar");
+        assert_eq!(archive.argv[1], "rcs");
+        assert!(archive
+            .argv
+            .contains(&format!("{LIB_DIR}/cross/debug/libutil.a")));
+
+        let link = graph.actions.iter().find(|a| a.id == "link:app").unwrap();
+        assert!(link.argv.contains(&format!("{BIN_DIR}/cross/debug/app")));
+
+        // The host graph keeps historical platform-free paths.
+        let host = BuildGraph::from_manifest_with_profile(&manifest, "debug").unwrap();
+        let host_link = host.actions.iter().find(|a| a.id == "link:app").unwrap();
+        assert!(host_link.argv.contains(&format!("{BIN_DIR}/debug/app")));
     }
 
     #[test]

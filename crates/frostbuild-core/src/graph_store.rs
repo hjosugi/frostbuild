@@ -6,21 +6,34 @@ use anyhow::{Context, Result};
 use memmap2::Mmap;
 
 use crate::graph::BuildGraph;
-use crate::manifest::Manifest;
+use crate::manifest::{Manifest, HOST_PLATFORM};
 
 const MAGIC: &[u8; 8] = b"FRSTGR01";
-const VERSION: u32 = 1;
+const VERSION: u32 = 2;
 
 pub struct GraphStore;
 
 impl GraphStore {
     pub fn load_or_compile(root: &Path, manifest: &Manifest, profile: &str) -> Result<BuildGraph> {
-        let fingerprint = manifest_fingerprint(manifest, profile)?;
-        let path = root.join(format!(".frost/graph-{profile}.bin"));
+        Self::load_or_compile_configured(root, manifest, profile, HOST_PLATFORM)
+    }
+
+    pub fn load_or_compile_configured(
+        root: &Path,
+        manifest: &Manifest,
+        profile: &str,
+        platform: &str,
+    ) -> Result<BuildGraph> {
+        let fingerprint = manifest_fingerprint(manifest, profile, platform)?;
+        let path = if platform == HOST_PLATFORM {
+            root.join(format!(".frost/graph-{profile}.bin"))
+        } else {
+            root.join(format!(".frost/graph-{platform}-{profile}.bin"))
+        };
         if let Ok(graph) = load_graph(&path, &fingerprint) {
             return Ok(graph);
         }
-        let graph = BuildGraph::from_manifest_with_profile(manifest, profile)?;
+        let graph = BuildGraph::from_manifest_configured(manifest, profile, platform)?;
         save_graph(&path, &fingerprint, &graph)?;
         Ok(graph)
     }
@@ -37,8 +50,8 @@ impl GraphStore {
     }
 }
 
-fn manifest_fingerprint(manifest: &Manifest, profile: &str) -> Result<[u8; 32]> {
-    let bytes = postcard::to_allocvec(&(manifest, profile))?;
+fn manifest_fingerprint(manifest: &Manifest, profile: &str, platform: &str) -> Result<[u8; 32]> {
+    let bytes = postcard::to_allocvec(&(manifest, profile, platform))?;
     Ok(*blake3::hash(&bytes).as_bytes())
 }
 

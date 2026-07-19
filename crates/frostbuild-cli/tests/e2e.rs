@@ -78,6 +78,88 @@ fn copy_dir(src: &Path, dst: &Path) -> std::io::Result<()> {
 }
 
 #[test]
+fn platforms_isolate_outputs_and_caches() {
+    let ws = Workspace::new("platforms");
+    ws.append(
+        "frost.toml",
+        "\n[platform.devsim]\ncflags = [\"-DDEVICE=1\"]\n",
+    );
+
+    let (ok, out) = ws.build_explain();
+    assert!(ok, "host build failed:\n{out}");
+
+    let (ok, out) = ws.frost(&["build", "--platform", "devsim", "--explain"]);
+    assert!(ok, "devsim build failed:\n{out}");
+    assert!(
+        out.contains("5 executed"),
+        "platform build must not reuse host action results:\n{out}"
+    );
+    assert!(
+        ws.dir.join(".frost/bin/devsim/debug/app").exists(),
+        "platform binary lives in a platform-segmented tree"
+    );
+    assert!(
+        ws.dir.join(".frost/bin/debug/app").exists(),
+        "host binary keeps its historical path"
+    );
+
+    // Both configurations stay warm simultaneously: switching back and
+    // forth is a cache lookup, never a rebuild (the Bazel analysis-cache
+    // wipe pain, avoided by keying every action on its configuration).
+    let (ok, out) = ws.frost(&["build", "--platform", "devsim", "--explain"]);
+    assert!(ok && out.contains("0 executed, 5 cached"), "{out}");
+    let (ok, out) = ws.build_explain();
+    assert!(ok && out.contains("0 executed, 5 cached"), "{out}");
+}
+
+#[test]
+fn unknown_platform_fails_with_diagnostic() {
+    let ws = Workspace::new("unknown-platform");
+    let (ok, out) = ws.frost(&["build", "--platform", "nope"]);
+    assert!(!ok, "build with undeclared platform must fail");
+    assert!(out.contains("unknown platform"), "{out}");
+}
+
+/// Real device cross-compilation: build the sample workspace for
+/// aarch64-linux-musl via `zig cc` and verify the produced ELF machine.
+/// Skips (with a note) when zig is not installed.
+#[test]
+#[cfg(unix)]
+fn cross_compile_aarch64_device_build() {
+    if Command::new("zig").arg("version").output().is_err() {
+        eprintln!("skipping cross_compile_aarch64_device_build: zig not in PATH");
+        return;
+    }
+    let ws = Workspace::new("cross-aarch64");
+    ws.write(
+        "tools/zig-cc",
+        "#!/bin/sh\nexec zig cc -target aarch64-linux-musl \"$@\"\n",
+    );
+    ws.write("tools/zig-ar", "#!/bin/sh\nexec zig ar \"$@\"\n");
+    for tool in ["tools/zig-cc", "tools/zig-ar"] {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(ws.dir.join(tool), std::fs::Permissions::from_mode(0o755))
+            .unwrap();
+    }
+    ws.append(
+        "frost.toml",
+        "\n[platform.aarch64]\ncc = \"tools/zig-cc\"\nar = \"tools/zig-ar\"\n",
+    );
+
+    let (ok, out) = ws.frost(&["build", "--platform", "aarch64", "--explain"]);
+    assert!(ok, "cross build failed:\n{out}");
+
+    let bin = std::fs::read(ws.dir.join(".frost/bin/aarch64/debug/app")).unwrap();
+    assert_eq!(&bin[..4], b"\x7fELF", "output must be an ELF binary");
+    let machine = u16::from_le_bytes([bin[18], bin[19]]);
+    assert_eq!(machine, 183, "e_machine must be EM_AARCH64 (183)");
+
+    // Cross results are cached independently of the host tree.
+    let (ok, out) = ws.frost(&["build", "--platform", "aarch64", "--explain"]);
+    assert!(ok && out.contains("0 executed, 5 cached"), "{out}");
+}
+
+#[test]
 fn clean_build_then_noop_is_fully_cached() {
     let ws = Workspace::new("noop");
 
