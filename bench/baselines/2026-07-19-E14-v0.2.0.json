@@ -1,0 +1,432 @@
+{
+  "config": {
+    "iterations": 5,
+    "jobs": 8,
+    "scenarios": [
+      "clean",
+      "noop",
+      "incremental_leaf",
+      "hot_header",
+      "cache_hit_rebuild"
+    ],
+    "sizes": [
+      1000,
+      10000
+    ],
+    "tools": [
+      "frost",
+      "ninja",
+      "make"
+    ]
+  },
+  "digest": "63624735968951d0978e7ddabc5f657c1de71b62e77f6bf0c0a61362fbc2f191",
+  "environment": {
+    "captured_at": "2026-07-19T13:23:42Z",
+    "cpu_count": 8,
+    "cpu_governor": "performance",
+    "hostname": "E14",
+    "load_avg": [
+      1.8076171875,
+      2.09716796875,
+      2.00927734375
+    ],
+    "machine": "x86_64",
+    "platform": "Linux-7.1.2-3-cachyos-x86_64-with-glibc2.43",
+    "processor": "",
+    "python": "3.14.6",
+    "turbo": "enabled"
+  },
+  "generated_at": "2026-07-19T13:23:42Z",
+  "results": [
+    {
+      "iterations": 5,
+      "jobs": 8,
+      "scenarios": {
+        "cache_hit_rebuild": {
+          "max_ms": 143.817,
+          "median_ms": 131.784,
+          "min_ms": 123.786,
+          "samples_ms": [
+            123.786,
+            143.817,
+            131.784,
+            126.855,
+            136.659
+          ]
+        },
+        "clean": {
+          "max_ms": 2901.559,
+          "median_ms": 2603.051,
+          "min_ms": 2479.843,
+          "samples_ms": [
+            2901.559,
+            2479.843,
+            2560.143,
+            2746.002,
+            2603.051
+          ]
+        },
+        "hot_header": {
+          "max_ms": 2174.236,
+          "median_ms": 2167.472,
+          "min_ms": 2131.326,
+          "samples_ms": [
+            2131.326,
+            2168.636,
+            2174.236,
+            2133.615,
+            2167.472
+          ]
+        },
+        "incremental_leaf": {
+          "max_ms": 28.026,
+          "median_ms": 27.574,
+          "min_ms": 26.252,
+          "samples_ms": [
+            27.574,
+            28.026,
+            26.252,
+            27.899,
+            26.966
+          ]
+        },
+        "noop": {
+          "max_ms": 26.031,
+          "median_ms": 25.628,
+          "min_ms": 24.761,
+          "samples_ms": [
+            25.841,
+            25.628,
+            26.031,
+            24.761,
+            25.177
+          ]
+        }
+      },
+      "size": 1000,
+      "status": "ok",
+      "target_count": 1000,
+      "tool": "frost"
+    },
+    {
+      "iterations": 5,
+      "jobs": 8,
+      "scenarios": {
+        "cache_hit_rebuild": {
+          "applicable": false,
+          "reason": "ninja has no content-addressed action cache in this harness"
+        },
+        "clean": {
+          "max_ms": 1081.027,
+          "median_ms": 1033.441,
+          "min_ms": 1028.623,
+          "samples_ms": [
+            1081.027,
+            1033.441,
+            1057.566,
+            1031.627,
+            1028.623
+          ]
+        },
+        "hot_header": {
+          "max_ms": 1069.689,
+          "median_ms": 1036.052,
+          "min_ms": 1013.08,
+          "samples_ms": [
+            1013.08,
+            1037.513,
+            1069.689,
+            1027.72,
+            1036.052
+          ]
+        },
+        "incremental_leaf": {
+          "max_ms": 7.666,
+          "median_ms": 7.5,
+          "min_ms": 7.334,
+          "samples_ms": [
+            7.666,
+            7.334,
+            7.373,
+            7.5,
+            7.61
+          ]
+        },
+        "noop": {
+          "max_ms": 6.177,
+          "median_ms": 5.906,
+          "min_ms": 5.448,
+          "samples_ms": [
+            5.906,
+            5.448,
+            6.029,
+            5.748,
+            6.177
+          ]
+        }
+      },
+      "size": 1000,
+      "status": "ok",
+      "target_count": 1000,
+      "tool": "ninja"
+    },
+    {
+      "iterations": 5,
+      "jobs": 8,
+      "scenarios": {
+        "cache_hit_rebuild": {
+          "applicable": false,
+          "reason": "make has no content-addressed action cache in this harness"
+        },
+        "clean": {
+          "max_ms": 1283.26,
+          "median_ms": 1270.044,
+          "min_ms": 1228.905,
+          "samples_ms": [
+            1281.887,
+            1270.044,
+            1245.541,
+            1228.905,
+            1283.26
+          ]
+        },
+        "hot_header": {
+          "max_ms": 1285.796,
+          "median_ms": 1250.719,
+          "min_ms": 1223.625,
+          "samples_ms": [
+            1283.554,
+            1285.796,
+            1223.625,
+            1250.719,
+            1224.69
+          ]
+        },
+        "incremental_leaf": {
+          "max_ms": 141.21,
+          "median_ms": 136.304,
+          "min_ms": 130.172,
+          "samples_ms": [
+            136.304,
+            135.784,
+            141.21,
+            130.172,
+            138.179
+          ]
+        },
+        "noop": {
+          "max_ms": 160.045,
+          "median_ms": 145.97,
+          "min_ms": 132.983,
+          "samples_ms": [
+            145.413,
+            145.97,
+            132.983,
+            147.49,
+            160.045
+          ]
+        }
+      },
+      "size": 1000,
+      "status": "ok",
+      "target_count": 1000,
+      "tool": "make"
+    },
+    {
+      "iterations": 5,
+      "jobs": 8,
+      "scenarios": {
+        "cache_hit_rebuild": {
+          "max_ms": 2320.302,
+          "median_ms": 1833.641,
+          "min_ms": 1731.667,
+          "samples_ms": [
+            1731.667,
+            1778.252,
+            1833.641,
+            2013.097,
+            2320.302
+          ]
+        },
+        "clean": {
+          "max_ms": 28370.283,
+          "median_ms": 27484.193,
+          "min_ms": 25138.424,
+          "samples_ms": [
+            27484.193,
+            28370.283,
+            27537.351,
+            25138.424,
+            25799.539
+          ]
+        },
+        "hot_header": {
+          "max_ms": 24365.608,
+          "median_ms": 24192.009,
+          "min_ms": 22556.566,
+          "samples_ms": [
+            24364.225,
+            24192.009,
+            24365.608,
+            22556.566,
+            23496.682
+          ]
+        },
+        "incremental_leaf": {
+          "max_ms": 239.104,
+          "median_ms": 228.693,
+          "min_ms": 226.411,
+          "samples_ms": [
+            228.693,
+            226.411,
+            227.65,
+            232.693,
+            239.104
+          ]
+        },
+        "noop": {
+          "max_ms": 255.839,
+          "median_ms": 232.734,
+          "min_ms": 221.817,
+          "samples_ms": [
+            255.839,
+            237.502,
+            228.696,
+            232.734,
+            221.817
+          ]
+        }
+      },
+      "size": 10000,
+      "status": "ok",
+      "target_count": 10000,
+      "tool": "frost"
+    },
+    {
+      "iterations": 5,
+      "jobs": 8,
+      "scenarios": {
+        "cache_hit_rebuild": {
+          "applicable": false,
+          "reason": "ninja has no content-addressed action cache in this harness"
+        },
+        "clean": {
+          "max_ms": 11937.241,
+          "median_ms": 11430.446,
+          "min_ms": 10869.913,
+          "samples_ms": [
+            11937.241,
+            10869.913,
+            11430.446,
+            11106.206,
+            11532.916
+          ]
+        },
+        "hot_header": {
+          "max_ms": 11840.734,
+          "median_ms": 10716.488,
+          "min_ms": 10599.137,
+          "samples_ms": [
+            10660.761,
+            10599.137,
+            11840.734,
+            11621.581,
+            10716.488
+          ]
+        },
+        "incremental_leaf": {
+          "max_ms": 49.642,
+          "median_ms": 48.028,
+          "min_ms": 47.261,
+          "samples_ms": [
+            49.642,
+            48.028,
+            48.102,
+            47.261,
+            47.611
+          ]
+        },
+        "noop": {
+          "max_ms": 50.976,
+          "median_ms": 46.565,
+          "min_ms": 44.83,
+          "samples_ms": [
+            50.976,
+            45.887,
+            46.565,
+            49.526,
+            44.83
+          ]
+        }
+      },
+      "size": 10000,
+      "status": "ok",
+      "target_count": 10000,
+      "tool": "ninja"
+    },
+    {
+      "iterations": 5,
+      "jobs": 8,
+      "scenarios": {
+        "cache_hit_rebuild": {
+          "applicable": false,
+          "reason": "make has no content-addressed action cache in this harness"
+        },
+        "clean": {
+          "max_ms": 32602.328,
+          "median_ms": 30060.436,
+          "min_ms": 29579.248,
+          "samples_ms": [
+            32602.328,
+            29579.248,
+            30057.45,
+            30324.702,
+            30060.436
+          ]
+        },
+        "hot_header": {
+          "max_ms": 29598.871,
+          "median_ms": 28716.49,
+          "min_ms": 28089.625,
+          "samples_ms": [
+            28089.625,
+            28716.49,
+            28963.073,
+            29598.871,
+            28193.005
+          ]
+        },
+        "incremental_leaf": {
+          "max_ms": 2312.352,
+          "median_ms": 2212.562,
+          "min_ms": 2130.765,
+          "samples_ms": [
+            2212.562,
+            2130.765,
+            2312.352,
+            2271.487,
+            2130.875
+          ]
+        },
+        "noop": {
+          "max_ms": 2511.114,
+          "median_ms": 2351.803,
+          "min_ms": 2182.443,
+          "samples_ms": [
+            2351.803,
+            2511.114,
+            2182.443,
+            2273.731,
+            2376.747
+          ]
+        }
+      },
+      "size": 10000,
+      "status": "ok",
+      "target_count": 10000,
+      "tool": "make"
+    }
+  ],
+  "schema": "frost-bench-standard-v1",
+  "suite": "standard"
+}

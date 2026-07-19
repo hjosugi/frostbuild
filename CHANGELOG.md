@@ -22,12 +22,27 @@ All notable changes follow Keep a Changelog and Semantic Versioning. Before
 - `docs/15_research_cache_layers.md`: layered cache research direction
   (equivalence / dimension hashes / distance) with adoption priorities.
 - Refreshed benchmark evidence on a desktop host (frost vs ninja vs make,
-  1k/10k, clean/incremental/no-op): `bench/results-2026-07-19-local.json`.
+  1k/10k, clean/incremental/no-op): `bench/baselines/2026-07-19-E14-v0.2.0.json`.
+
+### Performance
+
+- Graph construction on deep dependency chains dropped from O(n^3) to
+  O(n + edges) via structurally shared transitive export sets (#78):
+  a 10k-target linear chain now configures in 275 ms instead of ~19 min,
+  with action argv and cache keys byte-for-byte unchanged.
+- Manifest-free warm path: the graph store embeds a sources stamp
+  (manifest/ignore-file bytes + per-directory mtime_ns) plus the resolved
+  toolchain and default targets, so warm invocations of every subcommand
+  skip TOML parsing entirely; the hash cache moved from JSON to versioned
+  postcard. 10k-target no-op build: 445 ms → 241 ms. Remaining gap to
+  Ninja's ~50 ms is tracked in #81 (resident daemon targets <5 ms, #25).
 
 ### Changed
 
-- Graph store format bumped to version 2 (adds the platform axis); stale
-  caches recompile transparently.
+- Graph store format bumped to version 3 (platform axis, sources stamp,
+  embedded toolchain); stale caches recompile transparently.
+- Hash cache lives at `.frost/hashcache.bin`; the legacy JSON file is
+  removed opportunistically.
 
 ## [0.1.0] - 2026-07-12
 

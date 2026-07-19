@@ -334,11 +334,11 @@ checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 
 [[package]]
 name = "frostbuild-bench"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "frostbuild-cli"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -351,7 +351,7 @@ dependencies = [
 
 [[package]]
 name = "frostbuild-core"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "blake3",
@@ -368,7 +368,7 @@ dependencies = [
 
 [[package]]
 name = "frostbuild-daemon"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -379,7 +379,7 @@ dependencies = [
 
 [[package]]
 name = "frostbuild-exec"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "blake3",
@@ -391,7 +391,7 @@ dependencies = [
 
 [[package]]
 name = "frostbuild-store"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "frostbuild-core",
 ]

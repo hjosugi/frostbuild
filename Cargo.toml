@@ -10,7 +10,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "0BSD"
 repository = "https://github.com/hjosugi/frost-build"
@@ -31,10 +31,10 @@ libc = "0.2"
 notify = "8"
 ignore = "0.4"
 proptest = "1"
-frostbuild-core = { version = "0.1.0", path = "crates/frostbuild-core" }
-frostbuild-exec = { version = "0.1.0", path = "crates/frostbuild-exec" }
-frostbuild-store = { version = "0.1.0", path = "crates/frostbuild-store" }
-frostbuild-daemon = { version = "0.1.0", path = "crates/frostbuild-daemon" }
+frostbuild-core = { version = "0.2.0", path = "crates/frostbuild-core" }
+frostbuild-exec = { version = "0.2.0", path = "crates/frostbuild-exec" }
+frostbuild-store = { version = "0.2.0", path = "crates/frostbuild-store" }
+frostbuild-daemon = { version = "0.2.0", path = "crates/frostbuild-daemon" }
 
 [profile.release]
 lto = "thin"
