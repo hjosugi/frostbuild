@@ -5,6 +5,15 @@ All notable changes follow Keep a Changelog and Semantic Versioning. Before
 
 ## [Unreleased]
 
+### Added
+
+- `frost init` writes a starter manifest for the C or C++ sources already in a
+  directory, and the missing-manifest error names it: running frost somewhere
+  new used to end at `missing frost.toml` with no next step. The scaffold
+  reports what it found, splits an entry point from library code, and is
+  expected to build as written — a scaffold that does not is a different dead
+  end. It refuses to overwrite an existing manifest and has `--dry-run`.
+
 ### Fixed
 
 - A `srcs` or `inputs` glob that matched no files was accepted. A typo like

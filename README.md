@@ -11,6 +11,9 @@ is [docs/06_manifest_spec.md](docs/06_manifest_spec.md).
 ## Quick start
 
 ```bash
+# In a directory that already has C or C++ sources:
+frost init && frost build
+
 cargo build --release --locked
 ./target/release/frost -C sample_c build
 ./sample_c/.frost/bin/debug/app                 # frost: 42
@@ -66,6 +69,7 @@ frost -C myrepo daemon status
 - immutable local CAS, hardlink/copy materialization and bounded GC
 - early cutoff, affected test selection and opt-in determinism checking
 - mmap/versioned graph cache, `plan`, `explain`, Chrome trace and compdb
+- `init` scaffolds a manifest from the sources already present
 - `query deps/rdeps/somepath` over the target graph with JSON output
 - `simulate`: deterministic scheduler comparison from journal durations, and
   `build --stats` to calibrate it against a real run

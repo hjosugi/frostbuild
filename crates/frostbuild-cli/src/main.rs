@@ -146,6 +146,12 @@ enum Cmd {
         #[arg(long, default_value = frostbuild_core::manifest::HOST_PLATFORM)]
         platform: String,
     },
+    /// Write a starter frost.toml for the C or C++ sources already here
+    Init {
+        /// Print the manifest instead of writing it
+        #[arg(long)]
+        dry_run: bool,
+    },
     /// Compare scheduling strategies without building anything
     Simulate {
         targets: Vec<String>,
@@ -534,6 +540,7 @@ fn run(cli: Cli) -> Result<i32> {
             }
             Ok(0)
         }
+        Cmd::Init { dry_run } => run_init(&root, dry_run),
         Cmd::Simulate {
             targets,
             jobs,
@@ -1292,6 +1299,32 @@ fn summarize(
         format!("{selected} actions")
     };
     format!("frost: {headline} · {scope} · {elapsed_ms} ms")
+}
+
+/// Write a starter manifest for a directory that has sources but no
+/// `frost.toml`, so the first thing a newcomer runs is not a dead end.
+fn run_init(root: &std::path::Path, dry_run: bool) -> Result<i32> {
+    let manifest_path = root.join(frostbuild_core::manifest::MANIFEST_FILE);
+    if manifest_path.exists() && !dry_run {
+        bail!(
+            "{} already exists. delete it first, or use --dry-run to see what \
+             init would write",
+            manifest_path.display()
+        );
+    }
+    let scaffold = frostbuild_core::manifest::scaffold(root)?;
+    if dry_run {
+        print!("{}", scaffold.manifest);
+        return Ok(0);
+    }
+    std::fs::write(&manifest_path, &scaffold.manifest)?;
+    println!("frost: wrote {}", manifest_path.display());
+    for line in &scaffold.summary {
+        println!("  {line}");
+    }
+    println!();
+    println!("  read it before trusting it, then: frost build");
+    Ok(0)
 }
 
 #[cfg(test)]

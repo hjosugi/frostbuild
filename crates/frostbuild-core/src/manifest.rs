@@ -228,8 +228,13 @@ pub struct Manifest {
 impl Manifest {
     pub fn load(workspace_root: &Path) -> Result<Self> {
         let path = workspace_root.join(MANIFEST_FILE);
-        let text = std::fs::read_to_string(&path)
-            .with_context(|| format!("missing {} at {}", MANIFEST_FILE, path.display()))?;
+        let text = std::fs::read_to_string(&path).map_err(|_| {
+            anyhow::anyhow!(
+                "no {MANIFEST_FILE} in {}. run `frost init` to write one, \
+                 or `-C <dir>` to build somewhere else",
+                workspace_root.display()
+            )
+        })?;
         let raw: RawManifest =
             toml::from_str(&text).with_context(|| format!("failed to parse {}", path.display()))?;
         let root_has_workspace = toml::from_str::<toml::Value>(&text)
@@ -642,6 +647,165 @@ fn validate_paths(raw: &[String]) -> Result<Vec<String>> {
         out.push(validate_rel_path(p)?);
     }
     Ok(out)
+}
+
+/// A starter manifest for a directory that has C or C++ sources but no
+/// `frost.toml` yet.
+///
+/// Deliberately shallow: it reports what it found and writes the smallest
+/// manifest that builds it, rather than inferring a target layout the author
+/// did not ask for. Anything beyond one binary and one library is a decision
+/// the author should make in the file, where it is visible.
+pub struct Scaffold {
+    pub manifest: String,
+    /// What the scan saw, for the caller to print.
+    pub summary: Vec<String>,
+}
+
+const SOURCE_EXTENSIONS: [&str; 6] = ["c", "cc", "cpp", "cxx", "C", "c++"];
+
+pub fn scaffold(root: &Path) -> Result<Scaffold> {
+    let mut sources: Vec<String> = Vec::new();
+    collect_sources(root, root, &mut sources, 0)?;
+    sources.sort();
+    if sources.is_empty() {
+        bail!(
+            "no C or C++ sources under {}. frost builds C and C++; write \
+             {MANIFEST_FILE} by hand for anything else",
+            root.display()
+        );
+    }
+
+    let has_include = root.join("include").is_dir();
+    // A file defining main is the binary; everything else is library code.
+    let entry = sources
+        .iter()
+        .find(|path| defines_main(&root.join(path)))
+        .cloned();
+
+    let mut summary = vec![format!("{} source file(s)", sources.len())];
+    let mut manifest = String::from("[workspace]\n");
+
+    let (binary_srcs, library_srcs): (Vec<String>, Vec<String>) = match &entry {
+        Some(entry) => {
+            summary.push(format!("entry point: {entry}"));
+            (
+                vec![entry.clone()],
+                sources.iter().filter(|s| *s != entry).cloned().collect(),
+            )
+        }
+        None => {
+            summary.push("no main() found, so everything becomes a library".into());
+            (Vec::new(), sources.clone())
+        }
+    };
+    if has_include {
+        summary.push("include/ used as the exported header directory".into());
+    }
+
+    let name = root
+        .file_name()
+        .and_then(|n| n.to_str())
+        .map(sanitize_name)
+        .filter(|n| !n.is_empty())
+        .unwrap_or_else(|| "app".to_string());
+    let lib_name = format!("{name}_lib");
+
+    let default_target = if binary_srcs.is_empty() {
+        // Nothing defines main, so a library is the only honest default.
+        name.clone()
+    } else {
+        name.clone()
+    };
+    manifest.push_str(&format!("default_targets = [\"{default_target}\"]\n\n"));
+    manifest.push_str("[toolchain]\ncc = \"cc\"\ncxx = \"c++\"\ncflags = [\"-Wall\"]\n\n");
+
+    if binary_srcs.is_empty() {
+        manifest.push_str(&format!("[target.{name}]\nkind = \"cc_library\"\n"));
+        manifest.push_str(&format!("srcs = {}\n", toml_array(&library_srcs)));
+        if has_include {
+            manifest.push_str("includes = [\"include\"]\n");
+        }
+    } else {
+        if !library_srcs.is_empty() {
+            manifest.push_str(&format!("[target.{lib_name}]\nkind = \"cc_library\"\n"));
+            manifest.push_str(&format!("srcs = {}\n", toml_array(&library_srcs)));
+            if has_include {
+                manifest.push_str("includes = [\"include\"]\n");
+            }
+            manifest.push('\n');
+        }
+        manifest.push_str(&format!("[target.{name}]\nkind = \"cc_binary\"\n"));
+        manifest.push_str(&format!("srcs = {}\n", toml_array(&binary_srcs)));
+        if !library_srcs.is_empty() {
+            manifest.push_str(&format!("deps = [\"{lib_name}\"]\n"));
+        } else if has_include {
+            manifest.push_str("includes = [\"include\"]\n");
+        }
+    }
+
+    Ok(Scaffold { manifest, summary })
+}
+
+fn collect_sources(root: &Path, dir: &Path, out: &mut Vec<String>, depth: usize) -> Result<()> {
+    if depth > 8 {
+        return Ok(());
+    }
+    for entry in std::fs::read_dir(dir)? {
+        let entry = entry?;
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        if name.starts_with('.') || matches!(name.as_ref(), "target" | "build" | "node_modules") {
+            continue;
+        }
+        let ty = entry.file_type()?;
+        let path = entry.path();
+        if ty.is_dir() && !ty.is_symlink() {
+            collect_sources(root, &path, out, depth + 1)?;
+        } else if ty.is_file()
+            && path
+                .extension()
+                .and_then(|e| e.to_str())
+                .is_some_and(|e| SOURCE_EXTENSIONS.contains(&e))
+        {
+            if let Ok(relative) = path.strip_prefix(root) {
+                out.push(relative.to_string_lossy().replace('\\', "/"));
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Whether a file looks like it defines `main`. A scaffold is allowed to be
+/// wrong here — the author reads the file it wrote — so this stays a textual
+/// check rather than pulling in a parser.
+fn defines_main(path: &Path) -> bool {
+    let Ok(text) = std::fs::read_to_string(path) else {
+        return false;
+    };
+    text.lines()
+        .map(str::trim_start)
+        .filter(|line| !line.starts_with("//") && !line.starts_with('*'))
+        .any(|line| line.contains("main(") && (line.contains("int ") || line.starts_with("main(")))
+}
+
+fn sanitize_name(raw: &str) -> String {
+    let name: String = raw
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '_' {
+                c
+            } else {
+                '-'
+            }
+        })
+        .collect();
+    name.trim_matches('-').to_string()
+}
+
+fn toml_array(values: &[String]) -> String {
+    let items: Vec<String> = values.iter().map(|v| format!("{v:?}")).collect();
+    format!("[{}]", items.join(", "))
 }
 
 #[cfg(test)]

@@ -835,3 +835,92 @@ fn a_glob_that_matches_nothing_is_reported_where_it_is_written() {
     let (ok, out) = ws.frost(&["build"]);
     assert!(ok, "removing the typo restores the build:\n{out}");
 }
+
+#[test]
+fn init_writes_a_manifest_that_actually_builds() {
+    // Running frost in a directory with sources but no manifest used to end
+    // at an error with no next step. The scaffold has to be good enough to
+    // build as written, or it is just a different dead end.
+    let dir = std::env::temp_dir().join(format!("frost-init-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(dir.join("src")).unwrap();
+    std::fs::create_dir_all(dir.join("include")).unwrap();
+    std::fs::write(
+        dir.join("src/main.c"),
+        "#include <stdio.h>\n#include \"util.h\"\n\
+         int main(void) { printf(\"%d\\n\", add(20, 22)); return 0; }\n",
+    )
+    .unwrap();
+    std::fs::write(
+        dir.join("src/util.c"),
+        "#include \"util.h\"\nint add(int a, int b) { return a + b; }\n",
+    )
+    .unwrap();
+    std::fs::write(dir.join("include/util.h"), "int add(int, int);\n").unwrap();
+
+    let frost = |args: &[&str]| {
+        let out = Command::new(frost_bin())
+            .arg("-C")
+            .arg(&dir)
+            .args(args)
+            .output()
+            .expect("spawn frost");
+        (
+            out.status.success(),
+            String::from_utf8_lossy(&out.stdout).to_string()
+                + &String::from_utf8_lossy(&out.stderr),
+        )
+    };
+
+    let (ok, out) = frost(&["build"]);
+    assert!(!ok);
+    assert!(
+        out.contains("frost init"),
+        "the error must name a next step:\n{out}"
+    );
+
+    let (ok, out) = frost(&["init"]);
+    assert!(ok, "{out}");
+    assert!(
+        out.contains("src/main.c"),
+        "the summary names the entry point:\n{out}"
+    );
+
+    let (ok, out) = frost(&["build"]);
+    assert!(ok, "the scaffold must build as written:\n{out}");
+    let run = Command::new(dir.join(".frost/bin/debug").join(dir.file_name().unwrap()))
+        .output()
+        .expect("run built binary");
+    assert_eq!(String::from_utf8_lossy(&run.stdout), "42\n");
+
+    // init refuses to clobber an existing manifest, and says how to look
+    // without writing.
+    let (ok, out) = frost(&["init"]);
+    assert!(!ok, "{out}");
+    assert!(out.contains("--dry-run"), "{out}");
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn init_refuses_a_directory_it_cannot_describe() {
+    let dir = std::env::temp_dir().join(format!("frost-init-empty-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("index.ts"), "export const x = 1;\n").unwrap();
+
+    let out = Command::new(frost_bin())
+        .arg("-C")
+        .arg(&dir)
+        .arg("init")
+        .output()
+        .expect("spawn frost");
+    assert!(
+        !out.status.success(),
+        "frost builds C and C++, not TypeScript"
+    );
+    let text = String::from_utf8_lossy(&out.stderr);
+    assert!(text.contains("no C or C++ sources"), "{text}");
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
