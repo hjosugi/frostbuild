@@ -34,6 +34,7 @@ pub enum ActionKind {
     Link,
     Genrule,
     Test,
+    KofunCompile,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -244,6 +245,60 @@ impl BuildGraph {
                     exported_includes.insert(name.clone(), include_set);
                     genrule_outputs.insert(name.clone(), SharedSet::join(Vec::new(), gen_parents));
                 }
+                TargetKind::KofunBinary => {
+                    let Some(driver) = toolchain.kofunc.as_ref() else {
+                        bail!(
+                            "target {name:?} is a kofun_binary but [toolchain] \
+                             does not configure kofunc"
+                        );
+                    };
+                    if target.srcs.len() != 1 {
+                        bail!(
+                            "target {name:?} is a kofun_binary with {} expanded sources; \
+                             exactly one is required",
+                            target.srcs.len()
+                        );
+                    }
+
+                    let source = &target.srcs[0];
+                    let bin = format!("{BIN_DIR}/{tree}/{}", path_key(name));
+                    let emitted_c = format!("{OBJ_DIR}/{tree}/{}/kofun.c", path_key(name));
+                    let mut inputs = vec![graph.file(source)];
+                    for dep in &target.deps {
+                        for output in dep_outputs(&graph, dep) {
+                            if !inputs.contains(&output) {
+                                inputs.push(output);
+                            }
+                        }
+                    }
+                    let bin_id = graph.file(&bin);
+                    let emitted_c_id = graph.file(&emitted_c);
+                    let action = graph.push_action(ActionNode {
+                        id: format!("kofun:{name}"),
+                        desc: format!("KOFUN {source} ({name})"),
+                        kind: ActionKind::KofunCompile,
+                        target: name.clone(),
+                        sandbox: target.sandbox,
+                        argv: vec![
+                            driver.clone(),
+                            "build".into(),
+                            source.clone(),
+                            "-o".into(),
+                            bin.clone(),
+                            "--emit-c".into(),
+                            emitted_c,
+                        ],
+                        inputs,
+                        order_only_inputs: Vec::new(),
+                        outputs: vec![bin_id, emitted_c_id],
+                        depfile: None,
+                    })?;
+                    target_node.actions.push(action);
+                    target_node.outputs = vec![bin_id];
+                    exported_libs.insert(name.clone(), SharedSet::join(Vec::new(), lib_parents));
+                    exported_includes.insert(name.clone(), include_set);
+                    genrule_outputs.insert(name.clone(), SharedSet::join(Vec::new(), gen_parents));
+                }
                 TargetKind::CcBinary | TargetKind::CcLibrary | TargetKind::CcTest => {
                     let tc = &toolchain;
                     let own_includes = include_set.flatten();
@@ -394,7 +449,9 @@ impl BuildGraph {
                                 target_node.outputs = vec![stamp_id];
                             }
                         }
-                        TargetKind::Genrule | TargetKind::Test => unreachable!(),
+                        TargetKind::Genrule | TargetKind::Test | TargetKind::KofunBinary => {
+                            unreachable!()
+                        }
                     }
 
                     exported_includes.insert(name.clone(), include_set);
@@ -553,6 +610,7 @@ impl BuildGraph {
                 TargetKind::CcTest => "box3d",
                 TargetKind::Genrule => "diamond",
                 TargetKind::Test => "component",
+                TargetKind::KofunBinary => "box",
             };
             out.push_str(&format!("  \"{}\" [shape={shape}];\n", target.name));
             for dep in &target.deps {
@@ -742,6 +800,83 @@ mod tests {
     }
 
     #[test]
+    fn kofun_binary_is_one_cacheable_action_with_declared_artifacts() {
+        let manifest = Manifest::parse_str(
+            r#"
+            [toolchain]
+            kofunc = "tools/kofun"
+
+            [target.generated]
+            kind = "genrule"
+            cmd = "generate ${out}"
+            inputs = ["schema.txt"]
+            outputs = ["generated/data.txt"]
+
+            [target.app]
+            kind = "kofun_binary"
+            srcs = ["src/main.kofun"]
+            deps = ["generated"]
+            "#,
+        )
+        .unwrap();
+        let graph = BuildGraph::from_manifest(&manifest).unwrap();
+        let action = graph.actions.iter().find(|a| a.id == "kofun:app").unwrap();
+        assert_eq!(action.kind, ActionKind::KofunCompile);
+        assert_eq!(
+            action.argv,
+            vec![
+                "tools/kofun",
+                "build",
+                "src/main.kofun",
+                "-o",
+                ".frost/bin/debug/app",
+                "--emit-c",
+                ".frost/obj/debug/app/kofun.c",
+            ]
+        );
+        assert_eq!(action.depfile, None);
+        let inputs = action
+            .inputs
+            .iter()
+            .map(|&id| graph.files[id].path.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(inputs, vec!["src/main.kofun", "generated/data.txt"]);
+        let outputs = action
+            .outputs
+            .iter()
+            .map(|&id| graph.files[id].path.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(
+            outputs,
+            vec![".frost/bin/debug/app", ".frost/obj/debug/app/kofun.c"]
+        );
+        assert_eq!(
+            graph.targets["app"]
+                .outputs
+                .iter()
+                .map(|&id| graph.files[id].path.as_str())
+                .collect::<Vec<_>>(),
+            vec![".frost/bin/debug/app"]
+        );
+        assert!(
+            graph.to_dot().contains("\"app\" [shape=box]"),
+            "{}",
+            graph.to_dot()
+        );
+    }
+
+    #[test]
+    fn kofun_binary_requires_an_explicit_compiler() {
+        let manifest =
+            Manifest::parse_str("[target.app]\nkind='kofun_binary'\nsrcs=['main.kofun']\n")
+                .unwrap();
+        let error = BuildGraph::from_manifest(&manifest)
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("does not configure kofunc"), "{error}");
+    }
+
+    #[test]
     fn compile_gets_dep_includes_and_gen_inputs() {
         let graph = BuildGraph::from_manifest(&demo_manifest()).unwrap();
         let compile = graph
@@ -857,6 +992,33 @@ mod tests {
         let host = BuildGraph::from_manifest_with_profile(&manifest, "debug").unwrap();
         let host_link = host.actions.iter().find(|a| a.id == "link:app").unwrap();
         assert!(host_link.argv.contains(&format!("{BIN_DIR}/debug/app")));
+    }
+
+    #[test]
+    fn platform_selects_kofun_compiler_and_output_tree() {
+        let manifest = Manifest::parse_str(
+            r#"
+            [toolchain]
+            kofunc = "host-kofun"
+
+            [platform.device]
+            kofunc = "device-kofun"
+
+            [target.app]
+            kind = "kofun_binary"
+            srcs = ["main.kofun"]
+            "#,
+        )
+        .unwrap();
+        let graph = BuildGraph::from_manifest_configured(&manifest, "release", "device").unwrap();
+        let action = graph.actions.iter().find(|a| a.id == "kofun:app").unwrap();
+        assert_eq!(action.argv[0], "device-kofun");
+        assert!(action
+            .argv
+            .contains(&format!("{BIN_DIR}/device/release/app")));
+        assert!(action
+            .argv
+            .contains(&format!("{OBJ_DIR}/device/release/app/kofun.c")));
     }
 
     #[test]

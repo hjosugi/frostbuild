@@ -1182,6 +1182,7 @@ fn default_duration(kind: ActionKind) -> u64 {
         ActionKind::Compile => 20,
         ActionKind::Genrule => 10,
         ActionKind::Test => 50,
+        ActionKind::KofunCompile => 30,
     }
 }
 
@@ -1258,6 +1259,7 @@ fn kind_code(kind: ActionKind) -> u8 {
         ActionKind::Link => 2,
         ActionKind::Genrule => 3,
         ActionKind::Test => 4,
+        ActionKind::KofunCompile => 5,
     }
 }
 
@@ -1452,7 +1454,7 @@ struct ToolchainStamp {
 const TOOLCHAIN_STAMP_PATH: &str = ".frost/toolchain.bin";
 
 /// Fingerprint of the compiler closure, cached by the stat identity of the
-/// three driver binaries.
+/// configured driver binaries.
 ///
 /// A second function used to exist that also mixed in `cc --print-sysroot`,
 /// but nothing called it, so the fingerprint frost actually used was the
@@ -1474,7 +1476,11 @@ pub fn toolchain_closure_fingerprint_cached(
     // The shell is in here because frost picks it, the same reason the C
     // drivers are: every genrule and shell test runs through it, and a
     // different /bin/sh can produce different bytes from the same command.
-    let all = [&toolchain.cc, &toolchain.cxx, &toolchain.ar, &shell];
+    let mut all = vec![&toolchain.cc, &toolchain.cxx, &toolchain.ar];
+    if let Some(kofunc) = &toolchain.kofunc {
+        all.push(kofunc);
+    }
+    all.push(&shell);
     let mut tools = Vec::with_capacity(all.len());
     let mut resolved_paths = Vec::with_capacity(all.len());
     for tool in all {
@@ -1577,11 +1583,13 @@ mod tests {
         // one tool frost picks and does not account for.
         let dir = std::env::temp_dir().join(format!("frost-tc-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
-        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::create_dir_all(dir.join("tools")).unwrap();
+        std::fs::write(dir.join("tools/kofun"), b"kofun compiler v1\n").unwrap();
         let toolchain = frostbuild_core::manifest::Toolchain {
             cc: "cc".into(),
             cxx: "c++".into(),
             ar: "ar".into(),
+            kofunc: Some("tools/kofun".into()),
             arflags: vec!["rcsD".into()],
             cflags: Vec::new(),
             cxxflags: Vec::new(),
@@ -1602,6 +1610,20 @@ mod tests {
                 .any(|(path, ..)| path.ends_with(frostbuild_core::graph::SHELL)),
             "the shell must be one of the hashed tools: {:?}",
             stamp.tools
+        );
+        assert!(
+            stamp
+                .tools
+                .iter()
+                .any(|(path, ..)| path.ends_with("tools/kofun")),
+            "the configured Kofun compiler must be hashed: {:?}",
+            stamp.tools
+        );
+        std::fs::write(dir.join("tools/kofun"), b"kofun compiler v2 changed\n").unwrap();
+        assert_ne!(
+            toolchain_closure_fingerprint_cached(&dir, &toolchain).unwrap(),
+            first,
+            "changing kofunc must invalidate the toolchain fingerprint"
         );
         std::fs::remove_dir_all(&dir).ok();
     }

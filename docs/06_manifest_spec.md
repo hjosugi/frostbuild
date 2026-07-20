@@ -27,6 +27,7 @@ default_targets = ["//apps/cli:cli"]
 cc = "cc"          # defaults shown
 cxx = "c++"
 ar = "ar"
+kofunc = "/path/to/kofun/bin/kofun" # optional; required by kofun_binary
 cflags = ["-Wall"]
 cxxflags = ["-std=c++20"]
 ldflags = []
@@ -42,8 +43,9 @@ ldflags = ["-s"]
 `frost build --profile NAME` appends profile flags and writes
 `.frost/{obj,lib,bin}/NAME/…`. Profiles coexist and have separate journal keys.
 C sources use `cc`; `.cc/.cpp/.cxx/.C/.c++` use `cxx`. Any C++ source makes a
-binary link with `cxx`. Compiler, C++ compiler, archiver and sysroot identity are
-fingerprinted into action keys. C++20 modules are not v1 functionality.
+binary link with `cxx`. Compiler, C++ compiler, archiver, configured Kofun
+compiler, and sysroot identity are fingerprinted into action keys. C++20
+modules are not v1 functionality.
 
 `arflags` (default `["rcsD"]`) overrides the archiver invocation for toolchains
 whose `ar` lacks GNU's deterministic flag.
@@ -55,6 +57,7 @@ whose `ar` lacks GNU's deterministic flag.
 cc = "aarch64-linux-gnu-gcc"     # unset drivers inherit [toolchain]
 cxx = "aarch64-linux-gnu-g++"
 ar = "aarch64-linux-gnu-ar"
+kofunc = "device-kofun"          # optional Kofun driver override
 arflags = ["rcsD"]               # optional archiver-flag override
 sysroot = "sysroots/aarch64"     # expands to --sysroot= on cflags/ldflags
 cflags = ["-mcpu=cortex-a53"]    # appended after [toolchain] flags
@@ -88,6 +91,26 @@ Each translation unit gets `-MD -MF`; discovered headers become content inputs.
 Generated outputs begin as order-only edges, so an unused generated header does
 not invalidate every TU. Libraries use deterministic archives. `cc_test` links
 like a binary and adds a cached execution action.
+
+## Kofun targets
+
+```toml
+[toolchain]
+kofunc = "/path/to/kofun/bin/kofun"
+
+[target.compiler_seed]
+kind = "kofun_binary"
+srcs = ["src/compiler_seed.kofun"]
+```
+
+A `kofun_binary` has exactly one `.kofun` source, matching the current Kofun
+CLI's single-input build contract. Frost runs
+`kofunc build SOURCE -o BINARY --emit-c GENERATED_C` as one cacheable action.
+Both artifacts are declared outputs, while the binary is the target's exported
+output. The source and outputs of declared target dependencies are content
+inputs. The active Kofun CLI does not expose a library artifact or Make-style
+depfile, so `kofun_library` and dynamic Kofun dependency ingestion are not v1
+functionality. An unchanged action is served from Frost's action cache.
 
 ## Genrules and shell tests
 

@@ -15,9 +15,15 @@ struct Workspace {
 impl Workspace {
     fn new(name: &str) -> Self {
         let src = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../sample_c");
+        let workspace = Self::empty(name);
+        copy_dir(&src, &workspace.dir).expect("copy sample_c");
+        workspace
+    }
+
+    fn empty(name: &str) -> Self {
         let dir = std::env::temp_dir().join(format!("frost-e2e-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
-        copy_dir(&src, &dir).expect("copy sample_c");
+        std::fs::create_dir_all(&dir).expect("create empty workspace");
         Self { dir }
     }
 
@@ -95,6 +101,139 @@ fn copy_dir(src: &Path, dst: &Path) -> std::io::Result<()> {
         }
     }
     Ok(())
+}
+
+#[test]
+#[cfg(unix)]
+fn kofun_binary_builds_incrementally_and_hits_the_action_cache() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let ws = Workspace::empty("kofun");
+    std::fs::create_dir_all(ws.dir.join("src")).unwrap();
+    std::fs::create_dir_all(ws.dir.join("tools")).unwrap();
+    ws.write(
+        "frost.toml",
+        r#"[workspace]
+default_targets = ["alpha", "beta"]
+
+[toolchain]
+kofunc = "tools/kofunc"
+
+[target.alpha]
+kind = "kofun_binary"
+srcs = ["src/alpha.kofun"]
+
+[target.beta]
+kind = "kofun_binary"
+srcs = ["src/beta.kofun"]
+"#,
+    );
+    ws.write("src/alpha.kofun", "alpha-v1\n");
+    ws.write("src/beta.kofun", "beta-v1\n");
+    ws.write(
+        "tools/kofunc",
+        r#"#!/bin/sh
+set -eu
+test "$1" = build
+source=$2
+test "$3" = -o
+output=$4
+test "$5" = --emit-c
+emitted=$6
+printf '%s\n' "$source" >> compiler.log
+value=$(sed -n '1p' "$source")
+printf '/* generated from %s */\n' "$value" > "$emitted"
+printf '#!/bin/sh\nprintf "%%s\\n" "%s"\n' "$value" > "$output"
+chmod +x "$output"
+"#,
+    );
+    std::fs::set_permissions(
+        ws.dir.join("tools/kofunc"),
+        std::fs::Permissions::from_mode(0o755),
+    )
+    .unwrap();
+
+    let (ok, initial) = ws.build_explain();
+    assert!(ok, "initial Kofun build failed:\n{initial}");
+    assert!(initial.contains("ran kofun:alpha"), "{initial}");
+    assert!(initial.contains("ran kofun:beta"), "{initial}");
+    assert!(initial.contains("2 built"), "{initial}");
+    for target in ["alpha", "beta"] {
+        assert!(
+            ws.dir.join(format!(".frost/bin/debug/{target}")).is_file(),
+            "{target} binary was not produced"
+        );
+        assert!(
+            ws.dir
+                .join(format!(".frost/obj/debug/{target}/kofun.c"))
+                .is_file(),
+            "{target} emitted C was not declared and retained"
+        );
+    }
+
+    let invocations = || std::fs::read_to_string(ws.dir.join("compiler.log")).unwrap();
+    let mut initial_invocations = invocations()
+        .lines()
+        .map(str::to_string)
+        .collect::<Vec<_>>();
+    initial_invocations.sort();
+    assert_eq!(
+        initial_invocations,
+        ["src/alpha.kofun", "src/beta.kofun"],
+        "independent targets may execute in either scheduler order"
+    );
+
+    let (ok, unchanged) = ws.build_explain();
+    assert!(ok, "unchanged Kofun rebuild failed:\n{unchanged}");
+    assert!(unchanged.contains("up to date"), "{unchanged}");
+    assert!(!unchanged.contains("  ran "), "{unchanged}");
+    assert_eq!(
+        invocations().lines().count(),
+        2,
+        "cached actions must not invoke kofunc"
+    );
+
+    ws.write("src/alpha.kofun", "alpha-v2\n");
+    let (ok, incremental) = ws.build_explain();
+    assert!(ok, "incremental Kofun build failed:\n{incremental}");
+    assert!(
+        incremental.contains("ran kofun:alpha :: input changed: src/alpha.kofun"),
+        "{incremental}"
+    );
+    assert!(
+        !incremental.contains("ran kofun:beta"),
+        "unaffected Kofun target recompiled:\n{incremental}"
+    );
+    assert!(incremental.contains("1 built, 1 cached"), "{incremental}");
+    let after_edit = invocations()
+        .lines()
+        .map(str::to_string)
+        .collect::<Vec<_>>();
+    assert_eq!(after_edit.len(), 3);
+    assert_eq!(
+        after_edit
+            .iter()
+            .filter(|source| source.as_str() == "src/alpha.kofun")
+            .count(),
+        2
+    );
+    assert_eq!(
+        after_edit
+            .iter()
+            .filter(|source| source.as_str() == "src/beta.kofun")
+            .count(),
+        1
+    );
+
+    let alpha = Command::new(ws.dir.join(".frost/bin/debug/alpha"))
+        .output()
+        .expect("run Kofun shim output");
+    assert!(alpha.status.success());
+    assert_eq!(String::from_utf8_lossy(&alpha.stdout), "alpha-v2\n");
+
+    let (ok, final_noop) = ws.build_explain();
+    assert!(ok && final_noop.contains("up to date"), "{final_noop}");
+    assert_eq!(invocations().lines().count(), 3);
 }
 
 #[test]

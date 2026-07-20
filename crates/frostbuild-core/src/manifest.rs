@@ -56,6 +56,7 @@ pub enum TargetKind {
     CcTest,
     Genrule,
     Test,
+    KofunBinary,
 }
 
 impl TargetKind {
@@ -66,6 +67,7 @@ impl TargetKind {
             TargetKind::CcTest => "cc_test",
             TargetKind::Genrule => "genrule",
             TargetKind::Test => "test",
+            TargetKind::KofunBinary => "kofun_binary",
         }
     }
 }
@@ -85,6 +87,7 @@ struct RawToolchain {
     cc: Option<String>,
     cxx: Option<String>,
     ar: Option<String>,
+    kofunc: Option<String>,
     #[serde(default)]
     arflags: Option<Vec<String>>,
     #[serde(default)]
@@ -104,6 +107,7 @@ struct RawPlatform {
     cc: Option<String>,
     cxx: Option<String>,
     ar: Option<String>,
+    kofunc: Option<String>,
     #[serde(default)]
     arflags: Option<Vec<String>>,
     sysroot: Option<String>,
@@ -169,6 +173,9 @@ pub struct Toolchain {
     pub cc: String,
     pub cxx: String,
     pub ar: String,
+    /// Kofun compiler driver. It is optional so C-only workspaces do not need
+    /// Kofun installed merely to fingerprint their configured toolchain.
+    pub kofunc: Option<String>,
     pub arflags: Vec<String>,
     pub cflags: Vec<String>,
     pub cxxflags: Vec<String>,
@@ -181,6 +188,7 @@ pub struct Platform {
     pub cc: Option<String>,
     pub cxx: Option<String>,
     pub ar: Option<String>,
+    pub kofunc: Option<String>,
     pub arflags: Option<Vec<String>>,
     pub sysroot: Option<String>,
     pub cflags: Vec<String>,
@@ -332,6 +340,7 @@ impl Manifest {
             cc: spec.cc.clone().unwrap_or_else(|| base.cc.clone()),
             cxx: spec.cxx.clone().unwrap_or_else(|| base.cxx.clone()),
             ar: spec.ar.clone().unwrap_or_else(|| base.ar.clone()),
+            kofunc: spec.kofunc.clone().or_else(|| base.kofunc.clone()),
             arflags: spec.arflags.clone().unwrap_or_else(|| base.arflags.clone()),
             cflags: base.cflags.clone(),
             cxxflags: base.cxxflags.clone(),
@@ -369,7 +378,7 @@ impl Manifest {
         let default_targets = if raw.workspace.default_targets.is_empty() {
             let binaries: Vec<String> = targets
                 .values()
-                .filter(|t| t.kind == TargetKind::CcBinary)
+                .filter(|t| matches!(t.kind, TargetKind::CcBinary | TargetKind::KofunBinary))
                 .map(|t| t.name.clone())
                 .collect();
             if binaries.is_empty() {
@@ -395,6 +404,7 @@ impl Manifest {
                     cc: spec.cc,
                     cxx: spec.cxx,
                     ar: spec.ar,
+                    kofunc: spec.kofunc,
                     arflags: spec.arflags,
                     sysroot: spec.sysroot,
                     cflags: spec.cflags,
@@ -410,6 +420,7 @@ impl Manifest {
                 cc: raw.toolchain.cc.unwrap_or_else(|| "cc".to_string()),
                 cxx: raw.toolchain.cxx.unwrap_or_else(|| "c++".to_string()),
                 ar: raw.toolchain.ar.unwrap_or_else(|| "ar".to_string()),
+                kofunc: raw.toolchain.kofunc,
                 arflags: raw
                     .toolchain
                     .arflags
@@ -466,6 +477,15 @@ fn build_target(name: &str, spec: RawTarget) -> Result<Target> {
                     "{} must not set genrule fields (cmd/inputs/outputs)",
                     spec.kind.as_str()
                 );
+            }
+        }
+        TargetKind::KofunBinary => {
+            validate_kofun_binary_sources(&srcs)?;
+            if !includes.is_empty() || !spec.cflags.is_empty() || !spec.ldflags.is_empty() {
+                bail!("kofun_binary does not support includes/cflags/ldflags");
+            }
+            if spec.cmd.is_some() || !inputs.is_empty() || !outputs.is_empty() {
+                bail!("kofun_binary must not set genrule fields (cmd/inputs/outputs)");
             }
         }
         TargetKind::Genrule | TargetKind::Test => {
@@ -602,6 +622,10 @@ fn expand_manifest_paths(manifest: &mut Manifest, root: &Path, package: &str) ->
         target.package = package.to_string();
         target.srcs = expand_paths(root, package, &target.srcs)
             .with_context(|| format!("target {name:?} srcs"))?;
+        if target.kind == TargetKind::KofunBinary {
+            validate_kofun_binary_sources(&target.srcs)
+                .with_context(|| format!("target {name:?} expanded srcs"))?;
+        }
         target.inputs = expand_paths(root, package, &target.inputs)
             .with_context(|| format!("target {name:?} inputs"))?;
         target.includes = target
@@ -614,6 +638,16 @@ fn expand_manifest_paths(manifest: &mut Manifest, root: &Path, package: &str) ->
             .iter()
             .map(|p| prefix_path(package, p))
             .collect();
+    }
+    Ok(())
+}
+
+fn validate_kofun_binary_sources(srcs: &[String]) -> Result<()> {
+    if srcs.len() != 1 {
+        bail!("kofun_binary requires exactly one source");
+    }
+    if !srcs[0].ends_with(".kofun") {
+        bail!("kofun_binary source must use the .kofun extension");
     }
     Ok(())
 }
@@ -902,15 +936,45 @@ mod tests {
     }
 
     #[test]
+    fn parses_kofun_binary_and_rejects_unsupported_shapes() {
+        let text = r#"
+            [toolchain]
+            kofunc = "tools/kofun"
+
+            [target.app]
+            kind = "kofun_binary"
+            srcs = ["src/main.kofun"]
+        "#;
+        let manifest = Manifest::parse_str(text).unwrap();
+        assert_eq!(manifest.toolchain.kofunc.as_deref(), Some("tools/kofun"));
+        assert_eq!(manifest.targets["app"].kind, TargetKind::KofunBinary);
+        assert_eq!(manifest.default_targets, vec!["app"]);
+
+        for invalid in [
+            "[target.app]\nkind='kofun_binary'\nsrcs=[]\n",
+            "[target.app]\nkind='kofun_binary'\nsrcs=['a.kofun','b.kofun']\n",
+            "[target.app]\nkind='kofun_binary'\nsrcs=['main.kf']\n",
+            "[target.app]\nkind='kofun_binary'\nsrcs=['main.kofun']\ncflags=['-O2']\n",
+        ] {
+            assert!(
+                Manifest::parse_str(invalid).is_err(),
+                "invalid Kofun target was accepted: {invalid}"
+            );
+        }
+    }
+
+    #[test]
     fn platform_overlay_resolves_toolchain() {
         let text = r#"
             [toolchain]
             cc = "gcc"
             cxx = "g++"
+            kofunc = "host-kofun"
             cflags = ["-O2"]
 
             [platform.aarch64]
             cc = "aarch64-linux-gnu-gcc"
+            kofunc = "aarch64-kofun"
             sysroot = "sysroots/aarch64"
             cflags = ["-mcpu=cortex-a53"]
             ldflags = ["-static"]
@@ -923,11 +987,13 @@ mod tests {
 
         let host = m.toolchain_for(HOST_PLATFORM).unwrap();
         assert_eq!(host.cc, "gcc");
+        assert_eq!(host.kofunc.as_deref(), Some("host-kofun"));
         assert_eq!(host.cflags, vec!["-O2"]);
         assert_eq!(host.arflags, vec!["rcsD"]);
 
         let cross = m.toolchain_for("aarch64").unwrap();
         assert_eq!(cross.cc, "aarch64-linux-gnu-gcc");
+        assert_eq!(cross.kofunc.as_deref(), Some("aarch64-kofun"));
         assert_eq!(cross.cxx, "g++", "unset drivers inherit the root toolchain");
         assert_eq!(
             cross.cflags,
