@@ -1463,16 +1463,21 @@ const TOOLCHAIN_STAMP_PATH: &str = ".frost/toolchain.bin";
 /// headers actually read from it arrive as depfile-discovered inputs.
 ///
 /// This used to load the workspace-wide content cache — megabytes covering
-/// every source file — to digest three executables. It now keeps its own
-/// stamp: three stats on the warm path, and the binaries are re-hashed only
-/// when one of them actually changed.
+/// every source file — to digest a handful of executables. It now keeps its
+/// own stamp: a few stats on the warm path, and the binaries are re-hashed
+/// only when one of them actually changed.
 pub fn toolchain_closure_fingerprint_cached(
     root: &Path,
     toolchain: &frostbuild_core::manifest::Toolchain,
 ) -> Result<String> {
-    let mut tools = Vec::with_capacity(3);
-    let mut resolved_paths = Vec::with_capacity(3);
-    for tool in [&toolchain.cc, &toolchain.cxx, &toolchain.ar] {
+    let shell = frostbuild_core::graph::SHELL.to_string();
+    // The shell is in here because frost picks it, the same reason the C
+    // drivers are: every genrule and shell test runs through it, and a
+    // different /bin/sh can produce different bytes from the same command.
+    let all = [&toolchain.cc, &toolchain.cxx, &toolchain.ar, &shell];
+    let mut tools = Vec::with_capacity(all.len());
+    let mut resolved_paths = Vec::with_capacity(all.len());
+    for tool in all {
         // A manifest may name a driver by a workspace-relative path (a
         // wrapper script for a cross toolchain, say), which only resolves
         // against the workspace root, not the process working directory.
@@ -1563,6 +1568,42 @@ mod tests {
     fn shell_join_quotes_specials() {
         let argv = vec!["cc".to_string(), "a b".to_string(), "plain".to_string()];
         assert_eq!(shell_join(&argv), "cc 'a b' plain");
+    }
+
+    #[test]
+    fn the_fingerprint_covers_the_shell_frost_chooses() {
+        // Every genrule and shell test runs through this interpreter, and the
+        // manifest has no way to name it, so leaving it out would make it the
+        // one tool frost picks and does not account for.
+        let dir = std::env::temp_dir().join(format!("frost-tc-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let toolchain = frostbuild_core::manifest::Toolchain {
+            cc: "cc".into(),
+            cxx: "c++".into(),
+            ar: "ar".into(),
+            arflags: vec!["rcsD".into()],
+            cflags: Vec::new(),
+            cxxflags: Vec::new(),
+            ldflags: Vec::new(),
+        };
+        let first = toolchain_closure_fingerprint_cached(&dir, &toolchain).unwrap();
+        assert_eq!(
+            toolchain_closure_fingerprint_cached(&dir, &toolchain).unwrap(),
+            first,
+            "an unchanged toolchain keeps its fingerprint"
+        );
+        let stamp = std::fs::read(dir.join(TOOLCHAIN_STAMP_PATH)).unwrap();
+        let stamp: ToolchainStamp = postcard::from_bytes(&stamp).unwrap();
+        assert!(
+            stamp
+                .tools
+                .iter()
+                .any(|(path, ..)| path.ends_with(frostbuild_core::graph::SHELL)),
+            "the shell must be one of the hashed tools: {:?}",
+            stamp.tools
+        );
+        std::fs::remove_dir_all(&dir).ok();
     }
 
     #[test]

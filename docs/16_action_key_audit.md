@@ -26,7 +26,8 @@ a stated argument; rows marked **gap** are known holes with no defence.
 | `HOME`, `TMPDIR`, `TMP`, `TEMP` | **out** | Scratch locations. An action whose output depends on where its scratch space lives is not hermetic, which is what `--sandbox` and `--check-determinism` exist to surface. |
 | Order-only inputs | **out** | By construction: generated headers must exist before a compile, but only the ones actually included should invalidate it, and the depfile names those. |
 | `--sandbox` | **out** | A checking mode, not a build input. It can only remove access to files an action never declared, so a build that differs under it was already unsound. |
-| **Interpreters a genrule invokes** (`/bin/sh`, `python3`, ...) | **gap** | frost cannot know which tools a shell command reaches. Declaring the script is not declaring its interpreter. Same class as any undeclared input; `--sandbox` narrows it, nothing closes it. |
+| The shell frost runs genrules through (`/bin/sh`) | yes | frost picks it, so it sits in the toolchain fingerprint beside the C drivers. The manifest has no way to name it, which is exactly why leaving it out would make it the one tool frost chooses and does not account for. |
+| **Other tools a genrule invokes** (`python3`, a script on PATH) | **gap** | frost cannot know which tools a shell command reaches. Declaring the script is not declaring what the script runs. Same class as any undeclared input; `--sandbox` narrows it, nothing closes it. |
 | **umask** | **gap** | Affects the permissions of created outputs. Only the executable bit is captured, via the output digest. |
 | **Filesystems with coarse mtime** | **gap** | The stat check is (mtime_ns, size ^ mode, inode). Where a filesystem reports whole seconds, a same-size rewrite inside one second can be missed. Not observed on ext4; no cheap defence beyond hashing everything. |
 
@@ -54,6 +55,6 @@ back the binary built against the other one. Tests now cover each; they are
 named in `crates/frostbuild-cli/tests/e2e.rs` and each one fails against the
 engine that preceded its fix.
 
-The three gaps above have no test, because a test would assert the wrong
+The remaining gaps have no test, because a test would assert the wrong
 behaviour. They are written down instead so that the next person to look does
 not have to rediscover them, and so that closing one is a deliberate change.

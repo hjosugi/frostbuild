@@ -7,6 +7,14 @@ All notable changes follow Keep a Changelog and Semantic Versioning. Before
 
 ### Fixed
 
+- The shell frost runs every genrule and shell test through was the one tool
+  frost chooses and did not account for. `/bin/sh` now sits in the toolchain
+  fingerprint beside the C drivers, so replacing it invalidates the actions
+  that depend on it. The manifest has no way to name the shell, which is
+  precisely why frost has to.
+
+### Fixed
+
 - A file's mode was not part of its digest, so `chmod -x` on a script a
   genrule runs changed no bytes and frost reported the build as current —
   while a clean build of the same tree failed. The executable bit now joins
