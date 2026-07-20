@@ -44,6 +44,9 @@ frost -C myrepo build --check-determinism
 frost -C myrepo simulate --jobs 1,4,16
 frost -C myrepo build --stats -j 16          # then calibrate against a real run
 
+# TTY builds use a live dashboard; force stable line output when needed
+frost -C myrepo build --no-tui
+
 # Graph queries: what does a change affect?
 frost -C myrepo query rdeps util
 frost -C myrepo query deps app --json
@@ -64,6 +67,8 @@ frost -C myrepo daemon status
 - `[platform.*]` cross/device toolchains with per-platform trees and caches
 - dynamic GCC/Clang depfile ingestion and generated-file order-only edges
 - parallel critical-path scheduler, captured diagnostics and `--keep-going`
+- interactive TTY progress with job slots, cache/timing state, critical path,
+  scrollable logs, automatic plain CI/pipe output and `--no-tui`
 - stat cache, parallel BLAKE3 hashing and toolchain closure fingerprinting
 - append-only crash-tolerant binary journal with per-action flush
 - immutable local CAS, hardlink/copy materialization and bounded GC

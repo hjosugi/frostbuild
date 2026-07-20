@@ -22,6 +22,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 toml = "1.1"
 clap = { version = "4", features = ["derive"] }
+crossterm = "0.29"
 glob = "0.3"
 memmap2 = "0.9"
 postcard = { version = "1", default-features = false, features = ["alloc"] }

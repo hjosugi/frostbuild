@@ -9,6 +9,8 @@ use frostbuild_core::journal::Journal;
 use frostbuild_core::manifest::{Manifest, TargetKind};
 use frostbuild_exec::{toolchain_closure_fingerprint_cached, BuildOptions, Engine, Outcome};
 
+mod progress;
+
 #[derive(Parser)]
 #[command(
     name = "frost",
@@ -64,6 +66,9 @@ enum Cmd {
         /// distance from the estimated critical path
         #[arg(long)]
         stats: bool,
+        /// Disable the interactive terminal UI and print plain progress lines
+        #[arg(long)]
+        no_tui: bool,
         /// Execute through the per-workspace frostd service
         #[arg(long)]
         daemon: bool,
@@ -95,6 +100,9 @@ enum Cmd {
         platform: String,
         #[arg(long)]
         sandbox: bool,
+        /// Disable the interactive terminal UI and print plain progress lines
+        #[arg(long)]
+        no_tui: bool,
         #[arg(long)]
         daemon: bool,
         #[arg(long, value_enum, default_value = "critical-path")]
@@ -266,6 +274,7 @@ fn run(cli: Cli) -> Result<i32> {
             check_determinism,
             trace,
             stats,
+            no_tui,
             daemon,
             scheduler,
             estimator,
@@ -284,6 +293,7 @@ fn run(cli: Cli) -> Result<i32> {
                 check_determinism: check_determinism.is_some(),
                 trace,
                 stats,
+                no_tui,
                 test_mode: false,
                 daemon,
                 affected: false,
@@ -305,6 +315,7 @@ fn run(cli: Cli) -> Result<i32> {
             profile,
             platform,
             sandbox,
+            no_tui,
             daemon,
             scheduler,
             estimator,
@@ -323,6 +334,7 @@ fn run(cli: Cli) -> Result<i32> {
                 check_determinism: false,
                 trace: None,
                 stats: false,
+                no_tui,
                 test_mode: true,
                 daemon,
                 affected,
@@ -773,6 +785,7 @@ struct BuildRequest {
     check_determinism: bool,
     trace: Option<PathBuf>,
     stats: bool,
+    no_tui: bool,
     test_mode: bool,
     daemon: bool,
     affected: bool,
@@ -804,6 +817,9 @@ fn run_build_via_daemon(root: &std::path::Path, request: &BuildRequest) -> Resul
     }
     if request.no_cache {
         args.push("--no-cache".into());
+    }
+    if request.no_tui {
+        args.push("--no-tui".into());
     }
     if request.affected {
         args.push("--affected".into());
@@ -929,6 +945,7 @@ fn run_build(root: &std::path::Path, request: BuildRequest) -> Result<i32> {
         }
     }
     let closure = graph.action_closure(&requested)?;
+    let (progress, renderer) = progress::start(request.no_tui, request.verbose);
     let opts = BuildOptions {
         jobs: request.jobs.unwrap_or_else(default_jobs),
         keep_going: request.keep_going,
@@ -947,12 +964,15 @@ fn run_build(root: &std::path::Path, request: BuildRequest) -> Result<i32> {
             EstimatorArg::Static => frostbuild_exec::Estimator::Static,
             EstimatorArg::Learned => frostbuild_exec::Estimator::Learned,
         },
+        progress: Some(progress),
         ..BuildOptions::default()
     };
 
     let started = Instant::now();
     let total = closure.len();
-    let report = Engine::new(root, &graph, closure, toolchain, opts).run()?;
+    let report = Engine::new(root, &graph, closure, toolchain, opts).run();
+    renderer.finish();
+    let report = report?;
     let elapsed = started.elapsed().as_millis();
 
     if request.explain {

@@ -53,6 +53,26 @@ impl Workspace {
         )
     }
 
+    #[cfg(unix)]
+    fn frost_pty(&self, args: &[&str], env: &[(&str, &str)]) -> (bool, String) {
+        let mut command = Command::new("script");
+        command
+            .args(["--quiet", "--return", "/dev/null", "--"])
+            .arg(frost_bin())
+            .arg("-C")
+            .arg(&self.dir)
+            .args(args);
+        for (key, value) in env {
+            command.env(key, value);
+        }
+        let out = command.output().expect("spawn frost in a pseudo-terminal");
+        (
+            out.status.success(),
+            String::from_utf8_lossy(&out.stdout).to_string()
+                + &String::from_utf8_lossy(&out.stderr),
+        )
+    }
+
     fn build_explain(&self) -> (bool, String) {
         self.frost(&["build", "--explain"])
     }
@@ -101,6 +121,137 @@ fn copy_dir(src: &Path, dst: &Path) -> std::io::Result<()> {
         }
     }
     Ok(())
+}
+
+#[test]
+fn piped_build_uses_stable_plain_progress() {
+    let ws = Workspace::new("plain-progress");
+    let (ok, out) = ws.frost(&["build"]);
+    assert!(ok, "{out}");
+    assert!(
+        out.contains("[1/"),
+        "plain progress was not printed:\n{out}"
+    );
+    assert!(
+        !out.contains("\u{1b}["),
+        "piped output must not contain terminal control codes:\n{out:?}"
+    );
+}
+
+#[test]
+#[cfg(unix)]
+fn tty_build_shows_live_slots_cache_critical_path_and_logs() {
+    let ws = Workspace::new("tui-progress");
+    let (ok, out) = ws.frost_pty(&["build"], &[]);
+    assert!(ok, "{out}");
+    assert!(
+        out.contains("\u{1b}[?1049h"),
+        "TTY build did not enter the live screen:\n{out:?}"
+    );
+    for label in ["slots", "cache", "critical path:", "logs ("] {
+        assert!(out.contains(label), "TUI omitted {label:?}:\n{out:?}");
+    }
+
+    let (ok, cached) = ws.frost_pty(&["build"], &[]);
+    assert!(ok, "{cached}");
+    assert!(
+        cached.contains("cache  5 hit"),
+        "live cache-hit state was not updated:\n{cached:?}"
+    );
+    assert!(cached.contains("up to date"), "{cached}");
+}
+
+#[test]
+#[cfg(unix)]
+fn no_tui_and_ci_force_plain_output_even_on_a_tty() {
+    for (name, args, env) in [
+        ("no-tui", vec!["build", "--no-tui"], vec![]),
+        ("ci", vec!["build"], vec![("CI", "1")]),
+    ] {
+        let ws = Workspace::new(name);
+        let (ok, out) = ws.frost_pty(&args, &env);
+        assert!(ok, "{out}");
+        assert!(
+            out.contains("[1/"),
+            "plain progress was not printed:\n{out}"
+        );
+        assert!(
+            !out.contains("\u{1b}[?1049h"),
+            "{name} unexpectedly enabled the live screen:\n{out:?}"
+        );
+    }
+}
+
+#[test]
+#[cfg(unix)]
+fn tty_failure_is_rendered_before_the_summary() {
+    let ws = Workspace::empty("tui-failure");
+    ws.write(
+        "frost.toml",
+        r#"[workspace]
+default_targets = ["broken"]
+
+[target.broken]
+kind = "genrule"
+cmd = "printf immediate-failure >&2; exit 7"
+outputs = ["broken.txt"]
+"#,
+    );
+    let (ok, out) = ws.frost_pty(&["build"], &[]);
+    assert!(!ok, "broken action unexpectedly succeeded:\n{out}");
+    let immediate = out.find("FAILED:").expect("failure was not rendered");
+    let summary = out
+        .rfind("failure summary")
+        .expect("failure summary was not printed");
+    assert!(
+        immediate < summary,
+        "failure did not appear before the summary:\n{out:?}"
+    );
+}
+
+#[test]
+#[cfg(unix)]
+fn ctrl_c_in_raw_tui_mode_still_cancels_the_build() {
+    use std::io::Write;
+    use std::process::Stdio;
+
+    let ws = Workspace::empty("tui-cancel");
+    ws.write(
+        "frost.toml",
+        r#"[workspace]
+default_targets = ["slow"]
+
+[target.slow]
+kind = "genrule"
+cmd = "sleep 3; printf done > ${out}"
+outputs = ["slow.txt"]
+"#,
+    );
+    let started = std::time::Instant::now();
+    let mut child = Command::new("script")
+        .args(["--quiet", "--return", "/dev/null", "--"])
+        .arg(frost_bin())
+        .arg("-C")
+        .arg(&ws.dir)
+        .arg("build")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("spawn TUI build");
+    std::thread::sleep(std::time::Duration::from_millis(150));
+    child
+        .stdin
+        .take()
+        .expect("script stdin")
+        .write_all(&[3])
+        .expect("send Ctrl-C");
+    let out = child.wait_with_output().expect("wait for cancelled build");
+    assert_eq!(out.status.code(), Some(130));
+    assert!(
+        started.elapsed() < std::time::Duration::from_secs(2),
+        "Ctrl-C was swallowed by raw terminal mode"
+    );
 }
 
 #[test]

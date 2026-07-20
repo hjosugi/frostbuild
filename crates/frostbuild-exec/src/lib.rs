@@ -27,6 +27,9 @@ use frostbuild_core::journal::{Journal, JournalEntry};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 
+mod progress;
+pub use progress::{progress_channel, ProgressEvent, ProgressSender, ProgressState};
+
 static CANCELLED: AtomicBool = AtomicBool::new(false);
 static RUNNING_PROCESS_GROUPS: OnceLock<Mutex<BTreeSet<i32>>> = OnceLock::new();
 static SIGNAL_HANDLER: OnceLock<()> = OnceLock::new();
@@ -62,19 +65,23 @@ pub fn install_signal_handler() -> Result<()> {
     if SIGNAL_HANDLER.get().is_some() {
         return Ok(());
     }
-    ctrlc::set_handler(|| {
-        CANCELLED.store(true, Ordering::SeqCst);
-        if let Some(groups) = RUNNING_PROCESS_GROUPS.get() {
-            for pid in groups.lock().unwrap().iter().copied() {
-                // SAFETY: kill is async-process-safe; negative pid addresses the process group.
-                unsafe {
-                    libc::kill(-pid, libc::SIGTERM);
-                }
-            }
-        }
-    })?;
+    ctrlc::set_handler(request_cancellation)?;
     let _ = SIGNAL_HANDLER.set(());
     Ok(())
+}
+
+/// Request the same cancellation performed by SIGINT. Interactive renderers
+/// call this when raw terminal mode turns Ctrl-C into a key event.
+pub fn request_cancellation() {
+    CANCELLED.store(true, Ordering::SeqCst);
+    if let Some(groups) = RUNNING_PROCESS_GROUPS.get() {
+        for pid in groups.lock().unwrap().iter().copied() {
+            // SAFETY: kill is async-process-safe; negative pid addresses the process group.
+            unsafe {
+                libc::kill(-pid, libc::SIGTERM);
+            }
+        }
+    }
 }
 
 pub fn was_cancelled() -> bool {
@@ -93,6 +100,9 @@ pub struct BuildOptions {
     pub cas_max_bytes: u64,
     pub scheduler: Scheduler,
     pub estimator: Estimator,
+    /// Optional structured progress sink. The execution engine never renders
+    /// terminal output itself; callers choose a TTY or plain-text renderer.
+    pub progress: Option<ProgressSender>,
 }
 
 /// Ready-queue ordering. Both schedulers run the same actions and produce the
@@ -156,6 +166,7 @@ impl Default for BuildOptions {
             cas_max_bytes: 10 * 1024 * 1024 * 1024,
             scheduler: Scheduler::CriticalPath,
             estimator: Estimator::Journal,
+            progress: None,
         }
     }
 }
@@ -268,7 +279,6 @@ struct Shared {
     outcomes: Vec<Option<Outcome>>,
     pending: usize,
     abort: bool,
-    printed: usize,
 }
 
 pub struct Engine<'a> {
@@ -284,6 +294,8 @@ pub struct Engine<'a> {
     priority: Vec<u64>,
     /// Estimated makespan lower bound and total work, for the stats report.
     critical_path_ms: u64,
+    critical_path: BTreeSet<usize>,
+    critical_path_labels: Vec<String>,
     estimated_work_ms: u64,
     toolchain_hash: String,
     /// Output-affecting environment captured once per invocation. Looking up
@@ -542,6 +554,8 @@ impl<'a> Engine<'a> {
             dependents: Vec::new(),
             priority: Vec::new(),
             critical_path_ms: 0,
+            critical_path: BTreeSet::new(),
+            critical_path_labels: Vec::new(),
             estimated_work_ms: 0,
             toolchain_hash,
             key_env,
@@ -556,7 +570,6 @@ impl<'a> Engine<'a> {
                 outcomes: vec![None; n],
                 pending: n,
                 abort: false,
-                printed: 0,
             }),
             cv: Condvar::new(),
             cas: LocalCas::new(root, cas_max_bytes),
@@ -565,20 +578,45 @@ impl<'a> Engine<'a> {
 
     pub fn run(mut self) -> Result<BuildReport> {
         let workers = self.opts.jobs.max(1).min(self.closure.len().max(1));
+        let progress = self.opts.progress.clone();
         let started = std::time::Instant::now();
         if self.all_cached().unwrap_or(false) {
-            let mut shared = self.shared.lock().unwrap();
-            shared.outcomes.fill(Some(Outcome::Cached));
-            shared.pending = 0;
-            shared.ready.clear();
+            if let Some(progress) = &progress {
+                progress.emit(ProgressEvent::BuildStarted {
+                    total: self.closure.len(),
+                    jobs: workers,
+                    critical_path_ms: 0,
+                    critical_path: Vec::new(),
+                });
+            }
+            {
+                let mut shared = self.shared.lock().unwrap();
+                shared.outcomes.fill(Some(Outcome::Cached));
+                shared.pending = 0;
+                shared.ready.clear();
+            }
+            if let Some(progress) = &progress {
+                progress.emit(ProgressEvent::AllCached {
+                    total: self.closure.len(),
+                });
+            }
         } else {
             if !self.opts.dry_run {
                 self.prepare_output_dirs()?;
             }
             self.prepare_schedule();
+            if let Some(progress) = &progress {
+                progress.emit(ProgressEvent::BuildStarted {
+                    total: self.closure.len(),
+                    jobs: workers,
+                    critical_path_ms: self.critical_path_ms,
+                    critical_path: std::mem::take(&mut self.critical_path_labels),
+                });
+            }
             std::thread::scope(|scope| {
-                for _ in 0..workers {
-                    scope.spawn(|| self.worker());
+                let engine = &self;
+                for slot in 0..workers {
+                    scope.spawn(move || engine.worker(slot));
                 }
             });
         }
@@ -628,7 +666,14 @@ impl<'a> Engine<'a> {
             estimated_work_ms: self.estimated_work_ms,
             executed,
         };
-        Ok(BuildReport { results, stats })
+        let report = BuildReport { results, stats };
+        if let Some(progress) = progress {
+            progress.emit(ProgressEvent::BuildFinished {
+                success: report.success(),
+                elapsed_ms: makespan_ms,
+            });
+        }
+        Ok(report)
     }
 
     /// Scheduling data is irrelevant when a whole closure is cached. Delay
@@ -641,6 +686,17 @@ impl<'a> Engine<'a> {
             self.opts.scheduler,
             self.opts.estimator,
         );
+        if self.opts.progress.is_some() {
+            self.critical_path = plan.critical_path.iter().copied().collect();
+            self.critical_path_labels = plan
+                .critical_path
+                .iter()
+                .map(|&local| self.graph.actions[self.closure[local]].desc.clone())
+                .collect();
+        } else {
+            self.critical_path.clear();
+            self.critical_path_labels.clear();
+        }
         self.closure_index = plan.closure_index;
         self.dependents = plan.dependents;
         self.priority = plan.priority;
@@ -774,7 +830,7 @@ impl<'a> Engine<'a> {
         }))
     }
 
-    fn worker(&self) {
+    fn worker(&self, slot: usize) {
         let mut continuation = None;
         loop {
             let local = if let Some(local) = continuation.take() {
@@ -795,12 +851,42 @@ impl<'a> Engine<'a> {
                 }
             };
 
+            let action = &self.graph.actions[self.closure[local]];
+            let critical = self.opts.progress.is_some() && self.critical_path.contains(&local);
+            if let Some(progress) = &self.opts.progress {
+                progress.emit(ProgressEvent::ActionStarted {
+                    slot,
+                    id: action.id.clone(),
+                    desc: action.desc.clone(),
+                    command: shell_join(&action.argv),
+                    critical,
+                });
+            }
+            let action_started = self.opts.progress.as_ref().map(|_| Instant::now());
             let outcome = self.process(local);
+            let elapsed_ms = action_started
+                .map(|started| started.elapsed().as_millis() as u64)
+                .unwrap_or(0);
+            let progress_result = self.opts.progress.as_ref().map(|_| match &outcome {
+                Outcome::Executed { duration_ms, .. } => {
+                    (ProgressState::Executed, *duration_ms, String::new())
+                }
+                Outcome::Cached => (ProgressState::CacheHit, elapsed_ms, String::new()),
+                Outcome::Failed { detail, .. } => {
+                    (ProgressState::Failed, elapsed_ms, detail.clone())
+                }
+                Outcome::Skipped { reason } => (ProgressState::Skipped, elapsed_ms, reason.clone()),
+                Outcome::WouldRun { reason } => {
+                    (ProgressState::WouldRun, elapsed_ms, reason.clone())
+                }
+                Outcome::MayRun { reason } => (ProgressState::MayRun, elapsed_ms, reason.clone()),
+            });
 
             let mut s = self.shared.lock().unwrap();
             let failed = matches!(outcome, Outcome::Failed { .. });
             s.outcomes[local] = Some(outcome);
             s.pending -= 1;
+            let completed = self.closure.len() - s.pending;
             if failed && !self.opts.keep_going {
                 s.abort = true;
                 s.ready.clear();
@@ -826,6 +912,21 @@ impl<'a> Engine<'a> {
             }
             let claimed = usize::from(continuation.is_some());
             drop(s);
+            if let (Some(progress), Some((state, duration_ms, detail))) =
+                (&self.opts.progress, progress_result)
+            {
+                progress.emit(ProgressEvent::ActionFinished {
+                    slot,
+                    completed,
+                    total: self.closure.len(),
+                    id: action.id.clone(),
+                    desc: action.desc.clone(),
+                    state,
+                    duration_ms,
+                    detail,
+                    critical,
+                });
+            }
             if finished {
                 // Everyone must wake to observe the end and return.
                 self.cv.notify_all();
@@ -947,8 +1048,14 @@ impl<'a> Engine<'a> {
         mut inputs: BTreeMap<String, String>,
         reason: String,
     ) -> Outcome {
+        let _ = local;
         if self.opts.dry_run {
             return Outcome::WouldRun { reason };
+        }
+        if let Some(progress) = &self.opts.progress {
+            progress.emit(ProgressEvent::ActionRunning {
+                id: action.id.clone(),
+            });
         }
 
         for &out in &action.outputs {
@@ -976,7 +1083,6 @@ impl<'a> Engine<'a> {
             Ok(child) => child,
             Err(err) => {
                 let detail = format!("failed to spawn {:?}: {err}", action.argv[0]);
-                self.print_failure(action, &detail);
                 return Outcome::Failed { reason, detail };
             }
         };
@@ -1015,7 +1121,6 @@ impl<'a> Engine<'a> {
                 describe_exit(&output.status),
                 captured.trim_end()
             );
-            self.print_failure(action, &detail);
             return Outcome::Failed { reason, detail };
         }
 
@@ -1029,7 +1134,6 @@ impl<'a> Engine<'a> {
                     Ok(deps) => discovered = deps,
                     Err(err) => {
                         let detail = format!("failed to parse depfile {dep_rel}: {err:#}");
-                        self.print_failure(action, &detail);
                         return Outcome::Failed { reason, detail };
                     }
                 }
@@ -1074,7 +1178,6 @@ impl<'a> Engine<'a> {
                 "command succeeded but declared output {} was not created",
                 missing.0
             );
-            self.print_failure(action, &detail);
             return Outcome::Failed { reason, detail };
         }
 
@@ -1098,7 +1201,6 @@ impl<'a> Engine<'a> {
                     path,
                     output_paths.join(", ")
                 );
-                self.print_failure(action, &detail);
                 return Outcome::Failed {
                     reason: "determinism check failed".into(),
                     detail,
@@ -1153,7 +1255,6 @@ impl<'a> Engine<'a> {
                     action.id,
                     changed.join(", ")
                 );
-                self.print_failure(action, &detail);
                 return Outcome::Failed {
                     reason: "determinism check failed".into(),
                     detail,
@@ -1183,7 +1284,12 @@ impl<'a> Engine<'a> {
             }
         }
 
-        self.print_progress(local, action, &captured);
+        if let Some(progress) = &self.opts.progress {
+            progress.emit(ProgressEvent::ActionOutput {
+                id: action.id.clone(),
+                output: captured,
+            });
+        }
         Outcome::Executed {
             reason,
             duration_ms,
@@ -1291,31 +1397,6 @@ impl<'a> Engine<'a> {
 
     fn priority(&self, local: usize) -> u64 {
         self.priority[local]
-    }
-
-    fn print_progress(
-        &self,
-        _local: usize,
-        action: &frostbuild_core::graph::ActionNode,
-        captured: &str,
-    ) {
-        let mut s = self.shared.lock().unwrap();
-        s.printed += 1;
-        let line = format!("[{}/{}] {}", s.printed, self.closure.len(), action.desc);
-        drop(s);
-        if self.opts.verbose {
-            println!("{line}\n  $ {}", shell_join(&action.argv));
-        } else {
-            println!("{line}");
-        }
-        let trimmed = captured.trim_end();
-        if !trimmed.is_empty() {
-            println!("{trimmed}");
-        }
-    }
-
-    fn print_failure(&self, action: &frostbuild_core::graph::ActionNode, detail: &str) {
-        println!("FAILED: {}\n{detail}", action.desc);
     }
 }
 
