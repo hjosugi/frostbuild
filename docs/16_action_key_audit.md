@@ -31,6 +31,15 @@ a stated argument; rows marked **gap** are known holes with no defence.
 | **umask** | **gap** | Affects the permissions of created outputs. Only the executable bit is captured, via the output digest. |
 | **Filesystems with coarse mtime** | **gap** | The stat check is (mtime_ns, size ^ mode, inode). Where a filesystem reports whole seconds, a same-size rewrite inside one second can be missed. Not observed on ext4; no cheap defence beyond hashing everything. |
 
+## Restoration is checked too
+
+A key that covers every input still delivers the wrong bytes if what is
+restored is not what was stored. The CAS is content-addressed, so an object
+that no longer hashes to its own name is corrupt; `materialize` verifies
+before publishing, removes the bad object and reports a miss, and the action
+re-runs. This was a real hole: flipping one byte in a CAS object produced
+`up to date` and a binary that differed from a correct build.
+
 ## The rule this table encodes
 
 An input belongs in the key when changing it changes what the action

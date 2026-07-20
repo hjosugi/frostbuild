@@ -7,6 +7,16 @@ All notable changes follow Keep a Changelog and Semantic Versioning. Before
 
 ### Fixed
 
+- **A corrupt CAS object was restored and the build reported as current.**
+  `materialize` copied an object into place without checking it against the
+  digest that names it, so bit rot or a truncated write produced an artifact
+  that never existed, delivered as a cache hit. Reproduced by flipping one
+  byte: frost said `up to date` and left a binary differing from a correct
+  build. Objects are now verified on restore; a bad one is removed and the
+  action re-runs. The cost is one hash, only on the restore path.
+
+### Fixed
+
 - The shell frost runs every genrule and shell test through was the one tool
   frost chooses and did not account for. `/bin/sh` now sits in the toolchain
   fingerprint beside the C drivers, so replacing it invalidates the actions
