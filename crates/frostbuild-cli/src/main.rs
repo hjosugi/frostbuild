@@ -1090,8 +1090,11 @@ fn resolve_targets(graph: &BuildGraph, requested: Vec<String>) -> Result<Vec<Str
     for name in &requested {
         if !graph.targets.contains_key(name) {
             let known: Vec<&str> = graph.targets.keys().map(String::as_str).collect();
+            if let Some(hint) = frostbuild_core::manifest::closest(name, known.iter().copied()) {
+                bail!("unknown target {name:?}. did you mean {hint:?}?");
+            }
             bail!(
-                "unknown target {name:?} (known targets: {})",
+                "unknown target {name:?}. known targets: {}",
                 known.join(", ")
             );
         }

@@ -12,6 +12,42 @@ pub const MANIFEST_FILE: &str = "frost.toml";
 /// it keeps historical output paths and cache identities unchanged.
 pub const HOST_PLATFORM: &str = "host";
 
+/// The profile every workspace has without declaring one.
+pub const DEFAULT_PROFILE: &str = "debug";
+
+/// The closest candidate to `input`, when one is close enough to be worth
+/// suggesting. Turns "unknown X" into "unknown X, did you mean Y".
+pub fn closest<'a>(input: &str, candidates: impl IntoIterator<Item = &'a str>) -> Option<&'a str> {
+    let mut best: Option<(usize, &str)> = None;
+    for candidate in candidates {
+        let distance = edit_distance(input, candidate);
+        if best.is_none() || best.is_some_and(|(d, _)| distance < d) {
+            best = Some((distance, candidate));
+        }
+    }
+    // One edit per three characters: short names need a near-exact match,
+    // longer ones tolerate a typo or two. A suggestion that is not actually
+    // similar is worse than no suggestion.
+    let budget = 1 + input.chars().count() / 3;
+    best.filter(|&(distance, _)| distance <= budget)
+        .map(|(_, name)| name)
+}
+
+fn edit_distance(a: &str, b: &str) -> usize {
+    let b: Vec<char> = b.chars().collect();
+    let mut previous: Vec<usize> = (0..=b.len()).collect();
+    let mut current = vec![0; b.len() + 1];
+    for (i, ca) in a.chars().enumerate() {
+        current[0] = i + 1;
+        for (j, &cb) in b.iter().enumerate() {
+            let substitute = previous[j] + usize::from(ca != cb);
+            current[j + 1] = substitute.min(previous[j + 1] + 1).min(current[j] + 1);
+        }
+        std::mem::swap(&mut previous, &mut current);
+    }
+    previous[b.len()]
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum TargetKind {
@@ -274,12 +310,15 @@ impl Manifest {
         }
         let Some(spec) = self.platforms.get(platform) else {
             let known: Vec<&str> = self.platforms.keys().map(String::as_str).collect();
+            if let Some(hint) = closest(platform, known.iter().copied()) {
+                bail!("unknown platform {platform:?}. did you mean {hint:?}?");
+            }
             bail!(
-                "unknown platform {platform:?} (declared platforms: {})",
+                "unknown platform {platform:?}{}",
                 if known.is_empty() {
-                    "none".to_string()
+                    ". this workspace declares no [platform.*] sections".to_string()
                 } else {
-                    known.join(", ")
+                    format!(". declared platforms: {}", known.join(", "))
                 }
             );
         };
@@ -738,6 +777,18 @@ mod tests {
         let err = m.toolchain_for("nope").unwrap_err().to_string();
         assert!(err.contains("unknown platform"), "{err}");
         assert!(err.contains("rv64"), "{err}");
+    }
+
+    #[test]
+    fn suggests_only_genuinely_close_names() {
+        assert_eq!(closest("relase", ["debug", "release"]), Some("release"));
+        assert_eq!(closest("aarch65", ["aarch64", "riscv"]), Some("aarch64"));
+        assert_eq!(closest("ap", ["app", "lib"]), Some("app"));
+        // A short name that resembles nothing gets no suggestion: a wrong
+        // hint sends the reader down the wrong path.
+        assert_eq!(closest("zzz", ["debug", "release"]), None);
+        assert_eq!(closest("windows", ["aarch64"]), None);
+        assert_eq!(closest("anything", []), None);
     }
 
     #[test]

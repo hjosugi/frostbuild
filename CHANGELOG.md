@@ -7,6 +7,11 @@ All notable changes follow Keep a Changelog and Semantic Versioning. Before
 
 ### Fixed
 
+- `--profile` accepted any name. A typo built with no profile flags into its
+  own output tree and said nothing, so `--profile relase` quietly produced a
+  different binary than `--profile release`. Once a workspace declares any
+  profile, an undeclared name is now an error; `debug` always works, and an
+  empty `[profile.<name>]` section still asks for a bare tree on purpose.
 - The daemon could not start from a workspace more than a few directories
   deep. Its socket lived inside the workspace, and a Unix socket address is
   capped near 100 bytes, so `frost daemon start` failed with `SUN_LEN` and no
@@ -19,6 +24,13 @@ All notable changes follow Keep a Changelog and Semantic Versioning. Before
 - `frost build --daemon` slept 20 ms after every successful build, to let the
   watcher deliver events for the build's own writes before clearing a counter
   that only `daemon status` reads. Every build paid it. Removed.
+
+### Changed
+
+- Unknown target, profile and platform names suggest the closest declared one
+  instead of printing the whole list: `unknown target "ap". did you mean
+  "app"?`. A name that resembles nothing still gets the list, because a wrong
+  suggestion is worse than none.
 
 ### Performance
 

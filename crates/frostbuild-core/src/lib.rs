@@ -63,7 +63,26 @@ impl ActionKey {
             })
             .unwrap_or_else(|_| self.cwd.to_string_lossy().replace('\\', "/"));
 
-        let mut payload = String::new();
+        // One allocation for the whole payload rather than a handful of
+        // doublings: every field contributes its key, its length and a few
+        // separators on top of the value.
+        let capacity = 128
+            + self.builder.len()
+            + self.target.len()
+            + cwd.len()
+            + self.toolchain_hash.len()
+            + self.argv.iter().map(|a| a.len() + 16).sum::<usize>()
+            + self
+                .env
+                .iter()
+                .map(|(k, v)| k.len() + v.len() + 32)
+                .sum::<usize>()
+            + self
+                .inputs
+                .iter()
+                .map(|(p, d)| p.len() + d.len() + 32)
+                .sum::<usize>();
+        let mut payload = String::with_capacity(capacity);
         write_field(&mut payload, "schema", "frost-action-key-v2");
         write_field(&mut payload, "builder", &self.builder);
         write_field(&mut payload, "target", &self.target);
@@ -97,10 +116,15 @@ impl ActionKey {
     }
 }
 
+/// Appends one length-prefixed field. Byte-for-byte identical to writing
+/// `key\0len\0value\0`; the length is formatted in place because
+/// `len().to_string()` heap-allocates once per field, and an action key writes
+/// a field per argv entry and two per input.
 fn write_field(payload: &mut String, key: &str, value: &str) {
+    use std::fmt::Write;
     payload.push_str(key);
     payload.push('\0');
-    payload.push_str(&value.len().to_string());
+    let _ = write!(payload, "{}", value.len());
     payload.push('\0');
     payload.push_str(value);
     payload.push('\0');

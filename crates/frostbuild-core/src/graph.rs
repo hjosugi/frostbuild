@@ -4,7 +4,7 @@ use std::rc::Rc;
 use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
 
-use crate::manifest::{Manifest, TargetKind, Toolchain, HOST_PLATFORM};
+use crate::manifest::{Manifest, TargetKind, Toolchain, DEFAULT_PROFILE, HOST_PLATFORM};
 
 pub type FileId = usize;
 pub type ActionId = usize;
@@ -95,6 +95,26 @@ impl BuildGraph {
                 .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
         {
             bail!("invalid profile name {profile:?}");
+        }
+        // A profile the manifest never declares builds with no profile flags,
+        // into its own output tree — silently, so `--profile relase` produces
+        // a different binary than `--profile release` and says nothing. Once a
+        // workspace declares any profile, an undeclared name is a typo far
+        // more often than an intent; declaring an empty section is the way to
+        // ask for a bare tree on purpose.
+        if !manifest.profiles.is_empty()
+            && profile != DEFAULT_PROFILE
+            && !manifest.profiles.contains_key(profile)
+        {
+            let known: Vec<&str> = manifest.profiles.keys().map(String::as_str).collect();
+            if let Some(hint) = crate::manifest::closest(profile, known.iter().copied()) {
+                bail!("unknown profile {profile:?}. did you mean {hint:?}?");
+            }
+            bail!(
+                "unknown profile {profile:?}. declared profiles: {} \
+                 (add an empty [profile.{profile}] section for a bare tree)",
+                known.join(", ")
+            );
         }
         let toolchain = manifest.toolchain_for(platform)?;
         // The host platform keeps historical single-segment output trees so
@@ -829,6 +849,34 @@ mod tests {
         let host = BuildGraph::from_manifest_with_profile(&manifest, "debug").unwrap();
         let host_link = host.actions.iter().find(|a| a.id == "link:app").unwrap();
         assert!(host_link.argv.contains(&format!("{BIN_DIR}/debug/app")));
+    }
+
+    #[test]
+    fn an_undeclared_profile_is_a_typo_not_a_silent_new_tree() {
+        let manifest = Manifest::parse_str(
+            r#"
+            [profile.release]
+            cflags = ["-O2"]
+
+            [target.app]
+            kind = "cc_binary"
+            srcs = ["a.c"]
+            "#,
+        )
+        .unwrap();
+        let err = BuildGraph::from_manifest_with_profile(&manifest, "relase")
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("did you mean"), "{err}");
+        assert!(err.contains("release"), "{err}");
+
+        // debug always works, declared or not: it is the default.
+        assert!(BuildGraph::from_manifest_with_profile(&manifest, "debug").is_ok());
+        assert!(BuildGraph::from_manifest_with_profile(&manifest, "release").is_ok());
+
+        // A workspace that declares no profiles keeps naming trees freely.
+        let bare = Manifest::parse_str("[target.app]\nkind='cc_binary'\nsrcs=['a.c']\n").unwrap();
+        assert!(BuildGraph::from_manifest_with_profile(&bare, "scratch").is_ok());
     }
 
     #[test]
