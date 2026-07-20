@@ -1,0 +1,37 @@
+[analyze] /home/claude/corpus/lua-g: 40 commits, FastCDC avg=512KiB min=128KiB max=2048KiB
+[analyze]   commit 10/40 (11s)
+[analyze]   commit 20/40 (21s)
+[analyze]   commit 30/40 (33s)
+[analyze]   commit 40/40 (44s)
+
+========================================================================
+/home/claude/corpus/lua-g  (FastCDC avg=512KiB)
+========================================================================
+artifact instances : 1440
+  exact CAS hits   : 1212  (84.2%)
+  first appearance : 36
+  misses w/ prev   : 192  <- the measurable population
+
+transferred bytes over 192 cache misses (total artifact size 78,735,110 B)
+
+  scheme              bytes    vs raw   vs zstd  vs cdc+zstd
+  raw            78,735,110    100.0%    299.0%       366.8%
+  zstd           26,337,171     33.5%    100.0%       122.7%
+  cdc            61,400,606     78.0%    233.1%       286.0%
+  cdc_zstd       21,466,653     27.3%     81.5%       100.0%
+  zdelta          4,790,068      6.1%     18.2%        22.3%
+  bsdiff            326,551      0.4%      1.2%         1.5%
+
+FastCDC behaviour on misses:
+  artifacts producing exactly 1 chunk : 129/192 (67.2%)  <- CDC is a no-op for these
+  chunk count distribution            : {1: 129, 2: 31, 3: 28, 4: 4}
+
+by artifact kind (bytes, and best delta vs cdc+zstd):
+  kind       n          raw        zstd    cdc+zstd      zdelta      bsdiff
+  .a        30   43,493,534  13,009,558   8,334,282   4,136,087      51,263
+  .o       129    7,014,152   2,452,623   2,452,623     116,451      76,872
+  bin       33   28,227,424  10,874,990  10,679,748     537,530     198,416
+
+HEADLINE: best neighbor delta vs Bazel's cdc+zstd = 1.5%  (delta wins, 21,140,102 B difference)
+
+[analyze] rows -> results/lua-g_avg512.json

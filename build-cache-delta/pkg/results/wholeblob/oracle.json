@@ -1,0 +1,2962 @@
+{
+ "lua-O2": {
+  "summary": {
+   "config": "lua-O2",
+   "misses": 111,
+   "trivial_mb": 0.335,
+   "oracle_mb": 0.335,
+   "oracle_saving_pct": 0.0,
+   "oracle_is_trivial_rate": 0.973,
+   "cpu_s": 42.0
+  },
+  "misses": [
+   {
+    "commit_index": 1,
+    "path": "ldo.o",
+    "raw": 16208,
+    "trivial": 623,
+    "oracle": 623,
+    "oracle_commit_index": 0,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 1,
+    "path": "lgc.o",
+    "raw": 27272,
+    "trivial": 939,
+    "oracle": 939,
+    "oracle_commit_index": 0,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 1,
+    "path": "liblua.a",
+    "raw": 540792,
+    "trivial": 1460,
+    "oracle": 1460,
+    "oracle_commit_index": 0,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 1,
+    "path": "lua",
+    "raw": 331976,
+    "trivial": 7649,
+    "oracle": 7649,
+    "oracle_commit_index": 0,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 2,
+    "path": "liblua.a",
+    "raw": 540856,
+    "trivial": 583,
+    "oracle": 583,
+    "oracle_commit_index": 1,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 2,
+    "path": "lstrlib.o",
+    "raw": 45640,
+    "trivial": 556,
+    "oracle": 556,
+    "oracle_commit_index": 1,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 2,
+    "path": "lua",
+    "raw": 331976,
+    "trivial": 1390,
+    "oracle": 1390,
+    "oracle_commit_index": 1,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 3,
+    "path": "lapi.o",
+    "raw": 29368,
+    "trivial": 370,
+    "oracle": 370,
+    "oracle_commit_index": 2,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 3,
+    "path": "liblua.a",
+    "raw": 540888,
+    "trivial": 422,
+    "oracle": 422,
+    "oracle_commit_index": 2,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 3,
+    "path": "lua",
+    "raw": 331976,
+    "trivial": 1399,
+    "oracle": 1399,
+    "oracle_commit_index": 2,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 7,
+    "path": "liblua.a",
+    "raw": 540888,
+    "trivial": 627,
+    "oracle": 627,
+    "oracle_commit_index": 6,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 7,
+    "path": "lstrlib.o",
+    "raw": 45640,
+    "trivial": 610,
+    "oracle": 610,
+    "oracle_commit_index": 6,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 7,
+    "path": "lua",
+    "raw": 331976,
+    "trivial": 653,
+    "oracle": 653,
+    "oracle_commit_index": 6,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 8,
+    "path": "ldo.o",
+    "raw": 16432,
+    "trivial": 1059,
+    "oracle": 1059,
+    "oracle_commit_index": 7,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 8,
+    "path": "lgc.o",
+    "raw": 27272,
+    "trivial": 317,
+    "oracle": 317,
+    "oracle_commit_index": 7,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 8,
+    "path": "liblua.a",
+    "raw": 541288,
+    "trivial": 1817,
+    "oracle": 1817,
+    "oracle_commit_index": 7,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 8,
+    "path": "lstate.o",
+    "raw": 8336,
+    "trivial": 600,
+    "oracle": 600,
+    "oracle_commit_index": 7,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 8,
+    "path": "lua",
+    "raw": 331976,
+    "trivial": 6486,
+    "oracle": 6486,
+    "oracle_commit_index": 7,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 11,
+    "path": "lua",
+    "raw": 332104,
+    "trivial": 4301,
+    "oracle": 4301,
+    "oracle_commit_index": 10,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 11,
+    "path": "lua.o",
+    "raw": 18752,
+    "trivial": 2828,
+    "oracle": 2828,
+    "oracle_commit_index": 10,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 13,
+    "path": "lapi.o",
+    "raw": 29368,
+    "trivial": 158,
+    "oracle": 158,
+    "oracle_commit_index": 12,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 13,
+    "path": "liblua.a",
+    "raw": 541288,
+    "trivial": 162,
+    "oracle": 162,
+    "oracle_commit_index": 12,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 13,
+    "path": "lua",
+    "raw": 332104,
+    "trivial": 215,
+    "oracle": 215,
+    "oracle_commit_index": 12,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 13,
+    "path": "lua.o",
+    "raw": 18752,
+    "trivial": 151,
+    "oracle": 151,
+    "oracle_commit_index": 12,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 17,
+    "path": "liblua.a",
+    "raw": 541288,
+    "trivial": 275,
+    "oracle": 275,
+    "oracle_commit_index": 16,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 17,
+    "path": "lua",
+    "raw": 332104,
+    "trivial": 289,
+    "oracle": 289,
+    "oracle_commit_index": 16,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 17,
+    "path": "lutf8lib.o",
+    "raw": 10096,
+    "trivial": 262,
+    "oracle": 262,
+    "oracle_commit_index": 16,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "lapi.o",
+    "raw": 29368,
+    "trivial": 188,
+    "oracle": 188,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "lgc.o",
+    "raw": 27272,
+    "trivial": 176,
+    "oracle": 176,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "liblua.a",
+    "raw": 541288,
+    "trivial": 326,
+    "oracle": 326,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "lstring.o",
+    "raw": 6456,
+    "trivial": 252,
+    "oracle": 252,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "lstrlib.o",
+    "raw": 45640,
+    "trivial": 155,
+    "oracle": 155,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "lua",
+    "raw": 332104,
+    "trivial": 379,
+    "oracle": 379,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 19,
+    "path": "liblua.a",
+    "raw": 541288,
+    "trivial": 157,
+    "oracle": 157,
+    "oracle_commit_index": 18,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 19,
+    "path": "lopcodes.o",
+    "raw": 1712,
+    "trivial": 144,
+    "oracle": 144,
+    "oracle_commit_index": 18,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 19,
+    "path": "lua",
+    "raw": 332104,
+    "trivial": 210,
+    "oracle": 210,
+    "oracle_commit_index": 18,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 20,
+    "path": "liblua.a",
+    "raw": 541176,
+    "trivial": 2180,
+    "oracle": 2180,
+    "oracle_commit_index": 19,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 20,
+    "path": "ltablib.o",
+    "raw": 13064,
+    "trivial": 2024,
+    "oracle": 2024,
+    "oracle_commit_index": 19,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 20,
+    "path": "lua",
+    "raw": 332096,
+    "trivial": 1976,
+    "oracle": 1974,
+    "oracle_commit_index": 18,
+    "oracle_is_trivial": false
+   },
+   {
+    "commit_index": 22,
+    "path": "lapi.o",
+    "raw": 29456,
+    "trivial": 602,
+    "oracle": 602,
+    "oracle_commit_index": 21,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 22,
+    "path": "liblua.a",
+    "raw": 541264,
+    "trivial": 665,
+    "oracle": 665,
+    "oracle_commit_index": 21,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 22,
+    "path": "lua",
+    "raw": 332096,
+    "trivial": 4832,
+    "oracle": 4832,
+    "oracle_commit_index": 21,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 23,
+    "path": "liblua.a",
+    "raw": 541248,
+    "trivial": 1012,
+    "oracle": 1012,
+    "oracle_commit_index": 22,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 23,
+    "path": "lstrlib.o",
+    "raw": 45624,
+    "trivial": 962,
+    "oracle": 962,
+    "oracle_commit_index": 22,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 23,
+    "path": "lua",
+    "raw": 332096,
+    "trivial": 920,
+    "oracle": 920,
+    "oracle_commit_index": 22,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 25,
+    "path": "lauxlib.o",
+    "raw": 34520,
+    "trivial": 1642,
+    "oracle": 1642,
+    "oracle_commit_index": 24,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 25,
+    "path": "lbaselib.o",
+    "raw": 20800,
+    "trivial": 611,
+    "oracle": 611,
+    "oracle_commit_index": 24,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 25,
+    "path": "ldblib.o",
+    "raw": 20088,
+    "trivial": 1187,
+    "oracle": 1187,
+    "oracle_commit_index": 24,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 25,
+    "path": "liblua.a",
+    "raw": 541400,
+    "trivial": 3598,
+    "oracle": 3598,
+    "oracle_commit_index": 24,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 25,
+    "path": "loadlib.o",
+    "raw": 16384,
+    "trivial": 386,
+    "oracle": 386,
+    "oracle_commit_index": 24,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 25,
+    "path": "lua",
+    "raw": 332096,
+    "trivial": 5545,
+    "oracle": 5545,
+    "oracle_commit_index": 24,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 25,
+    "path": "lua.o",
+    "raw": 18984,
+    "trivial": 1442,
+    "oracle": 1442,
+    "oracle_commit_index": 24,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 26,
+    "path": "ldebug.o",
+    "raw": 18368,
+    "trivial": 448,
+    "oracle": 448,
+    "oracle_commit_index": 25,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 26,
+    "path": "liblua.a",
+    "raw": 541432,
+    "trivial": 495,
+    "oracle": 495,
+    "oracle_commit_index": 25,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 26,
+    "path": "lua",
+    "raw": 332096,
+    "trivial": 1320,
+    "oracle": 1320,
+    "oracle_commit_index": 25,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 28,
+    "path": "ldo.o",
+    "raw": 16832,
+    "trivial": 1714,
+    "oracle": 1714,
+    "oracle_commit_index": 27,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 28,
+    "path": "liblua.a",
+    "raw": 541756,
+    "trivial": 3569,
+    "oracle": 3569,
+    "oracle_commit_index": 27,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 28,
+    "path": "lparser.o",
+    "raw": 41200,
+    "trivial": 1471,
+    "oracle": 1471,
+    "oracle_commit_index": 27,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 28,
+    "path": "lua",
+    "raw": 332136,
+    "trivial": 10161,
+    "oracle": 10161,
+    "oracle_commit_index": 27,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 28,
+    "path": "lundump.o",
+    "raw": 10248,
+    "trivial": 619,
+    "oracle": 619,
+    "oracle_commit_index": 27,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 29,
+    "path": "lbaselib.o",
+    "raw": 20680,
+    "trivial": 885,
+    "oracle": 885,
+    "oracle_commit_index": 28,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 29,
+    "path": "liblua.a",
+    "raw": 541636,
+    "trivial": 909,
+    "oracle": 909,
+    "oracle_commit_index": 28,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 29,
+    "path": "lua",
+    "raw": 332136,
+    "trivial": 1529,
+    "oracle": 1529,
+    "oracle_commit_index": 28,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lapi.o",
+    "raw": 28864,
+    "trivial": 3471,
+    "oracle": 3471,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lauxlib.o",
+    "raw": 34440,
+    "trivial": 3871,
+    "oracle": 3871,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lbaselib.o",
+    "raw": 20680,
+    "trivial": 1501,
+    "oracle": 1501,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lcode.o",
+    "raw": 30704,
+    "trivial": 6399,
+    "oracle": 6399,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lcorolib.o",
+    "raw": 8520,
+    "trivial": 923,
+    "oracle": 923,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "ldblib.o",
+    "raw": 19992,
+    "trivial": 1421,
+    "oracle": 1421,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "ldebug.o",
+    "raw": 18248,
+    "trivial": 3006,
+    "oracle": 3006,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "ldo.o",
+    "raw": 16744,
+    "trivial": 2499,
+    "oracle": 2499,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "ldump.o",
+    "raw": 4824,
+    "trivial": 1060,
+    "oracle": 1060,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lfunc.o",
+    "raw": 5520,
+    "trivial": 1316,
+    "oracle": 1316,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lgc.o",
+    "raw": 26848,
+    "trivial": 4505,
+    "oracle": 4505,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "liblua.a",
+    "raw": 538500,
+    "trivial": 66355,
+    "oracle": 66355,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "linit.o",
+    "raw": 3400,
+    "trivial": 217,
+    "oracle": 217,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "liolib.o",
+    "raw": 24984,
+    "trivial": 2961,
+    "oracle": 2961,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "llex.o",
+    "raw": 19336,
+    "trivial": 3192,
+    "oracle": 3192,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lmathlib.o",
+    "raw": 16192,
+    "trivial": 1545,
+    "oracle": 1545,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lmem.o",
+    "raw": 3480,
+    "trivial": 713,
+    "oracle": 713,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "loadlib.o",
+    "raw": 16320,
+    "trivial": 1438,
+    "oracle": 1438,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lobject.o",
+    "raw": 14096,
+    "trivial": 2966,
+    "oracle": 2966,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "loslib.o",
+    "raw": 12488,
+    "trivial": 1273,
+    "oracle": 1273,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lparser.o",
+    "raw": 41064,
+    "trivial": 7616,
+    "oracle": 7616,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lstate.o",
+    "raw": 8352,
+    "trivial": 1258,
+    "oracle": 1258,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lstring.o",
+    "raw": 6720,
+    "trivial": 1750,
+    "oracle": 1750,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lstrlib.o",
+    "raw": 45376,
+    "trivial": 7062,
+    "oracle": 7062,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "ltable.o",
+    "raw": 15488,
+    "trivial": 4213,
+    "oracle": 4213,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "ltablib.o",
+    "raw": 12992,
+    "trivial": 1507,
+    "oracle": 1507,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "ltm.o",
+    "raw": 9760,
+    "trivial": 1183,
+    "oracle": 1183,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lua",
+    "raw": 332232,
+    "trivial": 77824,
+    "oracle": 77824,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lua.o",
+    "raw": 18912,
+    "trivial": 1460,
+    "oracle": 1460,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lundump.o",
+    "raw": 10288,
+    "trivial": 1119,
+    "oracle": 1119,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lutf8lib.o",
+    "raw": 10016,
+    "trivial": 1517,
+    "oracle": 1511,
+    "oracle_commit_index": 16,
+    "oracle_is_trivial": false
+   },
+   {
+    "commit_index": 31,
+    "path": "lvm.o",
+    "raw": 38040,
+    "trivial": 10566,
+    "oracle": 10566,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lzio.o",
+    "raw": 2080,
+    "trivial": 416,
+    "oracle": 416,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 32,
+    "path": "liblua.a",
+    "raw": 538500,
+    "trivial": 153,
+    "oracle": 153,
+    "oracle_commit_index": 31,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 32,
+    "path": "lopcodes.o",
+    "raw": 1712,
+    "trivial": 146,
+    "oracle": 146,
+    "oracle_commit_index": 31,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 32,
+    "path": "lua",
+    "raw": 332232,
+    "trivial": 211,
+    "oracle": 211,
+    "oracle_commit_index": 31,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 34,
+    "path": "liblua.a",
+    "raw": 538350,
+    "trivial": 407,
+    "oracle": 406,
+    "oracle_commit_index": 31,
+    "oracle_is_trivial": false
+   },
+   {
+    "commit_index": 34,
+    "path": "lopcodes.o",
+    "raw": 1576,
+    "trivial": 304,
+    "oracle": 304,
+    "oracle_commit_index": 33,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 34,
+    "path": "lua",
+    "raw": 332200,
+    "trivial": 1286,
+    "oracle": 1286,
+    "oracle_commit_index": 33,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 35,
+    "path": "ldo.o",
+    "raw": 16632,
+    "trivial": 464,
+    "oracle": 464,
+    "oracle_commit_index": 34,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 35,
+    "path": "liblua.a",
+    "raw": 538222,
+    "trivial": 519,
+    "oracle": 519,
+    "oracle_commit_index": 34,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 35,
+    "path": "lua",
+    "raw": 332160,
+    "trivial": 6511,
+    "oracle": 6511,
+    "oracle_commit_index": 34,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 36,
+    "path": "lauxlib.o",
+    "raw": 34584,
+    "trivial": 524,
+    "oracle": 524,
+    "oracle_commit_index": 35,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 36,
+    "path": "liblua.a",
+    "raw": 538366,
+    "trivial": 570,
+    "oracle": 570,
+    "oracle_commit_index": 35,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 36,
+    "path": "lua",
+    "raw": 332160,
+    "trivial": 4384,
+    "oracle": 4384,
+    "oracle_commit_index": 35,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 37,
+    "path": "liblua.a",
+    "raw": 538366,
+    "trivial": 265,
+    "oracle": 265,
+    "oracle_commit_index": 36,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 37,
+    "path": "lua",
+    "raw": 332160,
+    "trivial": 294,
+    "oracle": 294,
+    "oracle_commit_index": 36,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 37,
+    "path": "lvm.o",
+    "raw": 38040,
+    "trivial": 256,
+    "oracle": 256,
+    "oracle_commit_index": 36,
+    "oracle_is_trivial": true
+   }
+  ]
+ },
+ "lua-g": {
+  "summary": {
+   "config": "lua-g",
+   "misses": 215,
+   "trivial_mb": 2.066,
+   "oracle_mb": 2.064,
+   "oracle_saving_pct": 0.1,
+   "oracle_is_trivial_rate": 0.893,
+   "cpu_s": 214.9
+  },
+  "misses": [
+   {
+    "commit_index": 1,
+    "path": "lapi.o",
+    "raw": 61816,
+    "trivial": 6656,
+    "oracle": 6656,
+    "oracle_commit_index": 0,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 1,
+    "path": "lcode.o",
+    "raw": 74192,
+    "trivial": 167,
+    "oracle": 167,
+    "oracle_commit_index": 0,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 1,
+    "path": "ldebug.o",
+    "raw": 45360,
+    "trivial": 170,
+    "oracle": 170,
+    "oracle_commit_index": 0,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 1,
+    "path": "ldo.o",
+    "raw": 43920,
+    "trivial": 11207,
+    "oracle": 11207,
+    "oracle_commit_index": 0,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 1,
+    "path": "lgc.o",
+    "raw": 53056,
+    "trivial": 12316,
+    "oracle": 12316,
+    "oracle_commit_index": 0,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 1,
+    "path": "liblua.a",
+    "raw": 1158992,
+    "trivial": 50704,
+    "oracle": 50704,
+    "oracle_commit_index": 0,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 1,
+    "path": "llex.o",
+    "raw": 39440,
+    "trivial": 4990,
+    "oracle": 4990,
+    "oracle_commit_index": 0,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 1,
+    "path": "lmem.o",
+    "raw": 15448,
+    "trivial": 633,
+    "oracle": 633,
+    "oracle_commit_index": 0,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 1,
+    "path": "lobject.o",
+    "raw": 35608,
+    "trivial": 5165,
+    "oracle": 5165,
+    "oracle_commit_index": 0,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 1,
+    "path": "lstate.o",
+    "raw": 25840,
+    "trivial": 1362,
+    "oracle": 1362,
+    "oracle_commit_index": 0,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 1,
+    "path": "lstring.o",
+    "raw": 23472,
+    "trivial": 3334,
+    "oracle": 3334,
+    "oracle_commit_index": 0,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 1,
+    "path": "ltable.o",
+    "raw": 46344,
+    "trivial": 5294,
+    "oracle": 5294,
+    "oracle_commit_index": 0,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 1,
+    "path": "lua",
+    "raw": 836024,
+    "trivial": 14310,
+    "oracle": 14310,
+    "oracle_commit_index": 0,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 1,
+    "path": "lundump.o",
+    "raw": 28864,
+    "trivial": 3451,
+    "oracle": 3451,
+    "oracle_commit_index": 0,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 2,
+    "path": "lapi.o",
+    "raw": 61824,
+    "trivial": 10173,
+    "oracle": 9963,
+    "oracle_commit_index": 0,
+    "oracle_is_trivial": false
+   },
+   {
+    "commit_index": 2,
+    "path": "liblua.a",
+    "raw": 1159040,
+    "trivial": 18808,
+    "oracle": 18808,
+    "oracle_commit_index": 1,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 2,
+    "path": "lstrlib.o",
+    "raw": 67736,
+    "trivial": 9164,
+    "oracle": 9164,
+    "oracle_commit_index": 1,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 2,
+    "path": "lua",
+    "raw": 836048,
+    "trivial": 1492,
+    "oracle": 1492,
+    "oracle_commit_index": 1,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 3,
+    "path": "lapi.o",
+    "raw": 61960,
+    "trivial": 15028,
+    "oracle": 15004,
+    "oracle_commit_index": 1,
+    "oracle_is_trivial": false
+   },
+   {
+    "commit_index": 3,
+    "path": "liblua.a",
+    "raw": 1159176,
+    "trivial": 15125,
+    "oracle": 15125,
+    "oracle_commit_index": 2,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 3,
+    "path": "lua",
+    "raw": 836096,
+    "trivial": 11842,
+    "oracle": 11842,
+    "oracle_commit_index": 2,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 4,
+    "path": "liblua.a",
+    "raw": 1159168,
+    "trivial": 9093,
+    "oracle": 9093,
+    "oracle_commit_index": 3,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 4,
+    "path": "ltable.o",
+    "raw": 46336,
+    "trivial": 8982,
+    "oracle": 8982,
+    "oracle_commit_index": 3,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 4,
+    "path": "lua",
+    "raw": 836096,
+    "trivial": 459,
+    "oracle": 459,
+    "oracle_commit_index": 3,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 5,
+    "path": "liblua.a",
+    "raw": 1159200,
+    "trivial": 11131,
+    "oracle": 11106,
+    "oracle_commit_index": 3,
+    "oracle_is_trivial": false
+   },
+   {
+    "commit_index": 5,
+    "path": "ltable.o",
+    "raw": 46368,
+    "trivial": 11088,
+    "oracle": 10969,
+    "oracle_commit_index": 0,
+    "oracle_is_trivial": false
+   },
+   {
+    "commit_index": 5,
+    "path": "lua",
+    "raw": 836120,
+    "trivial": 6763,
+    "oracle": 6763,
+    "oracle_commit_index": 4,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 7,
+    "path": "liblua.a",
+    "raw": 1159224,
+    "trivial": 12646,
+    "oracle": 12646,
+    "oracle_commit_index": 6,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 7,
+    "path": "lmathlib.o",
+    "raw": 25592,
+    "trivial": 2001,
+    "oracle": 2001,
+    "oracle_commit_index": 6,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 7,
+    "path": "lstrlib.o",
+    "raw": 67760,
+    "trivial": 9417,
+    "oracle": 9417,
+    "oracle_commit_index": 6,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 7,
+    "path": "ltablib.o",
+    "raw": 20160,
+    "trivial": 1809,
+    "oracle": 1809,
+    "oracle_commit_index": 6,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 7,
+    "path": "lua",
+    "raw": 836136,
+    "trivial": 1743,
+    "oracle": 1743,
+    "oracle_commit_index": 6,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 8,
+    "path": "ldo.o",
+    "raw": 44128,
+    "trivial": 9192,
+    "oracle": 9192,
+    "oracle_commit_index": 7,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 8,
+    "path": "lgc.o",
+    "raw": 53072,
+    "trivial": 9184,
+    "oracle": 9184,
+    "oracle_commit_index": 7,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 8,
+    "path": "liblua.a",
+    "raw": 1159776,
+    "trivial": 25296,
+    "oracle": 25296,
+    "oracle_commit_index": 7,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 8,
+    "path": "lstate.o",
+    "raw": 26168,
+    "trivial": 8280,
+    "oracle": 8280,
+    "oracle_commit_index": 7,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 8,
+    "path": "lua",
+    "raw": 836296,
+    "trivial": 9566,
+    "oracle": 9566,
+    "oracle_commit_index": 7,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 9,
+    "path": "liblua.a",
+    "raw": 1159784,
+    "trivial": 13523,
+    "oracle": 13523,
+    "oracle_commit_index": 8,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 9,
+    "path": "lparser.o",
+    "raw": 84824,
+    "trivial": 13470,
+    "oracle": 13470,
+    "oracle_commit_index": 8,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 9,
+    "path": "lua",
+    "raw": 836304,
+    "trivial": 433,
+    "oracle": 433,
+    "oracle_commit_index": 8,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 11,
+    "path": "lua",
+    "raw": 836528,
+    "trivial": 16952,
+    "oracle": 16952,
+    "oracle_commit_index": 10,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 11,
+    "path": "lua.o",
+    "raw": 33312,
+    "trivial": 8051,
+    "oracle": 8051,
+    "oracle_commit_index": 10,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 13,
+    "path": "lapi.o",
+    "raw": 61960,
+    "trivial": 157,
+    "oracle": 157,
+    "oracle_commit_index": 12,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 13,
+    "path": "liblua.a",
+    "raw": 1159784,
+    "trivial": 164,
+    "oracle": 164,
+    "oracle_commit_index": 12,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 13,
+    "path": "lua",
+    "raw": 836528,
+    "trivial": 214,
+    "oracle": 214,
+    "oracle_commit_index": 12,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 13,
+    "path": "lua.o",
+    "raw": 33312,
+    "trivial": 154,
+    "oracle": 154,
+    "oracle_commit_index": 12,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 14,
+    "path": "lua",
+    "raw": 836528,
+    "trivial": 539,
+    "oracle": 539,
+    "oracle_commit_index": 13,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 14,
+    "path": "lua.o",
+    "raw": 33320,
+    "trivial": 4555,
+    "oracle": 4555,
+    "oracle_commit_index": 13,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 15,
+    "path": "lcode.o",
+    "raw": 74272,
+    "trivial": 12208,
+    "oracle": 12208,
+    "oracle_commit_index": 14,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 15,
+    "path": "liblua.a",
+    "raw": 1159864,
+    "trivial": 12244,
+    "oracle": 12244,
+    "oracle_commit_index": 14,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 15,
+    "path": "lua",
+    "raw": 836576,
+    "trivial": 4114,
+    "oracle": 4114,
+    "oracle_commit_index": 14,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 17,
+    "path": "liblua.a",
+    "raw": 1159888,
+    "trivial": 2884,
+    "oracle": 2884,
+    "oracle_commit_index": 16,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 17,
+    "path": "lua",
+    "raw": 836568,
+    "trivial": 1390,
+    "oracle": 1390,
+    "oracle_commit_index": 16,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 17,
+    "path": "lutf8lib.o",
+    "raw": 15560,
+    "trivial": 3035,
+    "oracle": 3035,
+    "oracle_commit_index": 16,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "lapi.o",
+    "raw": 61952,
+    "trivial": 8725,
+    "oracle": 8725,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "lauxlib.o",
+    "raw": 53024,
+    "trivial": 5482,
+    "oracle": 5482,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "lcode.o",
+    "raw": 74272,
+    "trivial": 9303,
+    "oracle": 9303,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "ldebug.o",
+    "raw": 45352,
+    "trivial": 6002,
+    "oracle": 6002,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "ldo.o",
+    "raw": 44112,
+    "trivial": 6574,
+    "oracle": 6574,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "ldump.o",
+    "raw": 21400,
+    "trivial": 3893,
+    "oracle": 3893,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "lfunc.o",
+    "raw": 23448,
+    "trivial": 4012,
+    "oracle": 4012,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "lgc.o",
+    "raw": 53080,
+    "trivial": 6641,
+    "oracle": 6641,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "liblua.a",
+    "raw": 1159672,
+    "trivial": 112803,
+    "oracle": 112803,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "liolib.o",
+    "raw": 38944,
+    "trivial": 4129,
+    "oracle": 4129,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "llex.o",
+    "raw": 39424,
+    "trivial": 5036,
+    "oracle": 5036,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "loadlib.o",
+    "raw": 29600,
+    "trivial": 3037,
+    "oracle": 3037,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "lobject.o",
+    "raw": 35600,
+    "trivial": 5818,
+    "oracle": 5815,
+    "oracle_commit_index": 0,
+    "oracle_is_trivial": false
+   },
+   {
+    "commit_index": 18,
+    "path": "loslib.o",
+    "raw": 21232,
+    "trivial": 2504,
+    "oracle": 2504,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "lparser.o",
+    "raw": 84816,
+    "trivial": 10004,
+    "oracle": 10004,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "lstate.o",
+    "raw": 26160,
+    "trivial": 4456,
+    "oracle": 4456,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "lstring.o",
+    "raw": 23472,
+    "trivial": 5210,
+    "oracle": 5210,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "lstrlib.o",
+    "raw": 67744,
+    "trivial": 6118,
+    "oracle": 6118,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "ltable.o",
+    "raw": 46360,
+    "trivial": 7000,
+    "oracle": 7000,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "ltablib.o",
+    "raw": 20144,
+    "trivial": 2201,
+    "oracle": 2198,
+    "oracle_commit_index": 6,
+    "oracle_is_trivial": false
+   },
+   {
+    "commit_index": 18,
+    "path": "ltm.o",
+    "raw": 29928,
+    "trivial": 4782,
+    "oracle": 4782,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "lua",
+    "raw": 836096,
+    "trivial": 11533,
+    "oracle": 11533,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "lundump.o",
+    "raw": 28848,
+    "trivial": 4453,
+    "oracle": 4453,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "lutf8lib.o",
+    "raw": 15544,
+    "trivial": 1926,
+    "oracle": 1926,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 18,
+    "path": "lvm.o",
+    "raw": 103520,
+    "trivial": 9890,
+    "oracle": 9890,
+    "oracle_commit_index": 17,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 19,
+    "path": "liblua.a",
+    "raw": 1159672,
+    "trivial": 161,
+    "oracle": 161,
+    "oracle_commit_index": 18,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 19,
+    "path": "lopcodes.o",
+    "raw": 7776,
+    "trivial": 148,
+    "oracle": 148,
+    "oracle_commit_index": 18,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 19,
+    "path": "lua",
+    "raw": 836096,
+    "trivial": 207,
+    "oracle": 207,
+    "oracle_commit_index": 18,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 20,
+    "path": "liblua.a",
+    "raw": 1159736,
+    "trivial": 3079,
+    "oracle": 3079,
+    "oracle_commit_index": 19,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 20,
+    "path": "ltablib.o",
+    "raw": 20208,
+    "trivial": 3043,
+    "oracle": 3043,
+    "oracle_commit_index": 19,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 20,
+    "path": "lua",
+    "raw": 836128,
+    "trivial": 2398,
+    "oracle": 2398,
+    "oracle_commit_index": 19,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 21,
+    "path": "liblua.a",
+    "raw": 1159744,
+    "trivial": 13051,
+    "oracle": 13051,
+    "oracle_commit_index": 20,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 21,
+    "path": "lua",
+    "raw": 836144,
+    "trivial": 5043,
+    "oracle": 5043,
+    "oracle_commit_index": 20,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 21,
+    "path": "lvm.o",
+    "raw": 103528,
+    "trivial": 13007,
+    "oracle": 13007,
+    "oracle_commit_index": 20,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 22,
+    "path": "lapi.o",
+    "raw": 62016,
+    "trivial": 10560,
+    "oracle": 10560,
+    "oracle_commit_index": 21,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 22,
+    "path": "liblua.a",
+    "raw": 1159808,
+    "trivial": 10596,
+    "oracle": 10596,
+    "oracle_commit_index": 21,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 22,
+    "path": "lua",
+    "raw": 836152,
+    "trivial": 6285,
+    "oracle": 6285,
+    "oracle_commit_index": 21,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 23,
+    "path": "liblua.a",
+    "raw": 1159800,
+    "trivial": 9831,
+    "oracle": 9831,
+    "oracle_commit_index": 22,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 23,
+    "path": "lstrlib.o",
+    "raw": 67736,
+    "trivial": 9886,
+    "oracle": 9886,
+    "oracle_commit_index": 22,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 23,
+    "path": "lua",
+    "raw": 836152,
+    "trivial": 519,
+    "oracle": 519,
+    "oracle_commit_index": 22,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 25,
+    "path": "lauxlib.o",
+    "raw": 53064,
+    "trivial": 7558,
+    "oracle": 7558,
+    "oracle_commit_index": 24,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 25,
+    "path": "lbaselib.o",
+    "raw": 33288,
+    "trivial": 4381,
+    "oracle": 4381,
+    "oracle_commit_index": 24,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 25,
+    "path": "ldblib.o",
+    "raw": 31184,
+    "trivial": 4185,
+    "oracle": 4185,
+    "oracle_commit_index": 24,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 25,
+    "path": "liblua.a",
+    "raw": 1159920,
+    "trivial": 17575,
+    "oracle": 17575,
+    "oracle_commit_index": 24,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 25,
+    "path": "loadlib.o",
+    "raw": 29624,
+    "trivial": 2981,
+    "oracle": 2981,
+    "oracle_commit_index": 24,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 25,
+    "path": "lua",
+    "raw": 836160,
+    "trivial": 9127,
+    "oracle": 9127,
+    "oracle_commit_index": 24,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 25,
+    "path": "lua.o",
+    "raw": 33464,
+    "trivial": 4533,
+    "oracle": 4533,
+    "oracle_commit_index": 24,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 26,
+    "path": "ldebug.o",
+    "raw": 45376,
+    "trivial": 8514,
+    "oracle": 8514,
+    "oracle_commit_index": 25,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 26,
+    "path": "liblua.a",
+    "raw": 1159944,
+    "trivial": 8571,
+    "oracle": 8571,
+    "oracle_commit_index": 25,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 26,
+    "path": "lua",
+    "raw": 836160,
+    "trivial": 5780,
+    "oracle": 5780,
+    "oracle_commit_index": 25,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 27,
+    "path": "lua",
+    "raw": 836160,
+    "trivial": 226,
+    "oracle": 226,
+    "oracle_commit_index": 26,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 27,
+    "path": "lua.o",
+    "raw": 33464,
+    "trivial": 4038,
+    "oracle": 4038,
+    "oracle_commit_index": 26,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 28,
+    "path": "lapi.o",
+    "raw": 62016,
+    "trivial": 7859,
+    "oracle": 7859,
+    "oracle_commit_index": 27,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 28,
+    "path": "lcode.o",
+    "raw": 74272,
+    "trivial": 4835,
+    "oracle": 4835,
+    "oracle_commit_index": 27,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 28,
+    "path": "ldebug.o",
+    "raw": 45376,
+    "trivial": 5746,
+    "oracle": 5746,
+    "oracle_commit_index": 27,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 28,
+    "path": "ldo.o",
+    "raw": 45240,
+    "trivial": 12782,
+    "oracle": 12782,
+    "oracle_commit_index": 27,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 28,
+    "path": "liblua.a",
+    "raw": 1160740,
+    "trivial": 73324,
+    "oracle": 73324,
+    "oracle_commit_index": 27,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 28,
+    "path": "llex.o",
+    "raw": 39432,
+    "trivial": 4854,
+    "oracle": 4854,
+    "oracle_commit_index": 27,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 28,
+    "path": "lmem.o",
+    "raw": 15448,
+    "trivial": 2501,
+    "oracle": 2501,
+    "oracle_commit_index": 27,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 28,
+    "path": "lobject.o",
+    "raw": 35600,
+    "trivial": 191,
+    "oracle": 191,
+    "oracle_commit_index": 27,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 28,
+    "path": "lparser.o",
+    "raw": 84744,
+    "trivial": 18406,
+    "oracle": 18406,
+    "oracle_commit_index": 27,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 28,
+    "path": "lstate.o",
+    "raw": 26160,
+    "trivial": 3423,
+    "oracle": 3423,
+    "oracle_commit_index": 27,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 28,
+    "path": "lstring.o",
+    "raw": 23472,
+    "trivial": 3986,
+    "oracle": 3986,
+    "oracle_commit_index": 27,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 28,
+    "path": "ltable.o",
+    "raw": 46360,
+    "trivial": 6073,
+    "oracle": 6073,
+    "oracle_commit_index": 27,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 28,
+    "path": "lua",
+    "raw": 836488,
+    "trivial": 17874,
+    "oracle": 17874,
+    "oracle_commit_index": 27,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 28,
+    "path": "lundump.o",
+    "raw": 28560,
+    "trivial": 8144,
+    "oracle": 8144,
+    "oracle_commit_index": 27,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 29,
+    "path": "lbaselib.o",
+    "raw": 33200,
+    "trivial": 7078,
+    "oracle": 7078,
+    "oracle_commit_index": 28,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 29,
+    "path": "liblua.a",
+    "raw": 1160652,
+    "trivial": 7184,
+    "oracle": 7184,
+    "oracle_commit_index": 28,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 29,
+    "path": "lua",
+    "raw": 836512,
+    "trivial": 4701,
+    "oracle": 4701,
+    "oracle_commit_index": 28,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 30,
+    "path": "lapi.o",
+    "raw": 62016,
+    "trivial": 7826,
+    "oracle": 7826,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 30,
+    "path": "lcode.o",
+    "raw": 74272,
+    "trivial": 8292,
+    "oracle": 8292,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 30,
+    "path": "ldebug.o",
+    "raw": 45376,
+    "trivial": 5884,
+    "oracle": 5884,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 30,
+    "path": "ldo.o",
+    "raw": 45240,
+    "trivial": 6188,
+    "oracle": 6188,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 30,
+    "path": "ldump.o",
+    "raw": 21400,
+    "trivial": 3708,
+    "oracle": 3708,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 30,
+    "path": "lfunc.o",
+    "raw": 23448,
+    "trivial": 3926,
+    "oracle": 3926,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 30,
+    "path": "lgc.o",
+    "raw": 53072,
+    "trivial": 6113,
+    "oracle": 6113,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 30,
+    "path": "liblua.a",
+    "raw": 1160660,
+    "trivial": 89533,
+    "oracle": 89533,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 30,
+    "path": "llex.o",
+    "raw": 39432,
+    "trivial": 4920,
+    "oracle": 4920,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 30,
+    "path": "lmem.o",
+    "raw": 15448,
+    "trivial": 2663,
+    "oracle": 2566,
+    "oracle_commit_index": 27,
+    "oracle_is_trivial": false
+   },
+   {
+    "commit_index": 30,
+    "path": "lobject.o",
+    "raw": 35600,
+    "trivial": 5041,
+    "oracle": 5041,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 30,
+    "path": "lopcodes.o",
+    "raw": 7776,
+    "trivial": 662,
+    "oracle": 662,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 30,
+    "path": "lparser.o",
+    "raw": 84752,
+    "trivial": 9162,
+    "oracle": 9162,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 30,
+    "path": "lstate.o",
+    "raw": 26160,
+    "trivial": 3982,
+    "oracle": 3962,
+    "oracle_commit_index": 27,
+    "oracle_is_trivial": false
+   },
+   {
+    "commit_index": 30,
+    "path": "lstring.o",
+    "raw": 23472,
+    "trivial": 4021,
+    "oracle": 4021,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 30,
+    "path": "ltable.o",
+    "raw": 46368,
+    "trivial": 6312,
+    "oracle": 6312,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 30,
+    "path": "ltm.o",
+    "raw": 29928,
+    "trivial": 4696,
+    "oracle": 4696,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 30,
+    "path": "lua",
+    "raw": 836512,
+    "trivial": 619,
+    "oracle": 619,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 30,
+    "path": "lundump.o",
+    "raw": 28560,
+    "trivial": 4157,
+    "oracle": 4157,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 30,
+    "path": "lvm.o",
+    "raw": 103528,
+    "trivial": 9782,
+    "oracle": 9782,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 30,
+    "path": "lzio.o",
+    "raw": 13152,
+    "trivial": 2422,
+    "oracle": 2422,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lapi.o",
+    "raw": 61536,
+    "trivial": 14574,
+    "oracle": 14232,
+    "oracle_commit_index": 27,
+    "oracle_is_trivial": false
+   },
+   {
+    "commit_index": 31,
+    "path": "lauxlib.o",
+    "raw": 52544,
+    "trivial": 9891,
+    "oracle": 9891,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lbaselib.o",
+    "raw": 32720,
+    "trivial": 6059,
+    "oracle": 6059,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lcode.o",
+    "raw": 73832,
+    "trivial": 16828,
+    "oracle": 16714,
+    "oracle_commit_index": 27,
+    "oracle_is_trivial": false
+   },
+   {
+    "commit_index": 31,
+    "path": "lcorolib.o",
+    "raw": 14752,
+    "trivial": 2927,
+    "oracle": 2927,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lctype.o",
+    "raw": 3400,
+    "trivial": 450,
+    "oracle": 450,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "ldblib.o",
+    "raw": 30720,
+    "trivial": 5591,
+    "oracle": 5591,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "ldebug.o",
+    "raw": 44888,
+    "trivial": 11307,
+    "oracle": 11278,
+    "oracle_commit_index": 27,
+    "oracle_is_trivial": false
+   },
+   {
+    "commit_index": 31,
+    "path": "ldo.o",
+    "raw": 44768,
+    "trivial": 11102,
+    "oracle": 10941,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": false
+   },
+   {
+    "commit_index": 31,
+    "path": "ldump.o",
+    "raw": 20904,
+    "trivial": 6711,
+    "oracle": 6300,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": false
+   },
+   {
+    "commit_index": 31,
+    "path": "lfunc.o",
+    "raw": 22944,
+    "trivial": 6885,
+    "oracle": 6415,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": false
+   },
+   {
+    "commit_index": 31,
+    "path": "lgc.o",
+    "raw": 52640,
+    "trivial": 12550,
+    "oracle": 12550,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "liblua.a",
+    "raw": 1145396,
+    "trivial": 235083,
+    "oracle": 235083,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "linit.o",
+    "raw": 6704,
+    "trivial": 692,
+    "oracle": 692,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "liolib.o",
+    "raw": 38472,
+    "trivial": 7081,
+    "oracle": 7081,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "llex.o",
+    "raw": 38944,
+    "trivial": 9087,
+    "oracle": 8973,
+    "oracle_commit_index": 27,
+    "oracle_is_trivial": false
+   },
+   {
+    "commit_index": 31,
+    "path": "lmathlib.o",
+    "raw": 25088,
+    "trivial": 4383,
+    "oracle": 4343,
+    "oracle_commit_index": 6,
+    "oracle_is_trivial": false
+   },
+   {
+    "commit_index": 31,
+    "path": "lmem.o",
+    "raw": 14928,
+    "trivial": 4724,
+    "oracle": 4293,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": false
+   },
+   {
+    "commit_index": 31,
+    "path": "loadlib.o",
+    "raw": 29128,
+    "trivial": 4985,
+    "oracle": 4985,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lobject.o",
+    "raw": 35144,
+    "trivial": 10096,
+    "oracle": 10093,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": false
+   },
+   {
+    "commit_index": 31,
+    "path": "lopcodes.o",
+    "raw": 7264,
+    "trivial": 1000,
+    "oracle": 1000,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "loslib.o",
+    "raw": 20752,
+    "trivial": 4089,
+    "oracle": 4089,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lparser.o",
+    "raw": 84360,
+    "trivial": 19494,
+    "oracle": 19494,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lstate.o",
+    "raw": 25648,
+    "trivial": 6610,
+    "oracle": 6610,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lstring.o",
+    "raw": 23008,
+    "trivial": 6865,
+    "oracle": 6842,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": false
+   },
+   {
+    "commit_index": 31,
+    "path": "lstrlib.o",
+    "raw": 67328,
+    "trivial": 14283,
+    "oracle": 14283,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "ltable.o",
+    "raw": 45912,
+    "trivial": 12330,
+    "oracle": 12299,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": false
+   },
+   {
+    "commit_index": 31,
+    "path": "ltablib.o",
+    "raw": 19736,
+    "trivial": 4282,
+    "oracle": 4282,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "ltests.o",
+    "raw": 9808,
+    "trivial": 1034,
+    "oracle": 1034,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "ltm.o",
+    "raw": 29448,
+    "trivial": 7984,
+    "oracle": 7981,
+    "oracle_commit_index": 29,
+    "oracle_is_trivial": false
+   },
+   {
+    "commit_index": 31,
+    "path": "lua",
+    "raw": 835296,
+    "trivial": 49707,
+    "oracle": 49707,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lua.o",
+    "raw": 32968,
+    "trivial": 6569,
+    "oracle": 6557,
+    "oracle_commit_index": 26,
+    "oracle_is_trivial": false
+   },
+   {
+    "commit_index": 31,
+    "path": "lundump.o",
+    "raw": 28088,
+    "trivial": 7974,
+    "oracle": 7974,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lutf8lib.o",
+    "raw": 15080,
+    "trivial": 3800,
+    "oracle": 3800,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lvm.o",
+    "raw": 103552,
+    "trivial": 19498,
+    "oracle": 19498,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 31,
+    "path": "lzio.o",
+    "raw": 12656,
+    "trivial": 3847,
+    "oracle": 3847,
+    "oracle_commit_index": 30,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 32,
+    "path": "liblua.a",
+    "raw": 1145396,
+    "trivial": 160,
+    "oracle": 160,
+    "oracle_commit_index": 31,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 32,
+    "path": "lopcodes.o",
+    "raw": 7264,
+    "trivial": 149,
+    "oracle": 149,
+    "oracle_commit_index": 31,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 32,
+    "path": "lua",
+    "raw": 835296,
+    "trivial": 207,
+    "oracle": 207,
+    "oracle_commit_index": 31,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 33,
+    "path": "liblua.a",
+    "raw": 1145396,
+    "trivial": 13037,
+    "oracle": 13037,
+    "oracle_commit_index": 32,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 33,
+    "path": "lparser.o",
+    "raw": 84360,
+    "trivial": 13033,
+    "oracle": 13033,
+    "oracle_commit_index": 32,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 33,
+    "path": "lua",
+    "raw": 835296,
+    "trivial": 360,
+    "oracle": 360,
+    "oracle_commit_index": 32,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 34,
+    "path": "lcode.o",
+    "raw": 73832,
+    "trivial": 11969,
+    "oracle": 11969,
+    "oracle_commit_index": 33,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 34,
+    "path": "ldebug.o",
+    "raw": 44888,
+    "trivial": 5915,
+    "oracle": 5915,
+    "oracle_commit_index": 33,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 34,
+    "path": "liblua.a",
+    "raw": 1145006,
+    "trivial": 18668,
+    "oracle": 18668,
+    "oracle_commit_index": 33,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 34,
+    "path": "lopcodes.o",
+    "raw": 6888,
+    "trivial": 1839,
+    "oracle": 1839,
+    "oracle_commit_index": 33,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 34,
+    "path": "lua",
+    "raw": 835080,
+    "trivial": 10369,
+    "oracle": 10369,
+    "oracle_commit_index": 33,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 35,
+    "path": "lapi.o",
+    "raw": 61544,
+    "trivial": 7131,
+    "oracle": 7131,
+    "oracle_commit_index": 34,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 35,
+    "path": "lcode.o",
+    "raw": 73832,
+    "trivial": 4841,
+    "oracle": 4841,
+    "oracle_commit_index": 34,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 35,
+    "path": "ldebug.o",
+    "raw": 44888,
+    "trivial": 5846,
+    "oracle": 5846,
+    "oracle_commit_index": 34,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 35,
+    "path": "ldo.o",
+    "raw": 44488,
+    "trivial": 9225,
+    "oracle": 9225,
+    "oracle_commit_index": 34,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 35,
+    "path": "lgc.o",
+    "raw": 52640,
+    "trivial": 6073,
+    "oracle": 6073,
+    "oracle_commit_index": 34,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 35,
+    "path": "liblua.a",
+    "raw": 1144718,
+    "trivial": 53821,
+    "oracle": 53821,
+    "oracle_commit_index": 34,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 35,
+    "path": "llex.o",
+    "raw": 38944,
+    "trivial": 166,
+    "oracle": 166,
+    "oracle_commit_index": 34,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 35,
+    "path": "lmem.o",
+    "raw": 14928,
+    "trivial": 2597,
+    "oracle": 2597,
+    "oracle_commit_index": 34,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 35,
+    "path": "lobject.o",
+    "raw": 35144,
+    "trivial": 197,
+    "oracle": 197,
+    "oracle_commit_index": 34,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 35,
+    "path": "lparser.o",
+    "raw": 84360,
+    "trivial": 5114,
+    "oracle": 5114,
+    "oracle_commit_index": 34,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 35,
+    "path": "lstate.o",
+    "raw": 25648,
+    "trivial": 3938,
+    "oracle": 3938,
+    "oracle_commit_index": 34,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 35,
+    "path": "lstring.o",
+    "raw": 23008,
+    "trivial": 4032,
+    "oracle": 4032,
+    "oracle_commit_index": 34,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 35,
+    "path": "ltable.o",
+    "raw": 45912,
+    "trivial": 6412,
+    "oracle": 6412,
+    "oracle_commit_index": 34,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 35,
+    "path": "lua",
+    "raw": 834952,
+    "trivial": 11432,
+    "oracle": 11432,
+    "oracle_commit_index": 34,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 35,
+    "path": "lundump.o",
+    "raw": 28088,
+    "trivial": 4229,
+    "oracle": 4229,
+    "oracle_commit_index": 34,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 36,
+    "path": "lauxlib.o",
+    "raw": 52920,
+    "trivial": 9711,
+    "oracle": 9711,
+    "oracle_commit_index": 35,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 36,
+    "path": "liblua.a",
+    "raw": 1145094,
+    "trivial": 9779,
+    "oracle": 9779,
+    "oracle_commit_index": 35,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 36,
+    "path": "lua",
+    "raw": 835072,
+    "trivial": 8176,
+    "oracle": 8176,
+    "oracle_commit_index": 35,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 37,
+    "path": "liblua.a",
+    "raw": 1145150,
+    "trivial": 14053,
+    "oracle": 14053,
+    "oracle_commit_index": 36,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 37,
+    "path": "lua",
+    "raw": 835104,
+    "trivial": 4954,
+    "oracle": 4954,
+    "oracle_commit_index": 36,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 37,
+    "path": "lvm.o",
+    "raw": 103608,
+    "trivial": 14005,
+    "oracle": 14005,
+    "oracle_commit_index": 36,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 38,
+    "path": "liblua.a",
+    "raw": 1145142,
+    "trivial": 13161,
+    "oracle": 13161,
+    "oracle_commit_index": 37,
+    "oracle_is_trivial": true
+   },
+   {
+    "commit_index": 38,
+    "path": "lparser.o",
+    "raw": 84352,
+    "trivial": 13109,
+    "oracle": 13096,
+    "oracle_commit_index": 34,
+    "oracle_is_trivial": false
+   },
+   {
+    "commit_index": 38,
+    "path": "lua",
+    "raw": 835104,
+    "trivial": 431,
+    "oracle": 431,
+    "oracle_commit_index": 37,
+    "oracle_is_trivial": true
+   }
+  ]
+ }
+}

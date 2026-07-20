@@ -1,0 +1,77 @@
+[
+ {
+  "config": "lua-O2",
+  "commits": 40,
+  "misses": 111,
+  "exact_hits": 1293,
+  "one_chunk_rate_cdc512k": 0.784,
+  "raw_mb": 20.88,
+  "zstd_mb": 8.23,
+  "cdc512k_zstd_mb": 7.41,
+  "cdc16k_zstd_mb": 3.43,
+  "bsdiff_mb": 0.34,
+  "zstd_patch_mb": 0.36,
+  "cpu_s": {
+   "zstd": 0.1,
+   "cdc512k": 0.1,
+   "cdc16k": 0.06,
+   "bsdiff_diff": 2.54,
+   "bsdiff_apply": 0.09,
+   "zstd_patch_diff": 3.24,
+   "zstd_patch_apply": 0.19
+  },
+  "all_deltas_verified": true,
+  "bsdiff_vs_cdc512k_pct": 4.6,
+  "bsdiff_vs_cdc16k_pct": 9.9
+ },
+ {
+  "config": "lua-g",
+  "commits": 40,
+  "misses": 215,
+  "exact_hits": 1189,
+  "one_chunk_rate_cdc512k": 0.707,
+  "raw_mb": 68.66,
+  "zstd_mb": 27.94,
+  "cdc512k_zstd_mb": 22.38,
+  "cdc16k_zstd_mb": 11.74,
+  "bsdiff_mb": 2.07,
+  "zstd_patch_mb": 2.22,
+  "cpu_s": {
+   "zstd": 0.29,
+   "cdc512k": 0.29,
+   "cdc16k": 0.19,
+   "bsdiff_diff": 9.7,
+   "bsdiff_apply": 0.28,
+   "zstd_patch_diff": 11.01,
+   "zstd_patch_apply": 0.42
+  },
+  "all_deltas_verified": true,
+  "bsdiff_vs_cdc512k_pct": 9.2,
+  "bsdiff_vs_cdc16k_pct": 17.6
+ },
+ {
+  "config": "rg-debug",
+  "commits": 25,
+  "misses": 23,
+  "exact_hits": 1,
+  "one_chunk_rate_cdc512k": 0.0,
+  "raw_mb": 1149.43,
+  "zstd_mb": 270.15,
+  "cdc512k_zstd_mb": 175.76,
+  "cdc16k_zstd_mb": 149.48,
+  "bsdiff_mb": 27.67,
+  "zstd_patch_mb": 53.32,
+  "cpu_s": {
+   "zstd": 3.62,
+   "cdc512k": 3.95,
+   "cdc16k": 3.53,
+   "bsdiff_diff": 533.2,
+   "bsdiff_apply": 7.98,
+   "zstd_patch_diff": 369.59,
+   "zstd_patch_apply": 2.52
+  },
+  "all_deltas_verified": true,
+  "bsdiff_vs_cdc512k_pct": 15.7,
+  "bsdiff_vs_cdc16k_pct": 18.5
+ }
+]

@@ -1,0 +1,7532 @@
+{
+ "config": "lua-g",
+ "commits": 40,
+ "exact_hits": 1189,
+ "misses": [
+  {
+   "commit": "a5522f06d267",
+   "path": "lapi.o",
+   "raw": 61816,
+   "zstd": {
+    "size": 27621,
+    "cpu": 0.00020499999999401552
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 61816,
+    "transfer_zstd": 27621,
+    "cpu": 0.00022400000000288856
+   },
+   "cdc16k": {
+    "chunks": 4,
+    "new_chunks": 1,
+    "transfer": 27659,
+    "transfer_zstd": 17674,
+    "cpu": 0.00015500000000656655
+   },
+   "bsdiff": {
+    "size": 6656,
+    "diff_cpu": 0.006826999999987038,
+    "apply_cpu": 0.0004289999999969041,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 5842,
+    "diff_cpu": 0.00533500000000231,
+    "apply_cpu": 0.0012659999999868887,
+    "verified": true
+   }
+  },
+  {
+   "commit": "a5522f06d267",
+   "path": "lcode.o",
+   "raw": 74192,
+   "zstd": {
+    "size": 33419,
+    "cpu": 0.0002649999999562169
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 74192,
+    "transfer_zstd": 33419,
+    "cpu": 0.00029799999998658677
+   },
+   "cdc16k": {
+    "chunks": 7,
+    "new_chunks": 1,
+    "transfer": 19046,
+    "transfer_zstd": 16029,
+    "cpu": 0.00015200000001414082
+   },
+   "bsdiff": {
+    "size": 167,
+    "diff_cpu": 0.0061670000000049185,
+    "apply_cpu": 0.00021500000002561137,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 39,
+    "diff_cpu": 0.007401000000015756,
+    "apply_cpu": 0.0013689999999542124,
+    "verified": true
+   }
+  },
+  {
+   "commit": "a5522f06d267",
+   "path": "ldebug.o",
+   "raw": 45360,
+   "zstd": {
+    "size": 21992,
+    "cpu": 0.000298999999984062
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 45360,
+    "transfer_zstd": 21992,
+    "cpu": 0.00021199999997634222
+   },
+   "cdc16k": {
+    "chunks": 4,
+    "new_chunks": 2,
+    "transfer": 36417,
+    "transfer_zstd": 19886,
+    "cpu": 0.00018699999998261774
+   },
+   "bsdiff": {
+    "size": 170,
+    "diff_cpu": 0.003436999999962609,
+    "apply_cpu": 0.00014199999998254498,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 36,
+    "diff_cpu": 0.00414299999999912,
+    "apply_cpu": 0.0012549999999578176,
+    "verified": true
+   }
+  },
+  {
+   "commit": "a5522f06d267",
+   "path": "ldo.o",
+   "raw": 43920,
+   "zstd": {
+    "size": 20932,
+    "cpu": 0.0002709999999979118
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 43920,
+    "transfer_zstd": 20932,
+    "cpu": 0.00020599999999149077
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 43920,
+    "transfer_zstd": 20932,
+    "cpu": 0.0001950000000192631
+   },
+   "bsdiff": {
+    "size": 11207,
+    "diff_cpu": 0.0069240000000263535,
+    "apply_cpu": 0.0005170000000020991,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 10723,
+    "diff_cpu": 0.007827999999960866,
+    "apply_cpu": 0.0016289999999230531,
+    "verified": true
+   }
+  },
+  {
+   "commit": "a5522f06d267",
+   "path": "lgc.o",
+   "raw": 53056,
+   "zstd": {
+    "size": 24819,
+    "cpu": 0.00031199999995124017
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 53056,
+    "transfer_zstd": 24819,
+    "cpu": 0.00025399999998398926
+   },
+   "cdc16k": {
+    "chunks": 5,
+    "new_chunks": 5,
+    "transfer": 53056,
+    "transfer_zstd": 24819,
+    "cpu": 0.0002340000000344844
+   },
+   "bsdiff": {
+    "size": 12316,
+    "diff_cpu": 0.00910399999997935,
+    "apply_cpu": 0.0005950000000325417,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 12046,
+    "diff_cpu": 0.01149600000007922,
+    "apply_cpu": 0.0021029999999768734,
+    "verified": true
+   }
+  },
+  {
+   "commit": "a5522f06d267",
+   "path": "liblua.a",
+   "raw": 1158992,
+   "zstd": {
+    "size": 481559,
+    "cpu": 0.006277000000068256
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 1,
+    "transfer": 710682,
+    "transfer_zstd": 309022,
+    "cpu": 0.0066480000000410655
+   },
+   "cdc16k": {
+    "chunks": 76,
+    "new_chunks": 22,
+    "transfer": 383928,
+    "transfer_zstd": 189592,
+    "cpu": 0.0034530000000358996
+   },
+   "bsdiff": {
+    "size": 50704,
+    "diff_cpu": 0.24138300000004165,
+    "apply_cpu": 0.005570999999918058,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 49493,
+    "diff_cpu": 0.15661799999992354,
+    "apply_cpu": 0.003494999999986703,
+    "verified": true
+   }
+  },
+  {
+   "commit": "a5522f06d267",
+   "path": "llex.o",
+   "raw": 39440,
+   "zstd": {
+    "size": 17310,
+    "cpu": 0.0002619999999637912
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 39440,
+    "transfer_zstd": 17310,
+    "cpu": 0.0001859999999851425
+   },
+   "cdc16k": {
+    "chunks": 4,
+    "new_chunks": 1,
+    "transfer": 8024,
+    "transfer_zstd": 7407,
+    "cpu": 9.999999997489795e-05
+   },
+   "bsdiff": {
+    "size": 4990,
+    "diff_cpu": 0.00431399999996529,
+    "apply_cpu": 0.00029900000004090543,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 4390,
+    "diff_cpu": 0.0041450000000509135,
+    "apply_cpu": 0.0014489999999796055,
+    "verified": true
+   }
+  },
+  {
+   "commit": "a5522f06d267",
+   "path": "lmem.o",
+   "raw": 15448,
+   "zstd": {
+    "size": 7412,
+    "cpu": 0.000137999999992644
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 15448,
+    "transfer_zstd": 7412,
+    "cpu": 0.00011000000000649379
+   },
+   "cdc16k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 15448,
+    "transfer_zstd": 7412,
+    "cpu": 8.400000001529406e-05
+   },
+   "bsdiff": {
+    "size": 633,
+    "diff_cpu": 0.0012259999999741922,
+    "apply_cpu": 7.799999997359919e-05,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 382,
+    "diff_cpu": 0.0022979999999961365,
+    "apply_cpu": 0.0011340000000359396,
+    "verified": true
+   }
+  },
+  {
+   "commit": "a5522f06d267",
+   "path": "lobject.o",
+   "raw": 35608,
+   "zstd": {
+    "size": 17271,
+    "cpu": 0.00021099999997886698
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 35608,
+    "transfer_zstd": 17271,
+    "cpu": 0.00016199999998889325
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 27124,
+    "transfer_zstd": 15385,
+    "cpu": 0.00014800000002423985
+   },
+   "bsdiff": {
+    "size": 5165,
+    "diff_cpu": 0.0039899999999875035,
+    "apply_cpu": 0.00028600000001688386,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 4550,
+    "diff_cpu": 0.004220000000032087,
+    "apply_cpu": 0.0014430000000515975,
+    "verified": true
+   }
+  },
+  {
+   "commit": "a5522f06d267",
+   "path": "lstate.o",
+   "raw": 25840,
+   "zstd": {
+    "size": 12183,
+    "cpu": 0.00020399999999654028
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 25840,
+    "transfer_zstd": 12183,
+    "cpu": 0.00014199999998254498
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 1,
+    "transfer": 15316,
+    "transfer_zstd": 9872,
+    "cpu": 0.00011100000000396903
+   },
+   "bsdiff": {
+    "size": 1362,
+    "diff_cpu": 0.0022250000000099135,
+    "apply_cpu": 0.0001289999999585234,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 987,
+    "diff_cpu": 0.0029519999999934043,
+    "apply_cpu": 0.0011549999999260763,
+    "verified": true
+   }
+  },
+  {
+   "commit": "a5522f06d267",
+   "path": "lstring.o",
+   "raw": 23472,
+   "zstd": {
+    "size": 11809,
+    "cpu": 0.0001449999999749707
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 23472,
+    "transfer_zstd": 11809,
+    "cpu": 0.00012200000003304012
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 23472,
+    "transfer_zstd": 11809,
+    "cpu": 0.00011599999999134525
+   },
+   "bsdiff": {
+    "size": 3334,
+    "diff_cpu": 0.0026349999999979445,
+    "apply_cpu": 0.00019600000001673834,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 2768,
+    "diff_cpu": 0.0032139999999571955,
+    "apply_cpu": 0.0013170000000286564,
+    "verified": true
+   }
+  },
+  {
+   "commit": "a5522f06d267",
+   "path": "ltable.o",
+   "raw": 46344,
+   "zstd": {
+    "size": 22569,
+    "cpu": 0.0003399999999942338
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 46344,
+    "transfer_zstd": 22569,
+    "cpu": 0.00023399999997764098
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 1,
+    "transfer": 19523,
+    "transfer_zstd": 13271,
+    "cpu": 0.00014199999998254498
+   },
+   "bsdiff": {
+    "size": 5294,
+    "diff_cpu": 0.004994000000010601,
+    "apply_cpu": 0.000321999999982836,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 4673,
+    "diff_cpu": 0.004956000000106542,
+    "apply_cpu": 0.0014079999999694337,
+    "verified": true
+   }
+  },
+  {
+   "commit": "a5522f06d267",
+   "path": "lua",
+   "raw": 836024,
+   "zstd": {
+    "size": 326288,
+    "cpu": 0.0036910000000034415
+   },
+   "cdc512k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 836024,
+    "transfer_zstd": 326288,
+    "cpu": 0.004489000000035048
+   },
+   "cdc16k": {
+    "chunks": 53,
+    "new_chunks": 51,
+    "transfer": 809193,
+    "transfer_zstd": 317714,
+    "cpu": 0.004470999999966807
+   },
+   "bsdiff": {
+    "size": 14310,
+    "diff_cpu": 0.12140800000008767,
+    "apply_cpu": 0.0029999999999290594,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 33601,
+    "diff_cpu": 0.27443800000003193,
+    "apply_cpu": 0.0032559999999648426,
+    "verified": true
+   }
+  },
+  {
+   "commit": "a5522f06d267",
+   "path": "lundump.o",
+   "raw": 28864,
+   "zstd": {
+    "size": 13731,
+    "cpu": 0.00021499999996876795
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 28864,
+    "transfer_zstd": 13731,
+    "cpu": 0.00016399999998384374
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 1,
+    "transfer": 10744,
+    "transfer_zstd": 7535,
+    "cpu": 0.00010500000001911758
+   },
+   "bsdiff": {
+    "size": 3451,
+    "diff_cpu": 0.0031219999999620995,
+    "apply_cpu": 0.00022599999999783904,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3010,
+    "diff_cpu": 0.0031440000000202417,
+    "apply_cpu": 0.0011570000000347136,
+    "verified": true
+   }
+  },
+  {
+   "commit": "578ae5745cec",
+   "path": "lapi.o",
+   "raw": 61824,
+   "zstd": {
+    "size": 27578,
+    "cpu": 0.00044900000000325235
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 61824,
+    "transfer_zstd": 27578,
+    "cpu": 0.0002410000000168111
+   },
+   "cdc16k": {
+    "chunks": 4,
+    "new_chunks": 3,
+    "transfer": 44904,
+    "transfer_zstd": 23865,
+    "cpu": 0.0002230000000054133
+   },
+   "bsdiff": {
+    "size": 10173,
+    "diff_cpu": 0.007748999999989792,
+    "apply_cpu": 0.0005119999999578795,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 9017,
+    "diff_cpu": 0.006391999999948439,
+    "apply_cpu": 0.00159600000000637,
+    "verified": true
+   }
+  },
+  {
+   "commit": "578ae5745cec",
+   "path": "liblua.a",
+   "raw": 1159040,
+   "zstd": {
+    "size": 481211,
+    "cpu": 0.004201999999963846
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 938370,
+    "transfer_zstd": 392835,
+    "cpu": 0.004546000000004824
+   },
+   "cdc16k": {
+    "chunks": 75,
+    "new_chunks": 10,
+    "transfer": 134778,
+    "transfer_zstd": 60101,
+    "cpu": 0.0016469999999912943
+   },
+   "bsdiff": {
+    "size": 18808,
+    "diff_cpu": 0.179095000000018,
+    "apply_cpu": 0.0036000000000058208,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 17421,
+    "diff_cpu": 0.1364770000000135,
+    "apply_cpu": 0.003288999999938369,
+    "verified": true
+   }
+  },
+  {
+   "commit": "578ae5745cec",
+   "path": "lstrlib.o",
+   "raw": 67736,
+   "zstd": {
+    "size": 29148,
+    "cpu": 0.00036199999999553256
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 67736,
+    "transfer_zstd": 29148,
+    "cpu": 0.00029700000004595495
+   },
+   "cdc16k": {
+    "chunks": 7,
+    "new_chunks": 7,
+    "transfer": 67736,
+    "transfer_zstd": 29148,
+    "cpu": 0.00028899999995246617
+   },
+   "bsdiff": {
+    "size": 9164,
+    "diff_cpu": 0.00812400000006619,
+    "apply_cpu": 0.000505999999973028,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 8115,
+    "diff_cpu": 0.010615000000029795,
+    "apply_cpu": 0.0015450000000214459,
+    "verified": true
+   }
+  },
+  {
+   "commit": "578ae5745cec",
+   "path": "lua",
+   "raw": 836048,
+   "zstd": {
+    "size": 326369,
+    "cpu": 0.003990999999984979
+   },
+   "cdc512k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 836048,
+    "transfer_zstd": 326369,
+    "cpu": 0.004852999999968688
+   },
+   "cdc16k": {
+    "chunks": 55,
+    "new_chunks": 18,
+    "transfer": 308578,
+    "transfer_zstd": 121476,
+    "cpu": 0.0021309999999630236
+   },
+   "bsdiff": {
+    "size": 1492,
+    "diff_cpu": 0.10027800000000298,
+    "apply_cpu": 0.002375000000029104,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 2309,
+    "diff_cpu": 0.09463699999997743,
+    "apply_cpu": 0.0028520000000185064,
+    "verified": true
+   }
+  },
+  {
+   "commit": "632a71b24d86",
+   "path": "lapi.o",
+   "raw": 61960,
+   "zstd": {
+    "size": 27672,
+    "cpu": 0.000335000000063701
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 61960,
+    "transfer_zstd": 27672,
+    "cpu": 0.00022999999998774
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 61960,
+    "transfer_zstd": 27672,
+    "cpu": 0.00026000000002568413
+   },
+   "bsdiff": {
+    "size": 15028,
+    "diff_cpu": 0.011069000000020424,
+    "apply_cpu": 0.0006929999999556458,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 14250,
+    "diff_cpu": 0.01014900000001262,
+    "apply_cpu": 0.0017019999999661195,
+    "verified": true
+   }
+  },
+  {
+   "commit": "632a71b24d86",
+   "path": "liblua.a",
+   "raw": 1159176,
+   "zstd": {
+    "size": 481473,
+    "cpu": 0.00409100000001672
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 1,
+    "transfer": 710826,
+    "transfer_zstd": 309072,
+    "cpu": 0.003578000000004522
+   },
+   "cdc16k": {
+    "chunks": 74,
+    "new_chunks": 4,
+    "transfer": 74109,
+    "transfer_zstd": 32416,
+    "cpu": 0.00135899999997946
+   },
+   "bsdiff": {
+    "size": 15125,
+    "diff_cpu": 0.16765100000003486,
+    "apply_cpu": 0.00490300000001298,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 14533,
+    "diff_cpu": 0.1391280000000279,
+    "apply_cpu": 0.003592000000026019,
+    "verified": true
+   }
+  },
+  {
+   "commit": "632a71b24d86",
+   "path": "lua",
+   "raw": 836096,
+   "zstd": {
+    "size": 326603,
+    "cpu": 0.00371100000000979
+   },
+   "cdc512k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 836096,
+    "transfer_zstd": 326603,
+    "cpu": 0.004717000000027838
+   },
+   "cdc16k": {
+    "chunks": 50,
+    "new_chunks": 49,
+    "transfer": 822060,
+    "transfer_zstd": 325197,
+    "cpu": 0.00481400000001031
+   },
+   "bsdiff": {
+    "size": 11842,
+    "diff_cpu": 0.12072499999999309,
+    "apply_cpu": 0.002828000000022257,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 30773,
+    "diff_cpu": 0.25038799999998673,
+    "apply_cpu": 0.00330700000000661,
+    "verified": true
+   }
+  },
+  {
+   "commit": "c4e2c91973fe",
+   "path": "liblua.a",
+   "raw": 1159168,
+   "zstd": {
+    "size": 481512,
+    "cpu": 0.004255000000000564
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 1,
+    "transfer": 710818,
+    "transfer_zstd": 309059,
+    "cpu": 0.0036000000000058208
+   },
+   "cdc16k": {
+    "chunks": 74,
+    "new_chunks": 5,
+    "transfer": 81143,
+    "transfer_zstd": 38415,
+    "cpu": 0.001412000000016178
+   },
+   "bsdiff": {
+    "size": 9093,
+    "diff_cpu": 0.16043300000001182,
+    "apply_cpu": 0.00365700000003244,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 8041,
+    "diff_cpu": 0.13124299999998357,
+    "apply_cpu": 0.0034959999999841784,
+    "verified": true
+   }
+  },
+  {
+   "commit": "c4e2c91973fe",
+   "path": "ltable.o",
+   "raw": 46336,
+   "zstd": {
+    "size": 22585,
+    "cpu": 0.00028600000001688386
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 46336,
+    "transfer_zstd": 22585,
+    "cpu": 0.00022599999999783904
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 46336,
+    "transfer_zstd": 22585,
+    "cpu": 0.00020399999999654028
+   },
+   "bsdiff": {
+    "size": 8982,
+    "diff_cpu": 0.006045000000028722,
+    "apply_cpu": 0.0004459999999539832,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 7808,
+    "diff_cpu": 0.0048160000000052605,
+    "apply_cpu": 0.0014380000000073778,
+    "verified": true
+   }
+  },
+  {
+   "commit": "c4e2c91973fe",
+   "path": "lua",
+   "raw": 836096,
+   "zstd": {
+    "size": 326568,
+    "cpu": 0.00368500000001859
+   },
+   "cdc512k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 836096,
+    "transfer_zstd": 326568,
+    "cpu": 0.004339000000015858
+   },
+   "cdc16k": {
+    "chunks": 50,
+    "new_chunks": 10,
+    "transfer": 234147,
+    "transfer_zstd": 104108,
+    "cpu": 0.00197400000001835
+   },
+   "bsdiff": {
+    "size": 459,
+    "diff_cpu": 0.09895899999997937,
+    "apply_cpu": 0.00223199999999224,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 620,
+    "diff_cpu": 0.08488399999998819,
+    "apply_cpu": 0.0027680000000600558,
+    "verified": true
+   }
+  },
+  {
+   "commit": "962f444a7558",
+   "path": "liblua.a",
+   "raw": 1159200,
+   "zstd": {
+    "size": 481814,
+    "cpu": 0.004074000000002798
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 931520,
+    "transfer_zstd": 398019,
+    "cpu": 0.00435400000003483
+   },
+   "cdc16k": {
+    "chunks": 74,
+    "new_chunks": 5,
+    "transfer": 81175,
+    "transfer_zstd": 38379,
+    "cpu": 0.001412000000016178
+   },
+   "bsdiff": {
+    "size": 11131,
+    "diff_cpu": 0.1652679999999691,
+    "apply_cpu": 0.003811999999982163,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 10821,
+    "diff_cpu": 0.1371120000000019,
+    "apply_cpu": 0.0032779999999661413,
+    "verified": true
+   }
+  },
+  {
+   "commit": "962f444a7558",
+   "path": "ltable.o",
+   "raw": 46368,
+   "zstd": {
+    "size": 22623,
+    "cpu": 0.00030399999997143823
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 46368,
+    "transfer_zstd": 22623,
+    "cpu": 0.00023300000003700916
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 46368,
+    "transfer_zstd": 22623,
+    "cpu": 0.0002089999999839165
+   },
+   "bsdiff": {
+    "size": 11088,
+    "diff_cpu": 0.007683000000042739,
+    "apply_cpu": 0.0005009999999856518,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 10617,
+    "diff_cpu": 0.009471000000075946,
+    "apply_cpu": 0.0014740000000301734,
+    "verified": true
+   }
+  },
+  {
+   "commit": "962f444a7558",
+   "path": "lua",
+   "raw": 836120,
+   "zstd": {
+    "size": 326669,
+    "cpu": 0.0036910000000034415
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 836120,
+    "transfer_zstd": 326669,
+    "cpu": 0.004640999999992346
+   },
+   "cdc16k": {
+    "chunks": 55,
+    "new_chunks": 50,
+    "transfer": 773608,
+    "transfer_zstd": 304096,
+    "cpu": 0.004351999999983036
+   },
+   "bsdiff": {
+    "size": 6763,
+    "diff_cpu": 0.10912100000001601,
+    "apply_cpu": 0.0025850000000104956,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 15987,
+    "diff_cpu": 0.22199799999998504,
+    "apply_cpu": 0.0031900000000177897,
+    "verified": true
+   }
+  },
+  {
+   "commit": "5cfc725a8b61",
+   "path": "liblua.a",
+   "raw": 1159224,
+   "zstd": {
+    "size": 481810,
+    "cpu": 0.004298999999946318
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 810050,
+    "transfer_zstd": 344963,
+    "cpu": 0.004068999999958578
+   },
+   "cdc16k": {
+    "chunks": 73,
+    "new_chunks": 9,
+    "transfer": 132759,
+    "transfer_zstd": 53812,
+    "cpu": 0.001630999999974847
+   },
+   "bsdiff": {
+    "size": 12646,
+    "diff_cpu": 0.1735439999999926,
+    "apply_cpu": 0.0038049999999998363,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 12025,
+    "diff_cpu": 0.14216500000003407,
+    "apply_cpu": 0.0037309999999024512,
+    "verified": true
+   }
+  },
+  {
+   "commit": "5cfc725a8b61",
+   "path": "lmathlib.o",
+   "raw": 25592,
+   "zstd": {
+    "size": 9497,
+    "cpu": 0.00017300000001796434
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 25592,
+    "transfer_zstd": 9497,
+    "cpu": 0.00015000000001919034
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 1,
+    "transfer": 13877,
+    "transfer_zstd": 6988,
+    "cpu": 0.00010699999995722465
+   },
+   "bsdiff": {
+    "size": 2001,
+    "diff_cpu": 0.0025089999999750034,
+    "apply_cpu": 0.00015700000000151704,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 1509,
+    "diff_cpu": 0.0033280000000104337,
+    "apply_cpu": 0.0014590000000112013,
+    "verified": true
+   }
+  },
+  {
+   "commit": "5cfc725a8b61",
+   "path": "lstrlib.o",
+   "raw": 67760,
+   "zstd": {
+    "size": 29140,
+    "cpu": 0.00035299999996141196
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 67760,
+    "transfer_zstd": 29140,
+    "cpu": 0.00027699999998276326
+   },
+   "cdc16k": {
+    "chunks": 6,
+    "new_chunks": 6,
+    "transfer": 67760,
+    "transfer_zstd": 29140,
+    "cpu": 0.00027899999997771374
+   },
+   "bsdiff": {
+    "size": 9417,
+    "diff_cpu": 0.008393999999952939,
+    "apply_cpu": 0.0005019999999831271,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 9052,
+    "diff_cpu": 0.013152000000047792,
+    "apply_cpu": 0.0014270000000351502,
+    "verified": true
+   }
+  },
+  {
+   "commit": "5cfc725a8b61",
+   "path": "ltablib.o",
+   "raw": 20160,
+   "zstd": {
+    "size": 8579,
+    "cpu": 0.00018899999997756822
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 20160,
+    "transfer_zstd": 8579,
+    "cpu": 0.00019599999995989492
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 20160,
+    "transfer_zstd": 8579,
+    "cpu": 0.00016100000004826143
+   },
+   "bsdiff": {
+    "size": 1809,
+    "diff_cpu": 0.0019650000000410728,
+    "apply_cpu": 0.00013599999999769352,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 1322,
+    "diff_cpu": 0.0026140000000509644,
+    "apply_cpu": 0.0011109999999234788,
+    "verified": true
+   }
+  },
+  {
+   "commit": "5cfc725a8b61",
+   "path": "lua",
+   "raw": 836136,
+   "zstd": {
+    "size": 326571,
+    "cpu": 0.003680000000031214
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 836136,
+    "transfer_zstd": 326571,
+    "cpu": 0.0044849999999314605
+   },
+   "cdc16k": {
+    "chunks": 54,
+    "new_chunks": 17,
+    "transfer": 282014,
+    "transfer_zstd": 111304,
+    "cpu": 0.0019839999999931024
+   },
+   "bsdiff": {
+    "size": 1743,
+    "diff_cpu": 0.10195699999997032,
+    "apply_cpu": 0.0023149999999532156,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3011,
+    "diff_cpu": 0.09842900000001009,
+    "apply_cpu": 0.003025999999920259,
+    "verified": true
+   }
+  },
+  {
+   "commit": "2a7cf4f319fc",
+   "path": "ldo.o",
+   "raw": 44128,
+   "zstd": {
+    "size": 20976,
+    "cpu": 0.00027800000009392534
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 44128,
+    "transfer_zstd": 20976,
+    "cpu": 0.00018199999999524152
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 44128,
+    "transfer_zstd": 20976,
+    "cpu": 0.00018999999997504347
+   },
+   "bsdiff": {
+    "size": 9192,
+    "diff_cpu": 0.006250000000022737,
+    "apply_cpu": 0.0004500000000007276,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 8906,
+    "diff_cpu": 0.007062999999959629,
+    "apply_cpu": 0.001458000000013726,
+    "verified": true
+   }
+  },
+  {
+   "commit": "2a7cf4f319fc",
+   "path": "lgc.o",
+   "raw": 53072,
+   "zstd": {
+    "size": 24842,
+    "cpu": 0.0003399999999942338
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 53072,
+    "transfer_zstd": 24842,
+    "cpu": 0.0002780000000370819
+   },
+   "cdc16k": {
+    "chunks": 4,
+    "new_chunks": 4,
+    "transfer": 53072,
+    "transfer_zstd": 24842,
+    "cpu": 0.000279999999975189
+   },
+   "bsdiff": {
+    "size": 9184,
+    "diff_cpu": 0.006517000000030748,
+    "apply_cpu": 0.0004589999999780048,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 8329,
+    "diff_cpu": 0.006985000000042874,
+    "apply_cpu": 0.0014480000000389737,
+    "verified": true
+   }
+  },
+  {
+   "commit": "2a7cf4f319fc",
+   "path": "liblua.a",
+   "raw": 1159776,
+   "zstd": {
+    "size": 481731,
+    "cpu": 0.004041000000029271
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 932072,
+    "transfer_zstd": 397814,
+    "cpu": 0.0043600000000196815
+   },
+   "cdc16k": {
+    "chunks": 73,
+    "new_chunks": 11,
+    "transfer": 178830,
+    "transfer_zstd": 78853,
+    "cpu": 0.0018460000000004584
+   },
+   "bsdiff": {
+    "size": 25296,
+    "diff_cpu": 0.1757910000000038,
+    "apply_cpu": 0.0051799999999957436,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 25052,
+    "diff_cpu": 0.15302000000002636,
+    "apply_cpu": 0.0034689999999955035,
+    "verified": true
+   }
+  },
+  {
+   "commit": "2a7cf4f319fc",
+   "path": "lstate.o",
+   "raw": 26168,
+   "zstd": {
+    "size": 12357,
+    "cpu": 0.0001999999999497959
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 26168,
+    "transfer_zstd": 12357,
+    "cpu": 0.00015899999999646752
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 26168,
+    "transfer_zstd": 12357,
+    "cpu": 0.00012799999996104816
+   },
+   "bsdiff": {
+    "size": 8280,
+    "diff_cpu": 0.0048160000000052605,
+    "apply_cpu": 0.000394999999969059,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 7588,
+    "diff_cpu": 0.006237999999996191,
+    "apply_cpu": 0.0012929999999755637,
+    "verified": true
+   }
+  },
+  {
+   "commit": "2a7cf4f319fc",
+   "path": "lua",
+   "raw": 836296,
+   "zstd": {
+    "size": 326761,
+    "cpu": 0.003681999999969321
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 836296,
+    "transfer_zstd": 326761,
+    "cpu": 0.004620000000045366
+   },
+   "cdc16k": {
+    "chunks": 54,
+    "new_chunks": 50,
+    "transfer": 788620,
+    "transfer_zstd": 305200,
+    "cpu": 0.004393999999990683
+   },
+   "bsdiff": {
+    "size": 9566,
+    "diff_cpu": 0.11485000000004675,
+    "apply_cpu": 0.002789000000007036,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 22761,
+    "diff_cpu": 0.22173700000001872,
+    "apply_cpu": 0.003336999999987711,
+    "verified": true
+   }
+  },
+  {
+   "commit": "f5d1e8639bf5",
+   "path": "liblua.a",
+   "raw": 1159784,
+   "zstd": {
+    "size": 481655,
+    "cpu": 0.004059999999981301
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 1,
+    "transfer": 529348,
+    "transfer_zstd": 238327,
+    "cpu": 0.002809999999954016
+   },
+   "cdc16k": {
+    "chunks": 73,
+    "new_chunks": 4,
+    "transfer": 60503,
+    "transfer_zstd": 34950,
+    "cpu": 0.0013310000000501532
+   },
+   "bsdiff": {
+    "size": 13523,
+    "diff_cpu": 0.16503000000000156,
+    "apply_cpu": 0.003550000000018372,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 12403,
+    "diff_cpu": 0.13726300000001856,
+    "apply_cpu": 0.00336600000002818,
+    "verified": true
+   }
+  },
+  {
+   "commit": "f5d1e8639bf5",
+   "path": "lparser.o",
+   "raw": 84824,
+   "zstd": {
+    "size": 38892,
+    "cpu": 0.00038200000000188084
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 84824,
+    "transfer_zstd": 38892,
+    "cpu": 0.00034800000003087916
+   },
+   "cdc16k": {
+    "chunks": 7,
+    "new_chunks": 3,
+    "transfer": 32671,
+    "transfer_zstd": 23137,
+    "cpu": 0.000206999999988966
+   },
+   "bsdiff": {
+    "size": 13470,
+    "diff_cpu": 0.010911000000021431,
+    "apply_cpu": 0.0006799999999884676,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 12161,
+    "diff_cpu": 0.010164000000031592,
+    "apply_cpu": 0.0016169999999533502,
+    "verified": true
+   }
+  },
+  {
+   "commit": "f5d1e8639bf5",
+   "path": "lua",
+   "raw": 836304,
+   "zstd": {
+    "size": 326758,
+    "cpu": 0.003971000000035474
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 836304,
+    "transfer_zstd": 326758,
+    "cpu": 0.004454000000009728
+   },
+   "cdc16k": {
+    "chunks": 54,
+    "new_chunks": 14,
+    "transfer": 269977,
+    "transfer_zstd": 113726,
+    "cpu": 0.0020339999999805514
+   },
+   "bsdiff": {
+    "size": 433,
+    "diff_cpu": 0.09957900000000564,
+    "apply_cpu": 0.0022099999999909414,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 492,
+    "diff_cpu": 0.08214100000003555,
+    "apply_cpu": 0.0033680000000231303,
+    "verified": true
+   }
+  },
+  {
+   "commit": "3360710bd3ea",
+   "path": "lua",
+   "raw": 836528,
+   "zstd": {
+    "size": 326547,
+    "cpu": 0.004080999999985124
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 836528,
+    "transfer_zstd": 326547,
+    "cpu": 0.004482999999993353
+   },
+   "cdc16k": {
+    "chunks": 47,
+    "new_chunks": 47,
+    "transfer": 836528,
+    "transfer_zstd": 326547,
+    "cpu": 0.0044790000000034524
+   },
+   "bsdiff": {
+    "size": 16952,
+    "diff_cpu": 0.1365210000000161,
+    "apply_cpu": 0.003198999999995067,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 40228,
+    "diff_cpu": 0.2985570000000166,
+    "apply_cpu": 0.00304199999999355,
+    "verified": true
+   }
+  },
+  {
+   "commit": "3360710bd3ea",
+   "path": "lua.o",
+   "raw": 33312,
+   "zstd": {
+    "size": 13863,
+    "cpu": 0.0002620000000206346
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 33312,
+    "transfer_zstd": 13863,
+    "cpu": 0.00021900000001551234
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 33312,
+    "transfer_zstd": 13863,
+    "cpu": 0.00018299999999271677
+   },
+   "bsdiff": {
+    "size": 8051,
+    "diff_cpu": 0.005960000000072796,
+    "apply_cpu": 0.00043599999992238736,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 7312,
+    "diff_cpu": 0.007801000000029035,
+    "apply_cpu": 0.00153499999998985,
+    "verified": true
+   }
+  },
+  {
+   "commit": "efbc29754544",
+   "path": "lapi.o",
+   "raw": 61960,
+   "zstd": {
+    "size": 27672,
+    "cpu": 0.0003280000000245309
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 61960,
+    "transfer_zstd": 27672,
+    "cpu": 0.0003310000000169566
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 1,
+    "transfer": 25689,
+    "transfer_zstd": 16115,
+    "cpu": 0.00020100000000411455
+   },
+   "bsdiff": {
+    "size": 157,
+    "diff_cpu": 0.004849999999976262,
+    "apply_cpu": 0.00017600000001039007,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 31,
+    "diff_cpu": 0.004759999999976117,
+    "apply_cpu": 0.001220999999986816,
+    "verified": true
+   }
+  },
+  {
+   "commit": "efbc29754544",
+   "path": "liblua.a",
+   "raw": 1159784,
+   "zstd": {
+    "size": 481655,
+    "cpu": 0.0045250000000010004
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 1,
+    "transfer": 529348,
+    "transfer_zstd": 238327,
+    "cpu": 0.00290100000000848
+   },
+   "cdc16k": {
+    "chunks": 73,
+    "new_chunks": 1,
+    "transfer": 21988,
+    "transfer_zstd": 14863,
+    "cpu": 0.0012480000000323344
+   },
+   "bsdiff": {
+    "size": 164,
+    "diff_cpu": 0.15000399999996716,
+    "apply_cpu": 0.004360999999960313,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 195,
+    "diff_cpu": 0.12950499999999465,
+    "apply_cpu": 0.0034430000000043037,
+    "verified": true
+   }
+  },
+  {
+   "commit": "efbc29754544",
+   "path": "lua",
+   "raw": 836528,
+   "zstd": {
+    "size": 326547,
+    "cpu": 0.003723999999976968
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 1,
+    "transfer": 352387,
+    "transfer_zstd": 130014,
+    "cpu": 0.0020759999999881984
+   },
+   "cdc16k": {
+    "chunks": 47,
+    "new_chunks": 2,
+    "transfer": 40105,
+    "transfer_zstd": 13864,
+    "cpu": 0.0009670000000028267
+   },
+   "bsdiff": {
+    "size": 214,
+    "diff_cpu": 0.10018800000000283,
+    "apply_cpu": 0.002161999999998443,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 161,
+    "diff_cpu": 0.07428499999997484,
+    "apply_cpu": 0.0028029999999716892,
+    "verified": true
+   }
+  },
+  {
+   "commit": "efbc29754544",
+   "path": "lua.o",
+   "raw": 33312,
+   "zstd": {
+    "size": 13864,
+    "cpu": 0.0002369999999700667
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 33312,
+    "transfer_zstd": 13864,
+    "cpu": 0.00018299999999271677
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 1,
+    "transfer": 25837,
+    "transfer_zstd": 12186,
+    "cpu": 0.00014099999998506973
+   },
+   "bsdiff": {
+    "size": 154,
+    "diff_cpu": 0.0024750000000040018,
+    "apply_cpu": 0.00010600000007343624,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 31,
+    "diff_cpu": 0.003652999999928852,
+    "apply_cpu": 0.0013500000000021828,
+    "verified": true
+   }
+  },
+  {
+   "commit": "c6b484823806",
+   "path": "lua",
+   "raw": 836528,
+   "zstd": {
+    "size": 326534,
+    "cpu": 0.003696000000047661
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 836528,
+    "transfer_zstd": 326534,
+    "cpu": 0.004261999999982891
+   },
+   "cdc16k": {
+    "chunks": 47,
+    "new_chunks": 18,
+    "transfer": 392282,
+    "transfer_zstd": 157560,
+    "cpu": 0.0025420000000053733
+   },
+   "bsdiff": {
+    "size": 539,
+    "diff_cpu": 0.09670700000003762,
+    "apply_cpu": 0.0022030000000086147,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 576,
+    "diff_cpu": 0.08329400000002352,
+    "apply_cpu": 0.0029940000000010514,
+    "verified": true
+   }
+  },
+  {
+   "commit": "c6b484823806",
+   "path": "lua.o",
+   "raw": 33320,
+   "zstd": {
+    "size": 13881,
+    "cpu": 0.00023700000002691013
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 33320,
+    "transfer_zstd": 13881,
+    "cpu": 0.00018299999999271677
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 33320,
+    "transfer_zstd": 13881,
+    "cpu": 0.00015700000000151704
+   },
+   "bsdiff": {
+    "size": 4555,
+    "diff_cpu": 0.0037179999999921165,
+    "apply_cpu": 0.0002610000000231594,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3540,
+    "diff_cpu": 0.00417099999998527,
+    "apply_cpu": 0.001454999999964457,
+    "verified": true
+   }
+  },
+  {
+   "commit": "b60e2bcd7ca4",
+   "path": "lcode.o",
+   "raw": 74272,
+   "zstd": {
+    "size": 33479,
+    "cpu": 0.00035500000001320586
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 74272,
+    "transfer_zstd": 33479,
+    "cpu": 0.00026700000000801083
+   },
+   "cdc16k": {
+    "chunks": 8,
+    "new_chunks": 8,
+    "transfer": 74272,
+    "transfer_zstd": 33479,
+    "cpu": 0.0002939999999966858
+   },
+   "bsdiff": {
+    "size": 12208,
+    "diff_cpu": 0.010545000000035998,
+    "apply_cpu": 0.0006050000000072941,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 11894,
+    "diff_cpu": 0.011544999999955508,
+    "apply_cpu": 0.0017180000000394102,
+    "verified": true
+   }
+  },
+  {
+   "commit": "b60e2bcd7ca4",
+   "path": "liblua.a",
+   "raw": 1159864,
+   "zstd": {
+    "size": 481751,
+    "cpu": 0.004058000000043194
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 1,
+    "transfer": 529428,
+    "transfer_zstd": 238406,
+    "cpu": 0.002838999999994485
+   },
+   "cdc16k": {
+    "chunks": 74,
+    "new_chunks": 9,
+    "transfer": 104798,
+    "transfer_zstd": 47620,
+    "cpu": 0.0014400000000023283
+   },
+   "bsdiff": {
+    "size": 12244,
+    "diff_cpu": 0.16162000000002763,
+    "apply_cpu": 0.0038139999999771135,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 12193,
+    "diff_cpu": 0.1389120000000048,
+    "apply_cpu": 0.0033450000000243563,
+    "verified": true
+   }
+  },
+  {
+   "commit": "b60e2bcd7ca4",
+   "path": "lua",
+   "raw": 836576,
+   "zstd": {
+    "size": 326687,
+    "cpu": 0.003676000000041313
+   },
+   "cdc512k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 836576,
+    "transfer_zstd": 326687,
+    "cpu": 0.004376999999976761
+   },
+   "cdc16k": {
+    "chunks": 50,
+    "new_chunks": 32,
+    "transfer": 507388,
+    "transfer_zstd": 203082,
+    "cpu": 0.0031740000000013424
+   },
+   "bsdiff": {
+    "size": 4114,
+    "diff_cpu": 0.10917000000000598,
+    "apply_cpu": 0.0023830000000089058,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 8860,
+    "diff_cpu": 0.13682099999999764,
+    "apply_cpu": 0.002786999999955242,
+    "verified": true
+   }
+  },
+  {
+   "commit": "10eb89d1141d",
+   "path": "liblua.a",
+   "raw": 1159888,
+   "zstd": {
+    "size": 481683,
+    "cpu": 0.005246999999997115
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 757156,
+    "transfer_zstd": 322747,
+    "cpu": 0.004013999999983753
+   },
+   "cdc16k": {
+    "chunks": 74,
+    "new_chunks": 3,
+    "transfer": 40311,
+    "transfer_zstd": 16502,
+    "cpu": 0.001343999999960488
+   },
+   "bsdiff": {
+    "size": 2884,
+    "diff_cpu": 0.15810099999998783,
+    "apply_cpu": 0.0030730000000289692,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 2599,
+    "diff_cpu": 0.13534400000003188,
+    "apply_cpu": 0.0033669999999688116,
+    "verified": true
+   }
+  },
+  {
+   "commit": "10eb89d1141d",
+   "path": "lua",
+   "raw": 836568,
+   "zstd": {
+    "size": 326647,
+    "cpu": 0.0036799999999743704
+   },
+   "cdc512k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 836568,
+    "transfer_zstd": 326647,
+    "cpu": 0.00463799999999992
+   },
+   "cdc16k": {
+    "chunks": 50,
+    "new_chunks": 13,
+    "transfer": 248704,
+    "transfer_zstd": 94540,
+    "cpu": 0.002005999999994401
+   },
+   "bsdiff": {
+    "size": 1390,
+    "diff_cpu": 0.10266500000000178,
+    "apply_cpu": 0.0022599999999783904,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 1941,
+    "diff_cpu": 0.08802300000002106,
+    "apply_cpu": 0.0027489999999943393,
+    "verified": true
+   }
+  },
+  {
+   "commit": "10eb89d1141d",
+   "path": "lutf8lib.o",
+   "raw": 15560,
+   "zstd": {
+    "size": 7076,
+    "cpu": 0.00015400000006593473
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 15560,
+    "transfer_zstd": 7076,
+    "cpu": 0.00013500000000021828
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 15560,
+    "transfer_zstd": 7076,
+    "cpu": 9.599999998499698e-05
+   },
+   "bsdiff": {
+    "size": 3035,
+    "diff_cpu": 0.0020519999999351057,
+    "apply_cpu": 0.00017300000001796434,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 2405,
+    "diff_cpu": 0.004197000000090156,
+    "apply_cpu": 0.0011899999999513966,
+    "verified": true
+   }
+  },
+  {
+   "commit": "9e501d9855e5",
+   "path": "lapi.o",
+   "raw": 61952,
+   "zstd": {
+    "size": 27655,
+    "cpu": 0.00032299999998031126
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 61952,
+    "transfer_zstd": 27655,
+    "cpu": 0.00025199999998903877
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 61952,
+    "transfer_zstd": 27655,
+    "cpu": 0.00026500000001306034
+   },
+   "bsdiff": {
+    "size": 8725,
+    "diff_cpu": 0.007658999999989646,
+    "apply_cpu": 0.0004610000000297987,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 8792,
+    "diff_cpu": 0.007810999999946944,
+    "apply_cpu": 0.0014229999999884058,
+    "verified": true
+   }
+  },
+  {
+   "commit": "9e501d9855e5",
+   "path": "lauxlib.o",
+   "raw": 53024,
+   "zstd": {
+    "size": 21615,
+    "cpu": 0.0003080000000181826
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 53024,
+    "transfer_zstd": 21615,
+    "cpu": 0.00022899999999026477
+   },
+   "cdc16k": {
+    "chunks": 4,
+    "new_chunks": 4,
+    "transfer": 53024,
+    "transfer_zstd": 21615,
+    "cpu": 0.00022200000000793807
+   },
+   "bsdiff": {
+    "size": 5482,
+    "diff_cpu": 0.005911000000025979,
+    "apply_cpu": 0.00034499999998161,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 5185,
+    "diff_cpu": 0.006671999999980471,
+    "apply_cpu": 0.0016489999999862448,
+    "verified": true
+   }
+  },
+  {
+   "commit": "9e501d9855e5",
+   "path": "lcode.o",
+   "raw": 74272,
+   "zstd": {
+    "size": 33528,
+    "cpu": 0.0003560000000106811
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 74272,
+    "transfer_zstd": 33528,
+    "cpu": 0.0002959999999916363
+   },
+   "cdc16k": {
+    "chunks": 7,
+    "new_chunks": 4,
+    "transfer": 50085,
+    "transfer_zstd": 22329,
+    "cpu": 0.0002250000000003638
+   },
+   "bsdiff": {
+    "size": 9303,
+    "diff_cpu": 0.009151000000031217,
+    "apply_cpu": 0.0005290000000286454,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 9195,
+    "diff_cpu": 0.01133500000003096,
+    "apply_cpu": 0.0014320000000225264,
+    "verified": true
+   }
+  },
+  {
+   "commit": "9e501d9855e5",
+   "path": "ldebug.o",
+   "raw": 45352,
+   "zstd": {
+    "size": 21966,
+    "cpu": 0.000279999999975189
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 45352,
+    "transfer_zstd": 21966,
+    "cpu": 0.00021200000003318564
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 45352,
+    "transfer_zstd": 21966,
+    "cpu": 0.00019499999996241968
+   },
+   "bsdiff": {
+    "size": 6002,
+    "diff_cpu": 0.005445999999949436,
+    "apply_cpu": 0.00033199999995758844,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 5932,
+    "diff_cpu": 0.006436999999948512,
+    "apply_cpu": 0.0014490000000932923,
+    "verified": true
+   }
+  },
+  {
+   "commit": "9e501d9855e5",
+   "path": "ldo.o",
+   "raw": 44112,
+   "zstd": {
+    "size": 20981,
+    "cpu": 0.00027000000000043656
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 44112,
+    "transfer_zstd": 20981,
+    "cpu": 0.00020799999992959783
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 44112,
+    "transfer_zstd": 20981,
+    "cpu": 0.00019500000007610652
+   },
+   "bsdiff": {
+    "size": 6574,
+    "diff_cpu": 0.005443000000013853,
+    "apply_cpu": 0.0003479999999171923,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 6428,
+    "diff_cpu": 0.006434999999953561,
+    "apply_cpu": 0.001381999999978234,
+    "verified": true
+   }
+  },
+  {
+   "commit": "9e501d9855e5",
+   "path": "ldump.o",
+   "raw": 21400,
+   "zstd": {
+    "size": 10503,
+    "cpu": 0.000183999999990192
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 21400,
+    "transfer_zstd": 10503,
+    "cpu": 0.0001310000000103173
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 21400,
+    "transfer_zstd": 10503,
+    "cpu": 0.00011000000000649379
+   },
+   "bsdiff": {
+    "size": 3893,
+    "diff_cpu": 0.0027299999999854663,
+    "apply_cpu": 0.00020799999998644125,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3533,
+    "diff_cpu": 0.0036330000000361906,
+    "apply_cpu": 0.0012430000000449581,
+    "verified": true
+   }
+  },
+  {
+   "commit": "9e501d9855e5",
+   "path": "lfunc.o",
+   "raw": 23448,
+   "zstd": {
+    "size": 11317,
+    "cpu": 0.0001470000000267646
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 23448,
+    "transfer_zstd": 11317,
+    "cpu": 0.00012499999996862243
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 23448,
+    "transfer_zstd": 11317,
+    "cpu": 0.0001190000000406144
+   },
+   "bsdiff": {
+    "size": 4012,
+    "diff_cpu": 0.00292699999999968,
+    "apply_cpu": 0.00021700000002056186,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3685,
+    "diff_cpu": 0.003973999999971056,
+    "apply_cpu": 0.0013759999999933825,
+    "verified": true
+   }
+  },
+  {
+   "commit": "9e501d9855e5",
+   "path": "lgc.o",
+   "raw": 53080,
+   "zstd": {
+    "size": 24906,
+    "cpu": 0.0002910000000042601
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 53080,
+    "transfer_zstd": 24906,
+    "cpu": 0.00023900000002186061
+   },
+   "cdc16k": {
+    "chunks": 5,
+    "new_chunks": 5,
+    "transfer": 53080,
+    "transfer_zstd": 24906,
+    "cpu": 0.00022899999999026477
+   },
+   "bsdiff": {
+    "size": 6641,
+    "diff_cpu": 0.006211000000007516,
+    "apply_cpu": 0.00038499999999430656,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 6430,
+    "diff_cpu": 0.006673000000091633,
+    "apply_cpu": 0.001297000000022308,
+    "verified": true
+   }
+  },
+  {
+   "commit": "9e501d9855e5",
+   "path": "liblua.a",
+   "raw": 1159672,
+   "zstd": {
+    "size": 481508,
+    "cpu": 0.004261999999982891
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 1159672,
+    "transfer_zstd": 481508,
+    "cpu": 0.00530199999997194
+   },
+   "cdc16k": {
+    "chunks": 76,
+    "new_chunks": 62,
+    "transfer": 969005,
+    "transfer_zstd": 417133,
+    "cpu": 0.004810000000020409
+   },
+   "bsdiff": {
+    "size": 112803,
+    "diff_cpu": 0.21932000000003882,
+    "apply_cpu": 0.006607000000030894,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 121193,
+    "diff_cpu": 0.22783900000001722,
+    "apply_cpu": 0.0036149999999679494,
+    "verified": true
+   }
+  },
+  {
+   "commit": "9e501d9855e5",
+   "path": "liolib.o",
+   "raw": 38944,
+   "zstd": {
+    "size": 15477,
+    "cpu": 0.0002590000000282089
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 38944,
+    "transfer_zstd": 15477,
+    "cpu": 0.00020399999999654028
+   },
+   "cdc16k": {
+    "chunks": 4,
+    "new_chunks": 3,
+    "transfer": 23214,
+    "transfer_zstd": 11108,
+    "cpu": 0.00013500000000021828
+   },
+   "bsdiff": {
+    "size": 4129,
+    "diff_cpu": 0.00438200000002098,
+    "apply_cpu": 0.00027399999999033753,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3642,
+    "diff_cpu": 0.005152000000066437,
+    "apply_cpu": 0.001247999999975491,
+    "verified": true
+   }
+  },
+  {
+   "commit": "9e501d9855e5",
+   "path": "llex.o",
+   "raw": 39424,
+   "zstd": {
+    "size": 17287,
+    "cpu": 0.00024700000000166256
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 39424,
+    "transfer_zstd": 17287,
+    "cpu": 0.00026500000001306034
+   },
+   "cdc16k": {
+    "chunks": 5,
+    "new_chunks": 5,
+    "transfer": 39424,
+    "transfer_zstd": 17287,
+    "cpu": 0.00022899999999026477
+   },
+   "bsdiff": {
+    "size": 5036,
+    "diff_cpu": 0.004591000000004897,
+    "apply_cpu": 0.00029499999999416104,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 4904,
+    "diff_cpu": 0.00559099999998125,
+    "apply_cpu": 0.0014570000000162509,
+    "verified": true
+   }
+  },
+  {
+   "commit": "9e501d9855e5",
+   "path": "loadlib.o",
+   "raw": 29600,
+   "zstd": {
+    "size": 11658,
+    "cpu": 0.0002250000000003638
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 29600,
+    "transfer_zstd": 11658,
+    "cpu": 0.00023299999998016574
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 16265,
+    "transfer_zstd": 6511,
+    "cpu": 0.00014700000008360803
+   },
+   "bsdiff": {
+    "size": 3037,
+    "diff_cpu": 0.0032009999999900174,
+    "apply_cpu": 0.00020900000004075991,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 2588,
+    "diff_cpu": 0.00410999999996875,
+    "apply_cpu": 0.00125100000002476,
+    "verified": true
+   }
+  },
+  {
+   "commit": "9e501d9855e5",
+   "path": "lobject.o",
+   "raw": 35600,
+   "zstd": {
+    "size": 17310,
+    "cpu": 0.00020299999999906504
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 35600,
+    "transfer_zstd": 17310,
+    "cpu": 0.00017299999996112092
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 35600,
+    "transfer_zstd": 17310,
+    "cpu": 0.00015999999999394277
+   },
+   "bsdiff": {
+    "size": 5818,
+    "diff_cpu": 0.004436999999995805,
+    "apply_cpu": 0.00031599999999798456,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 5438,
+    "diff_cpu": 0.0051239999999666,
+    "apply_cpu": 0.0013460000000122818,
+    "verified": true
+   }
+  },
+  {
+   "commit": "9e501d9855e5",
+   "path": "loslib.o",
+   "raw": 21232,
+   "zstd": {
+    "size": 8879,
+    "cpu": 0.00019699999995737016
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 21232,
+    "transfer_zstd": 8879,
+    "cpu": 0.00022400000000288856
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 21232,
+    "transfer_zstd": 8879,
+    "cpu": 0.00018299999999271677
+   },
+   "bsdiff": {
+    "size": 2504,
+    "diff_cpu": 0.002357000000017706,
+    "apply_cpu": 0.00016399999998384374,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 2068,
+    "diff_cpu": 0.003409000000033302,
+    "apply_cpu": 0.0013010000000690525,
+    "verified": true
+   }
+  },
+  {
+   "commit": "9e501d9855e5",
+   "path": "lparser.o",
+   "raw": 84816,
+   "zstd": {
+    "size": 38916,
+    "cpu": 0.00038000000000693035
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 84816,
+    "transfer_zstd": 38916,
+    "cpu": 0.00032700000002705565
+   },
+   "cdc16k": {
+    "chunks": 7,
+    "new_chunks": 4,
+    "transfer": 52272,
+    "transfer_zstd": 24525,
+    "cpu": 0.00023299999998016574
+   },
+   "bsdiff": {
+    "size": 10004,
+    "diff_cpu": 0.01044200000001183,
+    "apply_cpu": 0.0005689999999844986,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 10171,
+    "diff_cpu": 0.012874999999951342,
+    "apply_cpu": 0.0015440000000239706,
+    "verified": true
+   }
+  },
+  {
+   "commit": "9e501d9855e5",
+   "path": "lstate.o",
+   "raw": 26160,
+   "zstd": {
+    "size": 12374,
+    "cpu": 0.0002160000000230866
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 26160,
+    "transfer_zstd": 12374,
+    "cpu": 0.0001790000000028158
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 26160,
+    "transfer_zstd": 12374,
+    "cpu": 0.00015700000000151704
+   },
+   "bsdiff": {
+    "size": 4456,
+    "diff_cpu": 0.003425999999990381,
+    "apply_cpu": 0.00024199999995744292,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 4180,
+    "diff_cpu": 0.004966999999965083,
+    "apply_cpu": 0.0014189999999985048,
+    "verified": true
+   }
+  },
+  {
+   "commit": "9e501d9855e5",
+   "path": "lstring.o",
+   "raw": 23472,
+   "zstd": {
+    "size": 11779,
+    "cpu": 0.00019400000002178786
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 23472,
+    "transfer_zstd": 11779,
+    "cpu": 0.00023200000003953392
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 23472,
+    "transfer_zstd": 11779,
+    "cpu": 0.0002020000000015898
+   },
+   "bsdiff": {
+    "size": 5210,
+    "diff_cpu": 0.0034150000000181535,
+    "apply_cpu": 0.0002729999999928623,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 4601,
+    "diff_cpu": 0.004458999999997104,
+    "apply_cpu": 0.0013420000000223808,
+    "verified": true
+   }
+  },
+  {
+   "commit": "9e501d9855e5",
+   "path": "lstrlib.o",
+   "raw": 67744,
+   "zstd": {
+    "size": 29145,
+    "cpu": 0.0003740000000220789
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 67744,
+    "transfer_zstd": 29145,
+    "cpu": 0.00035200000002078013
+   },
+   "cdc16k": {
+    "chunks": 6,
+    "new_chunks": 5,
+    "transfer": 60741,
+    "transfer_zstd": 26222,
+    "cpu": 0.0002939999999966858
+   },
+   "bsdiff": {
+    "size": 6118,
+    "diff_cpu": 0.007332000000019434,
+    "apply_cpu": 0.0004020000000082291,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 5942,
+    "diff_cpu": 0.009136000000012245,
+    "apply_cpu": 0.001435000000014952,
+    "verified": true
+   }
+  },
+  {
+   "commit": "9e501d9855e5",
+   "path": "ltable.o",
+   "raw": 46360,
+   "zstd": {
+    "size": 22612,
+    "cpu": 0.00028599999996004044
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 46360,
+    "transfer_zstd": 22612,
+    "cpu": 0.00021699999996371844
+   },
+   "cdc16k": {
+    "chunks": 5,
+    "new_chunks": 5,
+    "transfer": 46360,
+    "transfer_zstd": 22612,
+    "cpu": 0.00020500000005085894
+   },
+   "bsdiff": {
+    "size": 7000,
+    "diff_cpu": 0.0057129999999574466,
+    "apply_cpu": 0.00038200000000188084,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 6713,
+    "diff_cpu": 0.00615200000004279,
+    "apply_cpu": 0.0014290000000301006,
+    "verified": true
+   }
+  },
+  {
+   "commit": "9e501d9855e5",
+   "path": "ltablib.o",
+   "raw": 20144,
+   "zstd": {
+    "size": 8549,
+    "cpu": 0.00018199999999524152
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 20144,
+    "transfer_zstd": 8549,
+    "cpu": 0.0001990000000660075
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 20144,
+    "transfer_zstd": 8549,
+    "cpu": 0.00015699999994467362
+   },
+   "bsdiff": {
+    "size": 2201,
+    "diff_cpu": 0.0021550000000161162,
+    "apply_cpu": 0.000151000000073509,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 1787,
+    "diff_cpu": 0.0032280000000355358,
+    "apply_cpu": 0.001174999999989268,
+    "verified": true
+   }
+  },
+  {
+   "commit": "9e501d9855e5",
+   "path": "ltm.o",
+   "raw": 29928,
+   "zstd": {
+    "size": 14272,
+    "cpu": 0.00019100000002936213
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 29928,
+    "transfer_zstd": 14272,
+    "cpu": 0.00022999999998774
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 29928,
+    "transfer_zstd": 14272,
+    "cpu": 0.00021000000003823516
+   },
+   "bsdiff": {
+    "size": 4782,
+    "diff_cpu": 0.0037489999999706924,
+    "apply_cpu": 0.00026300000001810986,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 4526,
+    "diff_cpu": 0.004308000000037282,
+    "apply_cpu": 0.0013720000000034815,
+    "verified": true
+   }
+  },
+  {
+   "commit": "9e501d9855e5",
+   "path": "lua",
+   "raw": 836096,
+   "zstd": {
+    "size": 326625,
+    "cpu": 0.003712999999947897
+   },
+   "cdc512k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 836096,
+    "transfer_zstd": 326625,
+    "cpu": 0.004411000000004606
+   },
+   "cdc16k": {
+    "chunks": 51,
+    "new_chunks": 49,
+    "transfer": 813129,
+    "transfer_zstd": 314187,
+    "cpu": 0.004329999999981737
+   },
+   "bsdiff": {
+    "size": 11533,
+    "diff_cpu": 0.11670799999996007,
+    "apply_cpu": 0.002879999999947813,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 26829,
+    "diff_cpu": 0.2327039999999556,
+    "apply_cpu": 0.003149000000007618,
+    "verified": true
+   }
+  },
+  {
+   "commit": "9e501d9855e5",
+   "path": "lundump.o",
+   "raw": 28848,
+   "zstd": {
+    "size": 13726,
+    "cpu": 0.00021500000002561137
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 28848,
+    "transfer_zstd": 13726,
+    "cpu": 0.0002250000000003638
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 28848,
+    "transfer_zstd": 13726,
+    "cpu": 0.00018099999999776628
+   },
+   "bsdiff": {
+    "size": 4453,
+    "diff_cpu": 0.003478000000029624,
+    "apply_cpu": 0.000252999999986514,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 4103,
+    "diff_cpu": 0.004712999999981093,
+    "apply_cpu": 0.0015700000000151704,
+    "verified": true
+   }
+  },
+  {
+   "commit": "9e501d9855e5",
+   "path": "lutf8lib.o",
+   "raw": 15544,
+   "zstd": {
+    "size": 7060,
+    "cpu": 0.0001399999999875945
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 15544,
+    "transfer_zstd": 7060,
+    "cpu": 0.00015200000001414082
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 15544,
+    "transfer_zstd": 7060,
+    "cpu": 0.00011100000000396903
+   },
+   "bsdiff": {
+    "size": 1926,
+    "diff_cpu": 0.0016899999999964166,
+    "apply_cpu": 0.00012900000001536682,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 1556,
+    "diff_cpu": 0.0027450000000044383,
+    "apply_cpu": 0.0010360000000559921,
+    "verified": true
+   }
+  },
+  {
+   "commit": "9e501d9855e5",
+   "path": "lvm.o",
+   "raw": 103520,
+   "zstd": {
+    "size": 37208,
+    "cpu": 0.0003609999999980573
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 103520,
+    "transfer_zstd": 37208,
+    "cpu": 0.00037300000002460365
+   },
+   "cdc16k": {
+    "chunks": 6,
+    "new_chunks": 3,
+    "transfer": 51238,
+    "transfer_zstd": 21972,
+    "cpu": 0.00027899999997771374
+   },
+   "bsdiff": {
+    "size": 9890,
+    "diff_cpu": 0.01220699999998942,
+    "apply_cpu": 0.0006169999999769971,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 10219,
+    "diff_cpu": 0.013344999999958418,
+    "apply_cpu": 0.0016259999999874708,
+    "verified": true
+   }
+  },
+  {
+   "commit": "36d5d2b28479",
+   "path": "liblua.a",
+   "raw": 1159672,
+   "zstd": {
+    "size": 481503,
+    "cpu": 0.004585000000020045
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 1,
+    "transfer": 427452,
+    "transfer_zstd": 179697,
+    "cpu": 0.0024650000000292493
+   },
+   "cdc16k": {
+    "chunks": 76,
+    "new_chunks": 1,
+    "transfer": 19939,
+    "transfer_zstd": 6358,
+    "cpu": 0.0012279999999691427
+   },
+   "bsdiff": {
+    "size": 161,
+    "diff_cpu": 0.16059600000005503,
+    "apply_cpu": 0.003361999999924592,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 192,
+    "diff_cpu": 0.13160200000004352,
+    "apply_cpu": 0.0033610000000408036,
+    "verified": true
+   }
+  },
+  {
+   "commit": "36d5d2b28479",
+   "path": "lopcodes.o",
+   "raw": 7776,
+   "zstd": {
+    "size": 3432,
+    "cpu": 8.29999999609754e-05
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 7776,
+    "transfer_zstd": 3432,
+    "cpu": 9.1999999995096e-05
+   },
+   "cdc16k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 7776,
+    "transfer_zstd": 3432,
+    "cpu": 5.8000000024094334e-05
+   },
+   "bsdiff": {
+    "size": 148,
+    "diff_cpu": 0.000532999999961703,
+    "apply_cpu": 3.800000001774606e-05,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 28,
+    "diff_cpu": 0.001855000000034579,
+    "apply_cpu": 0.0012179999999943902,
+    "verified": true
+   }
+  },
+  {
+   "commit": "36d5d2b28479",
+   "path": "lua",
+   "raw": 836096,
+   "zstd": {
+    "size": 326624,
+    "cpu": 0.0036820000000261643
+   },
+   "cdc512k": {
+    "chunks": 2,
+    "new_chunks": 1,
+    "transfer": 700664,
+    "transfer_zstd": 273183,
+    "cpu": 0.003985000000000127
+   },
+   "cdc16k": {
+    "chunks": 51,
+    "new_chunks": 2,
+    "transfer": 25904,
+    "transfer_zstd": 9667,
+    "cpu": 0.0010649999999827742
+   },
+   "bsdiff": {
+    "size": 207,
+    "diff_cpu": 0.09806200000002718,
+    "apply_cpu": 0.0022149999999783176,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 153,
+    "diff_cpu": 0.07398900000004005,
+    "apply_cpu": 0.002603999999962525,
+    "verified": true
+   }
+  },
+  {
+   "commit": "377cbea61b26",
+   "path": "liblua.a",
+   "raw": 1159736,
+   "zstd": {
+    "size": 481470,
+    "cpu": 0.004261000000042259
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 732284,
+    "transfer_zstd": 304972,
+    "cpu": 0.0036479999999983193
+   },
+   "cdc16k": {
+    "chunks": 76,
+    "new_chunks": 3,
+    "transfer": 44618,
+    "transfer_zstd": 16012,
+    "cpu": 0.0013329999999882602
+   },
+   "bsdiff": {
+    "size": 3079,
+    "diff_cpu": 0.1556569999999624,
+    "apply_cpu": 0.0044330000000059044,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 2922,
+    "diff_cpu": 0.1333280000000059,
+    "apply_cpu": 0.0035310000000094988,
+    "verified": true
+   }
+  },
+  {
+   "commit": "377cbea61b26",
+   "path": "ltablib.o",
+   "raw": 20208,
+   "zstd": {
+    "size": 8647,
+    "cpu": 0.00019499999996241968
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 20208,
+    "transfer_zstd": 8647,
+    "cpu": 0.0001449999999749707
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 20208,
+    "transfer_zstd": 8647,
+    "cpu": 0.00011000000000649379
+   },
+   "bsdiff": {
+    "size": 3043,
+    "diff_cpu": 0.0024559999999951287,
+    "apply_cpu": 0.00018700000003946116,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 2717,
+    "diff_cpu": 0.004559999999969477,
+    "apply_cpu": 0.0013069999999970605,
+    "verified": true
+   }
+  },
+  {
+   "commit": "377cbea61b26",
+   "path": "lua",
+   "raw": 836128,
+   "zstd": {
+    "size": 326650,
+    "cpu": 0.0036939999999958673
+   },
+   "cdc512k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 836128,
+    "transfer_zstd": 326650,
+    "cpu": 0.0044020000000273285
+   },
+   "cdc16k": {
+    "chunks": 50,
+    "new_chunks": 14,
+    "transfer": 272878,
+    "transfer_zstd": 103915,
+    "cpu": 0.001898999999980333
+   },
+   "bsdiff": {
+    "size": 2398,
+    "diff_cpu": 0.10246000000006461,
+    "apply_cpu": 0.0022819999999228457,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3945,
+    "diff_cpu": 0.10574800000011919,
+    "apply_cpu": 0.002836999999942691,
+    "verified": true
+   }
+  },
+  {
+   "commit": "51269bd783c9",
+   "path": "liblua.a",
+   "raw": 1159744,
+   "zstd": {
+    "size": 481691,
+    "cpu": 0.004262999999980366
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 842916,
+    "transfer_zstd": 364076,
+    "cpu": 0.004033999999990101
+   },
+   "cdc16k": {
+    "chunks": 77,
+    "new_chunks": 8,
+    "transfer": 106370,
+    "transfer_zstd": 43342,
+    "cpu": 0.001431999999965683
+   },
+   "bsdiff": {
+    "size": 13051,
+    "diff_cpu": 0.16011700000001383,
+    "apply_cpu": 0.004451000000017302,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 12780,
+    "diff_cpu": 0.14384899999993195,
+    "apply_cpu": 0.0033030000000167092,
+    "verified": true
+   }
+  },
+  {
+   "commit": "51269bd783c9",
+   "path": "lua",
+   "raw": 836144,
+   "zstd": {
+    "size": 326403,
+    "cpu": 0.0036910000000034415
+   },
+   "cdc512k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 836144,
+    "transfer_zstd": 326403,
+    "cpu": 0.004337999999961539
+   },
+   "cdc16k": {
+    "chunks": 48,
+    "new_chunks": 36,
+    "transfer": 648526,
+    "transfer_zstd": 250211,
+    "cpu": 0.0036709999999970933
+   },
+   "bsdiff": {
+    "size": 5043,
+    "diff_cpu": 0.11025399999999763,
+    "apply_cpu": 0.002529000000038195,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 11056,
+    "diff_cpu": 0.18794100000002345,
+    "apply_cpu": 0.0030019999999808533,
+    "verified": true
+   }
+  },
+  {
+   "commit": "51269bd783c9",
+   "path": "lvm.o",
+   "raw": 103528,
+   "zstd": {
+    "size": 37212,
+    "cpu": 0.0003829999999993561
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 103528,
+    "transfer_zstd": 37212,
+    "cpu": 0.00034599999997908526
+   },
+   "cdc16k": {
+    "chunks": 7,
+    "new_chunks": 6,
+    "transfer": 93011,
+    "transfer_zstd": 35555,
+    "cpu": 0.0003629999999930078
+   },
+   "bsdiff": {
+    "size": 13007,
+    "diff_cpu": 0.01287600000000566,
+    "apply_cpu": 0.0007249999999885404,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 12576,
+    "diff_cpu": 0.01711199999999735,
+    "apply_cpu": 0.0016640000000052169,
+    "verified": true
+   }
+  },
+  {
+   "commit": "f1bb2773bba8",
+   "path": "lapi.o",
+   "raw": 62016,
+   "zstd": {
+    "size": 27738,
+    "cpu": 0.00031599999999798456
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 62016,
+    "transfer_zstd": 27738,
+    "cpu": 0.00023099999998521525
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 62016,
+    "transfer_zstd": 27738,
+    "cpu": 0.00025099999999156353
+   },
+   "bsdiff": {
+    "size": 10560,
+    "diff_cpu": 0.007906999999988784,
+    "apply_cpu": 0.0005100000000197724,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 9892,
+    "diff_cpu": 0.007490000000018426,
+    "apply_cpu": 0.0014630000000011023,
+    "verified": true
+   }
+  },
+  {
+   "commit": "f1bb2773bba8",
+   "path": "liblua.a",
+   "raw": 1159808,
+   "zstd": {
+    "size": 481795,
+    "cpu": 0.004263000000037209
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 1,
+    "transfer": 415520,
+    "transfer_zstd": 187002,
+    "cpu": 0.002529000000038195
+   },
+   "cdc16k": {
+    "chunks": 77,
+    "new_chunks": 4,
+    "transfer": 74165,
+    "transfer_zstd": 32484,
+    "cpu": 0.00136600000001863
+   },
+   "bsdiff": {
+    "size": 10596,
+    "diff_cpu": 0.17024699999996074,
+    "apply_cpu": 0.0037269999999693937,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 10179,
+    "diff_cpu": 0.13430800000003273,
+    "apply_cpu": 0.003225999999983742,
+    "verified": true
+   }
+  },
+  {
+   "commit": "f1bb2773bba8",
+   "path": "lua",
+   "raw": 836152,
+   "zstd": {
+    "size": 328118,
+    "cpu": 0.0039519999999697575
+   },
+   "cdc512k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 836152,
+    "transfer_zstd": 328118,
+    "cpu": 0.00443599999999833
+   },
+   "cdc16k": {
+    "chunks": 48,
+    "new_chunks": 48,
+    "transfer": 836152,
+    "transfer_zstd": 328118,
+    "cpu": 0.004682999999999993
+   },
+   "bsdiff": {
+    "size": 6285,
+    "diff_cpu": 0.10864399999996976,
+    "apply_cpu": 0.0025730000000407927,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 15805,
+    "diff_cpu": 0.21228600000000597,
+    "apply_cpu": 0.0035659999999779757,
+    "verified": true
+   }
+  },
+  {
+   "commit": "efddc2309c5f",
+   "path": "liblua.a",
+   "raw": 1159800,
+   "zstd": {
+    "size": 481826,
+    "cpu": 0.004214999999987867
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 732340,
+    "transfer_zstd": 305094,
+    "cpu": 0.0038969999999949323
+   },
+   "cdc16k": {
+    "chunks": 77,
+    "new_chunks": 7,
+    "transfer": 101423,
+    "transfer_zstd": 40915,
+    "cpu": 0.0014690000000427972
+   },
+   "bsdiff": {
+    "size": 9831,
+    "diff_cpu": 0.16037099999999782,
+    "apply_cpu": 0.0033840000000395776,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 8973,
+    "diff_cpu": 0.13546800000005987,
+    "apply_cpu": 0.003425999999990381,
+    "verified": true
+   }
+  },
+  {
+   "commit": "efddc2309c5f",
+   "path": "lstrlib.o",
+   "raw": 67736,
+   "zstd": {
+    "size": 29143,
+    "cpu": 0.0003419999999891843
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 67736,
+    "transfer_zstd": 29143,
+    "cpu": 0.00029999999998153726
+   },
+   "cdc16k": {
+    "chunks": 6,
+    "new_chunks": 6,
+    "transfer": 67736,
+    "transfer_zstd": 29143,
+    "cpu": 0.0002849999999625652
+   },
+   "bsdiff": {
+    "size": 9886,
+    "diff_cpu": 0.008266000000048734,
+    "apply_cpu": 0.0005380000000059226,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 8784,
+    "diff_cpu": 0.008718999999985044,
+    "apply_cpu": 0.0016489999999862448,
+    "verified": true
+   }
+  },
+  {
+   "commit": "efddc2309c5f",
+   "path": "lua",
+   "raw": 836152,
+   "zstd": {
+    "size": 328108,
+    "cpu": 0.004014999999981228
+   },
+   "cdc512k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 836152,
+    "transfer_zstd": 328108,
+    "cpu": 0.004425999999966734
+   },
+   "cdc16k": {
+    "chunks": 48,
+    "new_chunks": 8,
+    "transfer": 127074,
+    "transfer_zstd": 56809,
+    "cpu": 0.001320999999961714
+   },
+   "bsdiff": {
+    "size": 519,
+    "diff_cpu": 0.10343399999999292,
+    "apply_cpu": 0.002188999999987118,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 700,
+    "diff_cpu": 0.07953300000002628,
+    "apply_cpu": 0.0028969999999617357,
+    "verified": true
+   }
+  },
+  {
+   "commit": "29cf284089d5",
+   "path": "lauxlib.o",
+   "raw": 53064,
+   "zstd": {
+    "size": 21874,
+    "cpu": 0.00030200000003333116
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 53064,
+    "transfer_zstd": 21874,
+    "cpu": 0.00020600000004833419
+   },
+   "cdc16k": {
+    "chunks": 4,
+    "new_chunks": 4,
+    "transfer": 53064,
+    "transfer_zstd": 21874,
+    "cpu": 0.00022100000001046283
+   },
+   "bsdiff": {
+    "size": 7558,
+    "diff_cpu": 0.006304000000000087,
+    "apply_cpu": 0.000413999999977932,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 6427,
+    "diff_cpu": 0.007209999999986394,
+    "apply_cpu": 0.0013940000000047803,
+    "verified": true
+   }
+  },
+  {
+   "commit": "29cf284089d5",
+   "path": "lbaselib.o",
+   "raw": 33288,
+   "zstd": {
+    "size": 12651,
+    "cpu": 0.00013500000000021828
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 33288,
+    "transfer_zstd": 12651,
+    "cpu": 0.00017299999996112092
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 33288,
+    "transfer_zstd": 12651,
+    "cpu": 0.00015200000001414082
+   },
+   "bsdiff": {
+    "size": 4381,
+    "diff_cpu": 0.003996000000029198,
+    "apply_cpu": 0.00027499999998781277,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3500,
+    "diff_cpu": 0.005945999999994456,
+    "apply_cpu": 0.0012549999999578176,
+    "verified": true
+   }
+  },
+  {
+   "commit": "29cf284089d5",
+   "path": "ldblib.o",
+   "raw": 31184,
+   "zstd": {
+    "size": 12034,
+    "cpu": 0.00022200000000793807
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 31184,
+    "transfer_zstd": 12034,
+    "cpu": 0.0001929999999674692
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 31184,
+    "transfer_zstd": 12034,
+    "cpu": 0.00017600000001039007
+   },
+   "bsdiff": {
+    "size": 4185,
+    "diff_cpu": 0.0036069999999881475,
+    "apply_cpu": 0.000252999999986514,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3280,
+    "diff_cpu": 0.004868000000044503,
+    "apply_cpu": 0.0012580000000070868,
+    "verified": true
+   }
+  },
+  {
+   "commit": "29cf284089d5",
+   "path": "liblua.a",
+   "raw": 1159920,
+   "zstd": {
+    "size": 481824,
+    "cpu": 0.004032999999992626
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 1159920,
+    "transfer_zstd": 481824,
+    "cpu": 0.005608999999992648
+   },
+   "cdc16k": {
+    "chunks": 78,
+    "new_chunks": 12,
+    "transfer": 199025,
+    "transfer_zstd": 73065,
+    "cpu": 0.0018410000000130822
+   },
+   "bsdiff": {
+    "size": 17575,
+    "diff_cpu": 0.16332300000004807,
+    "apply_cpu": 0.004993000000013126,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 15852,
+    "diff_cpu": 0.15421499999996513,
+    "apply_cpu": 0.003581000000053791,
+    "verified": true
+   }
+  },
+  {
+   "commit": "29cf284089d5",
+   "path": "loadlib.o",
+   "raw": 29624,
+   "zstd": {
+    "size": 11641,
+    "cpu": 0.00022400000000288856
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 29624,
+    "transfer_zstd": 11641,
+    "cpu": 0.00017600000001039007
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 29624,
+    "transfer_zstd": 11641,
+    "cpu": 0.00014400000003433888
+   },
+   "bsdiff": {
+    "size": 2981,
+    "diff_cpu": 0.003409999999973934,
+    "apply_cpu": 0.00020799999998644125,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 2505,
+    "diff_cpu": 0.005330999999955566,
+    "apply_cpu": 0.0013490000000047075,
+    "verified": true
+   }
+  },
+  {
+   "commit": "29cf284089d5",
+   "path": "lua",
+   "raw": 836160,
+   "zstd": {
+    "size": 326856,
+    "cpu": 0.003909000000021479
+   },
+   "cdc512k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 836160,
+    "transfer_zstd": 326856,
+    "cpu": 0.004518000000018674
+   },
+   "cdc16k": {
+    "chunks": 51,
+    "new_chunks": 51,
+    "transfer": 836160,
+    "transfer_zstd": 326856,
+    "cpu": 0.0045479999999997744
+   },
+   "bsdiff": {
+    "size": 9127,
+    "diff_cpu": 0.11043700000004719,
+    "apply_cpu": 0.0026709999999638967,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 18671,
+    "diff_cpu": 0.21585999999996375,
+    "apply_cpu": 0.003211999999962245,
+    "verified": true
+   }
+  },
+  {
+   "commit": "29cf284089d5",
+   "path": "lua.o",
+   "raw": 33464,
+   "zstd": {
+    "size": 13910,
+    "cpu": 0.0001999999999497959
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 33464,
+    "transfer_zstd": 13910,
+    "cpu": 0.0001790000000028158
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 33464,
+    "transfer_zstd": 13910,
+    "cpu": 0.00015799999999899228
+   },
+   "bsdiff": {
+    "size": 4533,
+    "diff_cpu": 0.004053999999996449,
+    "apply_cpu": 0.00029499999999416104,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3947,
+    "diff_cpu": 0.007088000000010197,
+    "apply_cpu": 0.0015129999999885513,
+    "verified": true
+   }
+  },
+  {
+   "commit": "d0bd25d2e7fb",
+   "path": "ldebug.o",
+   "raw": 45376,
+   "zstd": {
+    "size": 22279,
+    "cpu": 0.00027399999999033753
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 45376,
+    "transfer_zstd": 22279,
+    "cpu": 0.0002020000000015898
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 45376,
+    "transfer_zstd": 22279,
+    "cpu": 0.0001930000000243126
+   },
+   "bsdiff": {
+    "size": 8514,
+    "diff_cpu": 0.006050000000016098,
+    "apply_cpu": 0.00046000000003232344,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 7441,
+    "diff_cpu": 0.006950000000017553,
+    "apply_cpu": 0.0015710000000126456,
+    "verified": true
+   }
+  },
+  {
+   "commit": "d0bd25d2e7fb",
+   "path": "liblua.a",
+   "raw": 1159944,
+   "zstd": {
+    "size": 482296,
+    "cpu": 0.004500000000007276
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 1,
+    "transfer": 415544,
+    "transfer_zstd": 187190,
+    "cpu": 0.002694000000019514
+   },
+   "cdc16k": {
+    "chunks": 78,
+    "new_chunks": 4,
+    "transfer": 69365,
+    "transfer_zstd": 29325,
+    "cpu": 0.0014310000000250511
+   },
+   "bsdiff": {
+    "size": 8571,
+    "diff_cpu": 0.1741869999999608,
+    "apply_cpu": 0.004659000000060587,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 7720,
+    "diff_cpu": 0.13579700000008188,
+    "apply_cpu": 0.0035379999999918255,
+    "verified": true
+   }
+  },
+  {
+   "commit": "d0bd25d2e7fb",
+   "path": "lua",
+   "raw": 836160,
+   "zstd": {
+    "size": 326789,
+    "cpu": 0.003961000000003878
+   },
+   "cdc512k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 836160,
+    "transfer_zstd": 326789,
+    "cpu": 0.004353999999977987
+   },
+   "cdc16k": {
+    "chunks": 49,
+    "new_chunks": 49,
+    "transfer": 836160,
+    "transfer_zstd": 326789,
+    "cpu": 0.004707999999993717
+   },
+   "bsdiff": {
+    "size": 5780,
+    "diff_cpu": 0.10691499999995813,
+    "apply_cpu": 0.0026119999999991705,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 14677,
+    "diff_cpu": 0.20909599999998818,
+    "apply_cpu": 0.003072999999972126,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0c16a42d61d0",
+   "path": "lua",
+   "raw": 836160,
+   "zstd": {
+    "size": 326788,
+    "cpu": 0.0036949999999933425
+   },
+   "cdc512k": {
+    "chunks": 2,
+    "new_chunks": 1,
+    "transfer": 700716,
+    "transfer_zstd": 273388,
+    "cpu": 0.0036100000000374166
+   },
+   "cdc16k": {
+    "chunks": 49,
+    "new_chunks": 3,
+    "transfer": 53122,
+    "transfer_zstd": 24451,
+    "cpu": 0.0010229999999751271
+   },
+   "bsdiff": {
+    "size": 226,
+    "diff_cpu": 0.09730200000001332,
+    "apply_cpu": 0.0022739999999998872,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 180,
+    "diff_cpu": 0.07500499999997601,
+    "apply_cpu": 0.002958999999975731,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0c16a42d61d0",
+   "path": "lua.o",
+   "raw": 33464,
+   "zstd": {
+    "size": 13922,
+    "cpu": 0.00024300000001176159
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 33464,
+    "transfer_zstd": 13922,
+    "cpu": 0.0001790000000028158
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 33464,
+    "transfer_zstd": 13922,
+    "cpu": 0.00016400000004068715
+   },
+   "bsdiff": {
+    "size": 4038,
+    "diff_cpu": 0.003655999999978121,
+    "apply_cpu": 0.0002540000000408327,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3446,
+    "diff_cpu": 0.004047000000014123,
+    "apply_cpu": 0.00130500000000211,
+    "verified": true
+   }
+  },
+  {
+   "commit": "3228a97c6a95",
+   "path": "lapi.o",
+   "raw": 62016,
+   "zstd": {
+    "size": 27738,
+    "cpu": 0.0003440000000409782
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 62016,
+    "transfer_zstd": 27738,
+    "cpu": 0.00023099999998521525
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 29626,
+    "transfer_zstd": 18122,
+    "cpu": 0.00017300000001796434
+   },
+   "bsdiff": {
+    "size": 7859,
+    "diff_cpu": 0.0069740000000138025,
+    "apply_cpu": 0.000440999999966607,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 7198,
+    "diff_cpu": 0.005845999999962714,
+    "apply_cpu": 0.0013619999999718857,
+    "verified": true
+   }
+  },
+  {
+   "commit": "3228a97c6a95",
+   "path": "lcode.o",
+   "raw": 74272,
+   "zstd": {
+    "size": 33522,
+    "cpu": 0.0003420000000460277
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 74272,
+    "transfer_zstd": 33522,
+    "cpu": 0.0002870000000143591
+   },
+   "cdc16k": {
+    "chunks": 7,
+    "new_chunks": 1,
+    "transfer": 19070,
+    "transfer_zstd": 16066,
+    "cpu": 0.0001399999999875945
+   },
+   "bsdiff": {
+    "size": 4835,
+    "diff_cpu": 0.007256999999981417,
+    "apply_cpu": 0.0003810000000044056,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 4246,
+    "diff_cpu": 0.007501999999988129,
+    "apply_cpu": 0.0014899999999897773,
+    "verified": true
+   }
+  },
+  {
+   "commit": "3228a97c6a95",
+   "path": "ldebug.o",
+   "raw": 45376,
+   "zstd": {
+    "size": 22252,
+    "cpu": 0.0002729999999928623
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 45376,
+    "transfer_zstd": 22252,
+    "cpu": 0.00020800000004328467
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 45376,
+    "transfer_zstd": 22252,
+    "cpu": 0.00019499999996241968
+   },
+   "bsdiff": {
+    "size": 5746,
+    "diff_cpu": 0.005025999999986652,
+    "apply_cpu": 0.00032699999997021223,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 5010,
+    "diff_cpu": 0.0045509999999922,
+    "apply_cpu": 0.0013350000000400541,
+    "verified": true
+   }
+  },
+  {
+   "commit": "3228a97c6a95",
+   "path": "ldo.o",
+   "raw": 45240,
+   "zstd": {
+    "size": 21505,
+    "cpu": 0.00027399999999033753
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 45240,
+    "transfer_zstd": 21505,
+    "cpu": 0.00020900000004075991
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 45240,
+    "transfer_zstd": 21505,
+    "cpu": 0.00020299999999906504
+   },
+   "bsdiff": {
+    "size": 12782,
+    "diff_cpu": 0.008261000000004515,
+    "apply_cpu": 0.0005909999999857973,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 12269,
+    "diff_cpu": 0.007845999999972264,
+    "apply_cpu": 0.0013170000000286564,
+    "verified": true
+   }
+  },
+  {
+   "commit": "3228a97c6a95",
+   "path": "liblua.a",
+   "raw": 1160740,
+   "zstd": {
+    "size": 482817,
+    "cpu": 0.005636000000038166
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 843840,
+    "transfer_zstd": 365220,
+    "cpu": 0.004705999999998767
+   },
+   "cdc16k": {
+    "chunks": 77,
+    "new_chunks": 27,
+    "transfer": 456108,
+    "transfer_zstd": 220921,
+    "cpu": 0.002949999999998454
+   },
+   "bsdiff": {
+    "size": 73324,
+    "diff_cpu": 0.21051899999997659,
+    "apply_cpu": 0.006646000000046115,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 73224,
+    "diff_cpu": 0.1749970000000758,
+    "apply_cpu": 0.003712000000007265,
+    "verified": true
+   }
+  },
+  {
+   "commit": "3228a97c6a95",
+   "path": "llex.o",
+   "raw": 39432,
+   "zstd": {
+    "size": 17282,
+    "cpu": 0.00021799999996119368
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 39432,
+    "transfer_zstd": 17282,
+    "cpu": 0.00019000000003188688
+   },
+   "cdc16k": {
+    "chunks": 5,
+    "new_chunks": 3,
+    "transfer": 21884,
+    "transfer_zstd": 11691,
+    "cpu": 0.0001399999999875945
+   },
+   "bsdiff": {
+    "size": 4854,
+    "diff_cpu": 0.004307000000039807,
+    "apply_cpu": 0.00029000000000678483,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 4134,
+    "diff_cpu": 0.004351999999983036,
+    "apply_cpu": 0.0013639999999668362,
+    "verified": true
+   }
+  },
+  {
+   "commit": "3228a97c6a95",
+   "path": "lmem.o",
+   "raw": 15448,
+   "zstd": {
+    "size": 7412,
+    "cpu": 0.00013200000000779255
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 15448,
+    "transfer_zstd": 7412,
+    "cpu": 0.00010700000001406806
+   },
+   "cdc16k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 15448,
+    "transfer_zstd": 7412,
+    "cpu": 8.50000000127693e-05
+   },
+   "bsdiff": {
+    "size": 2501,
+    "diff_cpu": 0.00179800000000796,
+    "apply_cpu": 0.00014999999996234692,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 2018,
+    "diff_cpu": 0.0022559999999884894,
+    "apply_cpu": 0.0010850000000459659,
+    "verified": true
+   }
+  },
+  {
+   "commit": "3228a97c6a95",
+   "path": "lobject.o",
+   "raw": 35600,
+   "zstd": {
+    "size": 17310,
+    "cpu": 0.00022899999999026477
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 35600,
+    "transfer_zstd": 17310,
+    "cpu": 0.0001700000000255386
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 1,
+    "transfer": 15555,
+    "transfer_zstd": 11463,
+    "cpu": 0.00011599999999134525
+   },
+   "bsdiff": {
+    "size": 191,
+    "diff_cpu": 0.00255600000002687,
+    "apply_cpu": 0.00011599999999134525,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 50,
+    "diff_cpu": 0.0033279999999535903,
+    "apply_cpu": 0.0012690000000361579,
+    "verified": true
+   }
+  },
+  {
+   "commit": "3228a97c6a95",
+   "path": "lparser.o",
+   "raw": 84744,
+   "zstd": {
+    "size": 38852,
+    "cpu": 0.00037599999996018596
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 84744,
+    "transfer_zstd": 38852,
+    "cpu": 0.0003189999999904103
+   },
+   "cdc16k": {
+    "chunks": 5,
+    "new_chunks": 5,
+    "transfer": 84744,
+    "transfer_zstd": 38852,
+    "cpu": 0.0003370000000018081
+   },
+   "bsdiff": {
+    "size": 18406,
+    "diff_cpu": 0.014382000000011885,
+    "apply_cpu": 0.0008639999999786596,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 19371,
+    "diff_cpu": 0.01816000000007989,
+    "apply_cpu": 0.0015000000000213731,
+    "verified": true
+   }
+  },
+  {
+   "commit": "3228a97c6a95",
+   "path": "lstate.o",
+   "raw": 26160,
+   "zstd": {
+    "size": 12374,
+    "cpu": 0.0002250000000003638
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 26160,
+    "transfer_zstd": 12374,
+    "cpu": 0.00018099999999776628
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 1,
+    "transfer": 11248,
+    "transfer_zstd": 8755,
+    "cpu": 0.0001260000000229411
+   },
+   "bsdiff": {
+    "size": 3423,
+    "diff_cpu": 0.0029179999999655593,
+    "apply_cpu": 0.00021400000002813613,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 2425,
+    "diff_cpu": 0.0031319999999936954,
+    "apply_cpu": 0.0013360000000375294,
+    "verified": true
+   }
+  },
+  {
+   "commit": "3228a97c6a95",
+   "path": "lstring.o",
+   "raw": 23472,
+   "zstd": {
+    "size": 11778,
+    "cpu": 0.00019199999996999395
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 23472,
+    "transfer_zstd": 11778,
+    "cpu": 0.00015400000006593473
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 23472,
+    "transfer_zstd": 11778,
+    "cpu": 0.00012200000003304012
+   },
+   "bsdiff": {
+    "size": 3986,
+    "diff_cpu": 0.0027739999999312204,
+    "apply_cpu": 0.00021700000002056186,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3361,
+    "diff_cpu": 0.002927999999997155,
+    "apply_cpu": 0.0011079999999878964,
+    "verified": true
+   }
+  },
+  {
+   "commit": "3228a97c6a95",
+   "path": "ltable.o",
+   "raw": 46360,
+   "zstd": {
+    "size": 22612,
+    "cpu": 0.000279999999975189
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 46360,
+    "transfer_zstd": 22612,
+    "cpu": 0.00021200000003318564
+   },
+   "cdc16k": {
+    "chunks": 4,
+    "new_chunks": 2,
+    "transfer": 32230,
+    "transfer_zstd": 19408,
+    "cpu": 0.0001700000000255386
+   },
+   "bsdiff": {
+    "size": 6073,
+    "diff_cpu": 0.005267000000003463,
+    "apply_cpu": 0.0003560000000106811,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 5495,
+    "diff_cpu": 0.004998999999997977,
+    "apply_cpu": 0.0013759999999933825,
+    "verified": true
+   }
+  },
+  {
+   "commit": "3228a97c6a95",
+   "path": "lua",
+   "raw": 836488,
+   "zstd": {
+    "size": 326767,
+    "cpu": 0.0038509999999973843
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 836488,
+    "transfer_zstd": 326767,
+    "cpu": 0.0050309999999740285
+   },
+   "cdc16k": {
+    "chunks": 49,
+    "new_chunks": 48,
+    "transfer": 823657,
+    "transfer_zstd": 322492,
+    "cpu": 0.0048239999999850625
+   },
+   "bsdiff": {
+    "size": 17874,
+    "diff_cpu": 0.12349399999999378,
+    "apply_cpu": 0.003229999999973643,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 37380,
+    "diff_cpu": 0.26115799999996625,
+    "apply_cpu": 0.0037679999999795655,
+    "verified": true
+   }
+  },
+  {
+   "commit": "3228a97c6a95",
+   "path": "lundump.o",
+   "raw": 28560,
+   "zstd": {
+    "size": 13676,
+    "cpu": 0.00021400000002813613
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 28560,
+    "transfer_zstd": 13676,
+    "cpu": 0.00015700000000151704
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 28560,
+    "transfer_zstd": 13676,
+    "cpu": 0.00014099999998506973
+   },
+   "bsdiff": {
+    "size": 8144,
+    "diff_cpu": 0.004606999999964501,
+    "apply_cpu": 0.0003760000000170294,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 7616,
+    "diff_cpu": 0.0056690000000116925,
+    "apply_cpu": 0.0012000000000398359,
+    "verified": true
+   }
+  },
+  {
+   "commit": "4c5d5063a54c",
+   "path": "lbaselib.o",
+   "raw": 33200,
+   "zstd": {
+    "size": 12715,
+    "cpu": 0.0002459999999473439
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 33200,
+    "transfer_zstd": 12715,
+    "cpu": 0.0002949999999373176
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 33200,
+    "transfer_zstd": 12715,
+    "cpu": 0.00021400000002813613
+   },
+   "bsdiff": {
+    "size": 7078,
+    "diff_cpu": 0.005239999999957945,
+    "apply_cpu": 0.00038000000006377377,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 6039,
+    "diff_cpu": 0.006833000000028733,
+    "apply_cpu": 0.001398999999935313,
+    "verified": true
+   }
+  },
+  {
+   "commit": "4c5d5063a54c",
+   "path": "liblua.a",
+   "raw": 1160652,
+   "zstd": {
+    "size": 482593,
+    "cpu": 0.0045670000000086475
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 733512,
+    "transfer_zstd": 306013,
+    "cpu": 0.0038519999999948595
+   },
+   "cdc16k": {
+    "chunks": 77,
+    "new_chunks": 4,
+    "transfer": 61002,
+    "transfer_zstd": 20708,
+    "cpu": 0.0014859999999998763
+   },
+   "bsdiff": {
+    "size": 7184,
+    "diff_cpu": 0.17101400000001377,
+    "apply_cpu": 0.0033669999999688116,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 6314,
+    "diff_cpu": 0.1344110000000569,
+    "apply_cpu": 0.003406999999981508,
+    "verified": true
+   }
+  },
+  {
+   "commit": "4c5d5063a54c",
+   "path": "lua",
+   "raw": 836512,
+   "zstd": {
+    "size": 326857,
+    "cpu": 0.0037090000000148393
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 836512,
+    "transfer_zstd": 326857,
+    "cpu": 0.004571999999996024
+   },
+   "cdc16k": {
+    "chunks": 51,
+    "new_chunks": 35,
+    "transfer": 598627,
+    "transfer_zstd": 237297,
+    "cpu": 0.0033659999999713364
+   },
+   "bsdiff": {
+    "size": 4701,
+    "diff_cpu": 0.10607200000004013,
+    "apply_cpu": 0.002430000000003929,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 8814,
+    "diff_cpu": 0.1507149999999342,
+    "apply_cpu": 0.0029600000000300497,
+    "verified": true
+   }
+  },
+  {
+   "commit": "ae23e726018b",
+   "path": "lapi.o",
+   "raw": 62016,
+   "zstd": {
+    "size": 27738,
+    "cpu": 0.00033600000006117625
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 62016,
+    "transfer_zstd": 27738,
+    "cpu": 0.00031100000001060835
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 1,
+    "transfer": 27085,
+    "transfer_zstd": 17507,
+    "cpu": 0.00020599999993464735
+   },
+   "bsdiff": {
+    "size": 7826,
+    "diff_cpu": 0.007054999999922984,
+    "apply_cpu": 0.00044000000002597517,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 6754,
+    "diff_cpu": 0.006071000000019922,
+    "apply_cpu": 0.0015390000000365944,
+    "verified": true
+   }
+  },
+  {
+   "commit": "ae23e726018b",
+   "path": "lcode.o",
+   "raw": 74272,
+   "zstd": {
+    "size": 33547,
+    "cpu": 0.0003509999999664615
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 74272,
+    "transfer_zstd": 33547,
+    "cpu": 0.0002919999999448919
+   },
+   "cdc16k": {
+    "chunks": 8,
+    "new_chunks": 2,
+    "transfer": 19070,
+    "transfer_zstd": 16070,
+    "cpu": 0.00013899999999011925
+   },
+   "bsdiff": {
+    "size": 8292,
+    "diff_cpu": 0.00832100000002356,
+    "apply_cpu": 0.000490999999954056,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 7504,
+    "diff_cpu": 0.00826900000004116,
+    "apply_cpu": 0.0015480000000138716,
+    "verified": true
+   }
+  },
+  {
+   "commit": "ae23e726018b",
+   "path": "ldebug.o",
+   "raw": 45376,
+   "zstd": {
+    "size": 21995,
+    "cpu": 0.00028199999997013947
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 45376,
+    "transfer_zstd": 21995,
+    "cpu": 0.00029000000000678483
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 24953,
+    "transfer_zstd": 13406,
+    "cpu": 0.00020499999999401552
+   },
+   "bsdiff": {
+    "size": 5884,
+    "diff_cpu": 0.005316999999990912,
+    "apply_cpu": 0.00034499999998161,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 5156,
+    "diff_cpu": 0.004924999999957436,
+    "apply_cpu": 0.0017019999999661195,
+    "verified": true
+   }
+  },
+  {
+   "commit": "ae23e726018b",
+   "path": "ldo.o",
+   "raw": 45240,
+   "zstd": {
+    "size": 21505,
+    "cpu": 0.0003539999999588872
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 45240,
+    "transfer_zstd": 21505,
+    "cpu": 0.0002460000000041873
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 1,
+    "transfer": 23513,
+    "transfer_zstd": 14062,
+    "cpu": 0.00015300000001161607
+   },
+   "bsdiff": {
+    "size": 6188,
+    "diff_cpu": 0.0051239999999666,
+    "apply_cpu": 0.0003370000000018081,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 5119,
+    "diff_cpu": 0.004797000000053231,
+    "apply_cpu": 0.0014449999999897045,
+    "verified": true
+   }
+  },
+  {
+   "commit": "ae23e726018b",
+   "path": "ldump.o",
+   "raw": 21400,
+   "zstd": {
+    "size": 10503,
+    "cpu": 0.00019199999996999395
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 21400,
+    "transfer_zstd": 10503,
+    "cpu": 0.0002250000000003638
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 1,
+    "transfer": 12854,
+    "transfer_zstd": 8572,
+    "cpu": 0.00013899999999011925
+   },
+   "bsdiff": {
+    "size": 3708,
+    "diff_cpu": 0.0026000000000294676,
+    "apply_cpu": 0.00020800000004328467,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3152,
+    "diff_cpu": 0.0029389999999693828,
+    "apply_cpu": 0.0012550000000715045,
+    "verified": true
+   }
+  },
+  {
+   "commit": "ae23e726018b",
+   "path": "lfunc.o",
+   "raw": 23448,
+   "zstd": {
+    "size": 11301,
+    "cpu": 0.0001929999999674692
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 23448,
+    "transfer_zstd": 11301,
+    "cpu": 0.00022200000000793807
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 23448,
+    "transfer_zstd": 11301,
+    "cpu": 0.00017399999995859616
+   },
+   "bsdiff": {
+    "size": 3926,
+    "diff_cpu": 0.0027619999999615175,
+    "apply_cpu": 0.00022000000001298758,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3321,
+    "diff_cpu": 0.002755999999976666,
+    "apply_cpu": 0.00124399999998559,
+    "verified": true
+   }
+  },
+  {
+   "commit": "ae23e726018b",
+   "path": "lgc.o",
+   "raw": 53072,
+   "zstd": {
+    "size": 24883,
+    "cpu": 0.0002660000000105356
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 53072,
+    "transfer_zstd": 24883,
+    "cpu": 0.0002780000000370819
+   },
+   "cdc16k": {
+    "chunks": 4,
+    "new_chunks": 4,
+    "transfer": 53072,
+    "transfer_zstd": 24883,
+    "cpu": 0.00025899999997136547
+   },
+   "bsdiff": {
+    "size": 6113,
+    "diff_cpu": 0.005844000000024607,
+    "apply_cpu": 0.0003629999999930078,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 5337,
+    "diff_cpu": 0.005405999999993583,
+    "apply_cpu": 0.0013870000000224536,
+    "verified": true
+   }
+  },
+  {
+   "commit": "ae23e726018b",
+   "path": "liblua.a",
+   "raw": 1160660,
+   "zstd": {
+    "size": 482788,
+    "cpu": 0.004309999999975389
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 843848,
+    "transfer_zstd": 365302,
+    "cpu": 0.004284000000041033
+   },
+   "cdc16k": {
+    "chunks": 75,
+    "new_chunks": 31,
+    "transfer": 550467,
+    "transfer_zstd": 273294,
+    "cpu": 0.0030699999999797
+   },
+   "bsdiff": {
+    "size": 89533,
+    "diff_cpu": 0.20523599999995668,
+    "apply_cpu": 0.006844999999998436,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 86162,
+    "diff_cpu": 0.15488099999998894,
+    "apply_cpu": 0.0035599999999931242,
+    "verified": true
+   }
+  },
+  {
+   "commit": "ae23e726018b",
+   "path": "llex.o",
+   "raw": 39432,
+   "zstd": {
+    "size": 17282,
+    "cpu": 0.00023100000004205867
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 39432,
+    "transfer_zstd": 17282,
+    "cpu": 0.00019499999996241968
+   },
+   "cdc16k": {
+    "chunks": 5,
+    "new_chunks": 1,
+    "transfer": 8016,
+    "transfer_zstd": 7396,
+    "cpu": 9.1999999995096e-05
+   },
+   "bsdiff": {
+    "size": 4920,
+    "diff_cpu": 0.0042469999999639185,
+    "apply_cpu": 0.00028099999997266423,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3935,
+    "diff_cpu": 0.004264999999975316,
+    "apply_cpu": 0.0014380000000073778,
+    "verified": true
+   }
+  },
+  {
+   "commit": "ae23e726018b",
+   "path": "lmem.o",
+   "raw": 15448,
+   "zstd": {
+    "size": 7412,
+    "cpu": 0.0001289999999585234
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 15448,
+    "transfer_zstd": 7412,
+    "cpu": 0.00011699999998882049
+   },
+   "cdc16k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 15448,
+    "transfer_zstd": 7412,
+    "cpu": 8.50000000127693e-05
+   },
+   "bsdiff": {
+    "size": 2663,
+    "diff_cpu": 0.0018200000000092587,
+    "apply_cpu": 0.000160999999991418,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 2081,
+    "diff_cpu": 0.0024599999999850297,
+    "apply_cpu": 0.0012810000000627042,
+    "verified": true
+   }
+  },
+  {
+   "commit": "ae23e726018b",
+   "path": "lobject.o",
+   "raw": 35600,
+   "zstd": {
+    "size": 17310,
+    "cpu": 0.00023500000003195964
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 35600,
+    "transfer_zstd": 17310,
+    "cpu": 0.0001770000000078653
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 25419,
+    "transfer_zstd": 13754,
+    "cpu": 0.0001469999999699212
+   },
+   "bsdiff": {
+    "size": 5041,
+    "diff_cpu": 0.004043000000024222,
+    "apply_cpu": 0.0002920000000017353,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 4221,
+    "diff_cpu": 0.004130999999972573,
+    "apply_cpu": 0.0011680000000069413,
+    "verified": true
+   }
+  },
+  {
+   "commit": "ae23e726018b",
+   "path": "lopcodes.o",
+   "raw": 7776,
+   "zstd": {
+    "size": 3431,
+    "cpu": 8.300000001781882e-05
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 7776,
+    "transfer_zstd": 3431,
+    "cpu": 9.299999999257125e-05
+   },
+   "cdc16k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 7776,
+    "transfer_zstd": 3431,
+    "cpu": 7.199999998874773e-05
+   },
+   "bsdiff": {
+    "size": 662,
+    "diff_cpu": 0.0008540000000039072,
+    "apply_cpu": 6.099999995967664e-05,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 416,
+    "diff_cpu": 0.0017330000000015389,
+    "apply_cpu": 0.0011959999999930915,
+    "verified": true
+   }
+  },
+  {
+   "commit": "ae23e726018b",
+   "path": "lparser.o",
+   "raw": 84752,
+   "zstd": {
+    "size": 38856,
+    "cpu": 0.00035000000002582965
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 84752,
+    "transfer_zstd": 38856,
+    "cpu": 0.00031100000001060835
+   },
+   "cdc16k": {
+    "chunks": 4,
+    "new_chunks": 3,
+    "transfer": 73472,
+    "transfer_zstd": 36401,
+    "cpu": 0.00031999999998788553
+   },
+   "bsdiff": {
+    "size": 9162,
+    "diff_cpu": 0.009638999999992848,
+    "apply_cpu": 0.0005259999999793763,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 8463,
+    "diff_cpu": 0.008910000000014406,
+    "apply_cpu": 0.0014979999999695792,
+    "verified": true
+   }
+  },
+  {
+   "commit": "ae23e726018b",
+   "path": "lstate.o",
+   "raw": 26160,
+   "zstd": {
+    "size": 12374,
+    "cpu": 0.00020399999999654028
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 26160,
+    "transfer_zstd": 12374,
+    "cpu": 0.00014999999996234692
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 26160,
+    "transfer_zstd": 12374,
+    "cpu": 0.00012800000001789158
+   },
+   "bsdiff": {
+    "size": 3982,
+    "diff_cpu": 0.003011000000014974,
+    "apply_cpu": 0.00023099999998521525,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3394,
+    "diff_cpu": 0.002943000000016127,
+    "apply_cpu": 0.0012879999999881875,
+    "verified": true
+   }
+  },
+  {
+   "commit": "ae23e726018b",
+   "path": "lstring.o",
+   "raw": 23472,
+   "zstd": {
+    "size": 11780,
+    "cpu": 0.00016399999998384374
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 23472,
+    "transfer_zstd": 11780,
+    "cpu": 0.0001289999999585234
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 23472,
+    "transfer_zstd": 11780,
+    "cpu": 0.00011599999999134525
+   },
+   "bsdiff": {
+    "size": 4021,
+    "diff_cpu": 0.002769999999998163,
+    "apply_cpu": 0.00021700000002056186,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3286,
+    "diff_cpu": 0.0029910000000086256,
+    "apply_cpu": 0.0013179999999692882,
+    "verified": true
+   }
+  },
+  {
+   "commit": "ae23e726018b",
+   "path": "ltable.o",
+   "raw": 46368,
+   "zstd": {
+    "size": 22608,
+    "cpu": 0.000275999999985288
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 46368,
+    "transfer_zstd": 22608,
+    "cpu": 0.00021299999997381747
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 38963,
+    "transfer_zstd": 20956,
+    "cpu": 0.00019499999996241968
+   },
+   "bsdiff": {
+    "size": 6312,
+    "diff_cpu": 0.0052050000000463115,
+    "apply_cpu": 0.0003580000000056316,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 5561,
+    "diff_cpu": 0.004693000000031589,
+    "apply_cpu": 0.0013229999999566644,
+    "verified": true
+   }
+  },
+  {
+   "commit": "ae23e726018b",
+   "path": "ltm.o",
+   "raw": 29928,
+   "zstd": {
+    "size": 14272,
+    "cpu": 0.00021400000002813613
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 29928,
+    "transfer_zstd": 14272,
+    "cpu": 0.00015500000000656655
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 29329,
+    "transfer_zstd": 14174,
+    "cpu": 0.00014199999998254498
+   },
+   "bsdiff": {
+    "size": 4696,
+    "diff_cpu": 0.0035250000000246473,
+    "apply_cpu": 0.00025800000003073364,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 4111,
+    "diff_cpu": 0.0032629999999471693,
+    "apply_cpu": 0.001265000000046257,
+    "verified": true
+   }
+  },
+  {
+   "commit": "ae23e726018b",
+   "path": "lua",
+   "raw": 836512,
+   "zstd": {
+    "size": 326887,
+    "cpu": 0.0037339999999517204
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 596649,
+    "transfer_zstd": 228922,
+    "cpu": 0.003169999999954598
+   },
+   "cdc16k": {
+    "chunks": 51,
+    "new_chunks": 15,
+    "transfer": 239395,
+    "transfer_zstd": 99464,
+    "cpu": 0.0019110000000068794
+   },
+   "bsdiff": {
+    "size": 619,
+    "diff_cpu": 0.10203699999999571,
+    "apply_cpu": 0.0022200000000225373,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3246,
+    "diff_cpu": 0.09215399999999363,
+    "apply_cpu": 0.003054000000020096,
+    "verified": true
+   }
+  },
+  {
+   "commit": "ae23e726018b",
+   "path": "lundump.o",
+   "raw": 28560,
+   "zstd": {
+    "size": 13671,
+    "cpu": 0.0002160000000230866
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 28560,
+    "transfer_zstd": 13671,
+    "cpu": 0.00018000000000029104
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 23786,
+    "transfer_zstd": 12459,
+    "cpu": 0.0001310000000103173
+   },
+   "bsdiff": {
+    "size": 4157,
+    "diff_cpu": 0.00321099999996477,
+    "apply_cpu": 0.00024299999995491817,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3561,
+    "diff_cpu": 0.0033510000000092077,
+    "apply_cpu": 0.0011449999999513238,
+    "verified": true
+   }
+  },
+  {
+   "commit": "ae23e726018b",
+   "path": "lvm.o",
+   "raw": 103528,
+   "zstd": {
+    "size": 37210,
+    "cpu": 0.0003300000000194814
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 103528,
+    "transfer_zstd": 37210,
+    "cpu": 0.0003419999999891843
+   },
+   "cdc16k": {
+    "chunks": 7,
+    "new_chunks": 4,
+    "transfer": 51986,
+    "transfer_zstd": 24718,
+    "cpu": 0.00025099999999156353
+   },
+   "bsdiff": {
+    "size": 9782,
+    "diff_cpu": 0.011389999999948941,
+    "apply_cpu": 0.000597999999968124,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 9110,
+    "diff_cpu": 0.010068000000103439,
+    "apply_cpu": 0.001611999999965974,
+    "verified": true
+   }
+  },
+  {
+   "commit": "ae23e726018b",
+   "path": "lzio.o",
+   "raw": 13152,
+   "zstd": {
+    "size": 6511,
+    "cpu": 0.00012200000003304012
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 13152,
+    "transfer_zstd": 6511,
+    "cpu": 0.0001449999999749707
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 1,
+    "transfer": 4782,
+    "transfer_zstd": 4445,
+    "cpu": 7.700000003296736e-05
+   },
+   "bsdiff": {
+    "size": 2422,
+    "diff_cpu": 0.0015899999999646752,
+    "apply_cpu": 0.0001399999999875945,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 1912,
+    "diff_cpu": 0.002149000000031265,
+    "apply_cpu": 0.0012539999999603424,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "lapi.o",
+   "raw": 61536,
+   "zstd": {
+    "size": 27312,
+    "cpu": 0.0003120000000080836
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 61536,
+    "transfer_zstd": 27312,
+    "cpu": 0.00029700000004595495
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 61536,
+    "transfer_zstd": 27312,
+    "cpu": 0.0002959999999916363
+   },
+   "bsdiff": {
+    "size": 14574,
+    "diff_cpu": 0.009838000000002012,
+    "apply_cpu": 0.000711000000023887,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 14378,
+    "diff_cpu": 0.01770699999997305,
+    "apply_cpu": 0.001583000000039192,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "lauxlib.o",
+   "raw": 52544,
+   "zstd": {
+    "size": 21133,
+    "cpu": 0.00032700000002705565
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 52544,
+    "transfer_zstd": 21133,
+    "cpu": 0.0002779999999802385
+   },
+   "cdc16k": {
+    "chunks": 5,
+    "new_chunks": 5,
+    "transfer": 52544,
+    "transfer_zstd": 21133,
+    "cpu": 0.0002689999999461179
+   },
+   "bsdiff": {
+    "size": 9891,
+    "diff_cpu": 0.0075029999999856045,
+    "apply_cpu": 0.0005219999999894753,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 9621,
+    "diff_cpu": 0.014045999999950709,
+    "apply_cpu": 0.0015339999999923748,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "lbaselib.o",
+   "raw": 32720,
+   "zstd": {
+    "size": 12172,
+    "cpu": 0.00024700000000166256
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 32720,
+    "transfer_zstd": 12172,
+    "cpu": 0.0002020000000015898
+   },
+   "cdc16k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 32720,
+    "transfer_zstd": 12172,
+    "cpu": 0.00018299999999271677
+   },
+   "bsdiff": {
+    "size": 6059,
+    "diff_cpu": 0.004468000000031225,
+    "apply_cpu": 0.00033600000000433283,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 5406,
+    "diff_cpu": 0.008913999999947464,
+    "apply_cpu": 0.0014219999999909305,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "lcode.o",
+   "raw": 73832,
+   "zstd": {
+    "size": 33008,
+    "cpu": 0.00038200000000188084
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 73832,
+    "transfer_zstd": 33008,
+    "cpu": 0.00035000000002582965
+   },
+   "cdc16k": {
+    "chunks": 6,
+    "new_chunks": 6,
+    "transfer": 73832,
+    "transfer_zstd": 33008,
+    "cpu": 0.0003399999999942338
+   },
+   "bsdiff": {
+    "size": 16828,
+    "diff_cpu": 0.01188400000000911,
+    "apply_cpu": 0.0008109999999987849,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 16318,
+    "diff_cpu": 0.020043000000043776,
+    "apply_cpu": 0.00159600000000637,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "lcorolib.o",
+   "raw": 14752,
+   "zstd": {
+    "size": 5857,
+    "cpu": 0.00012999999995599865
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 14752,
+    "transfer_zstd": 5857,
+    "cpu": 0.00011399999999639476
+   },
+   "cdc16k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 14752,
+    "transfer_zstd": 5857,
+    "cpu": 9.499999998752173e-05
+   },
+   "bsdiff": {
+    "size": 2927,
+    "diff_cpu": 0.0020190000000184227,
+    "apply_cpu": 0.00017099999996617044,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 2529,
+    "diff_cpu": 0.004393999999990683,
+    "apply_cpu": 0.001270999999974265,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "lctype.o",
+   "raw": 3400,
+   "zstd": {
+    "size": 1229,
+    "cpu": 4.400000000259752e-05
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 3400,
+    "transfer_zstd": 1229,
+    "cpu": 7.299999998622297e-05
+   },
+   "cdc16k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 3400,
+    "transfer_zstd": 1229,
+    "cpu": 5.400000003419336e-05
+   },
+   "bsdiff": {
+    "size": 450,
+    "diff_cpu": 0.000417999999967833,
+    "apply_cpu": 4.900000004681715e-05,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 261,
+    "diff_cpu": 0.001989000000037322,
+    "apply_cpu": 0.0011819999999715947,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "ldblib.o",
+   "raw": 30720,
+   "zstd": {
+    "size": 11546,
+    "cpu": 0.0002250000000003638
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 30720,
+    "transfer_zstd": 11546,
+    "cpu": 0.0001650000000381624
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 30720,
+    "transfer_zstd": 11546,
+    "cpu": 0.0001469999999699212
+   },
+   "bsdiff": {
+    "size": 5591,
+    "diff_cpu": 0.004140000000006694,
+    "apply_cpu": 0.00031100000001060835,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 5179,
+    "diff_cpu": 0.00788700000003928,
+    "apply_cpu": 0.0013140000000362306,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "ldebug.o",
+   "raw": 44888,
+   "zstd": {
+    "size": 21402,
+    "cpu": 0.00031100000001060835
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 44888,
+    "transfer_zstd": 21402,
+    "cpu": 0.0002360000000294349
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 44888,
+    "transfer_zstd": 21402,
+    "cpu": 0.00020999999998139174
+   },
+   "bsdiff": {
+    "size": 11307,
+    "diff_cpu": 0.007056000000034146,
+    "apply_cpu": 0.0005370000000084474,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 11000,
+    "diff_cpu": 0.012044000000003052,
+    "apply_cpu": 0.0015030000000137989,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "ldo.o",
+   "raw": 44768,
+   "zstd": {
+    "size": 20929,
+    "cpu": 0.00027399999999033753
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 44768,
+    "transfer_zstd": 20929,
+    "cpu": 0.00020599999999149077
+   },
+   "cdc16k": {
+    "chunks": 4,
+    "new_chunks": 4,
+    "transfer": 44768,
+    "transfer_zstd": 20929,
+    "cpu": 0.0001950000000192631
+   },
+   "bsdiff": {
+    "size": 11102,
+    "diff_cpu": 0.006922000000031403,
+    "apply_cpu": 0.0005299999999692773,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 10900,
+    "diff_cpu": 0.011507999999935237,
+    "apply_cpu": 0.0014709999999809042,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "ldump.o",
+   "raw": 20904,
+   "zstd": {
+    "size": 9959,
+    "cpu": 0.00010400000002164234
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 20904,
+    "transfer_zstd": 9959,
+    "cpu": 0.0001490000000217151
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 20904,
+    "transfer_zstd": 9959,
+    "cpu": 0.0001310000000103173
+   },
+   "bsdiff": {
+    "size": 6711,
+    "diff_cpu": 0.0038710000000037326,
+    "apply_cpu": 0.00032500000003210516,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 5797,
+    "diff_cpu": 0.005643000000077336,
+    "apply_cpu": 0.001496999999972104,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "lfunc.o",
+   "raw": 22944,
+   "zstd": {
+    "size": 10842,
+    "cpu": 0.0001190000000406144
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 22944,
+    "transfer_zstd": 10842,
+    "cpu": 0.00017800000000534055
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 22944,
+    "transfer_zstd": 10842,
+    "cpu": 0.0001219999999761967
+   },
+   "bsdiff": {
+    "size": 6885,
+    "diff_cpu": 0.003686999999956697,
+    "apply_cpu": 0.0003280000000245309,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 6206,
+    "diff_cpu": 0.005913000000020929,
+    "apply_cpu": 0.0013500000000021828,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "lgc.o",
+   "raw": 52640,
+   "zstd": {
+    "size": 24292,
+    "cpu": 0.00019900000000916407
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 52640,
+    "transfer_zstd": 24292,
+    "cpu": 0.00025099999999156353
+   },
+   "cdc16k": {
+    "chunks": 5,
+    "new_chunks": 5,
+    "transfer": 52640,
+    "transfer_zstd": 24292,
+    "cpu": 0.00023099999998521525
+   },
+   "bsdiff": {
+    "size": 12550,
+    "diff_cpu": 0.0085809999999924,
+    "apply_cpu": 0.0006250000000136424,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 12259,
+    "diff_cpu": 0.013654999999971551,
+    "apply_cpu": 0.0014349999999581087,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "liblua.a",
+   "raw": 1145396,
+   "zstd": {
+    "size": 466142,
+    "cpu": 0.004214999999987867
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 1145396,
+    "transfer_zstd": 466142,
+    "cpu": 0.005443000000013853
+   },
+   "cdc16k": {
+    "chunks": 64,
+    "new_chunks": 64,
+    "transfer": 1145396,
+    "transfer_zstd": 466142,
+    "cpu": 0.005428999999992357
+   },
+   "bsdiff": {
+    "size": 235083,
+    "diff_cpu": 0.30381599999998343,
+    "apply_cpu": 0.012289000000009764,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 245777,
+    "diff_cpu": 0.4689900000000762,
+    "apply_cpu": 0.0040939999999523025,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "linit.o",
+   "raw": 6704,
+   "zstd": {
+    "size": 2577,
+    "cpu": 7.799999997359919e-05
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 6704,
+    "transfer_zstd": 2577,
+    "cpu": 9.800000003679088e-05
+   },
+   "cdc16k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 6704,
+    "transfer_zstd": 2577,
+    "cpu": 5.699999996977567e-05
+   },
+   "bsdiff": {
+    "size": 692,
+    "diff_cpu": 0.0006739999999467727,
+    "apply_cpu": 6.199999995715189e-05,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 452,
+    "diff_cpu": 0.0028260000000273067,
+    "apply_cpu": 0.001377999999988333,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "liolib.o",
+   "raw": 38472,
+   "zstd": {
+    "size": 14975,
+    "cpu": 0.0002479999999991378
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 38472,
+    "transfer_zstd": 14975,
+    "cpu": 0.00018400000004703543
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 38472,
+    "transfer_zstd": 14975,
+    "cpu": 0.00017800000000534055
+   },
+   "bsdiff": {
+    "size": 7081,
+    "diff_cpu": 0.005328000000019983,
+    "apply_cpu": 0.0003859999999917818,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 6826,
+    "diff_cpu": 0.011005000000011478,
+    "apply_cpu": 0.0014400000000023283,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "llex.o",
+   "raw": 38944,
+   "zstd": {
+    "size": 16723,
+    "cpu": 0.00026500000001306034
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 38944,
+    "transfer_zstd": 16723,
+    "cpu": 0.00021700000002056186
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 38944,
+    "transfer_zstd": 16723,
+    "cpu": 0.0002049999999371721
+   },
+   "bsdiff": {
+    "size": 9087,
+    "diff_cpu": 0.005904999999984284,
+    "apply_cpu": 0.00044000000002597517,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 9032,
+    "diff_cpu": 0.01064900000005764,
+    "apply_cpu": 0.0014669999999910033,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "lmathlib.o",
+   "raw": 25088,
+   "zstd": {
+    "size": 8974,
+    "cpu": 0.00019200000002683737
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 25088,
+    "transfer_zstd": 8974,
+    "cpu": 0.00013899999999011925
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 25088,
+    "transfer_zstd": 8974,
+    "cpu": 0.00011899999998377098
+   },
+   "bsdiff": {
+    "size": 4383,
+    "diff_cpu": 0.003441999999949985,
+    "apply_cpu": 0.00026300000001810986,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 4019,
+    "diff_cpu": 0.007884999999987485,
+    "apply_cpu": 0.0013000000000147338,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "lmem.o",
+   "raw": 14928,
+   "zstd": {
+    "size": 6895,
+    "cpu": 0.0001239999999711472
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 14928,
+    "transfer_zstd": 6895,
+    "cpu": 0.00012999999995599865
+   },
+   "cdc16k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 14928,
+    "transfer_zstd": 6895,
+    "cpu": 0.00010499999996227416
+   },
+   "bsdiff": {
+    "size": 4724,
+    "diff_cpu": 0.0026030000000218934,
+    "apply_cpu": 0.00023499999997511622,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3945,
+    "diff_cpu": 0.004128999999977623,
+    "apply_cpu": 0.0012620000000538312,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "loadlib.o",
+   "raw": 29128,
+   "zstd": {
+    "size": 11147,
+    "cpu": 0.00020599999999149077
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 29128,
+    "transfer_zstd": 11147,
+    "cpu": 0.00015700000000151704
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 29128,
+    "transfer_zstd": 11147,
+    "cpu": 0.00014099999998506973
+   },
+   "bsdiff": {
+    "size": 4985,
+    "diff_cpu": 0.00382600000000366,
+    "apply_cpu": 0.0002910000000042601,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 4522,
+    "diff_cpu": 0.007574999999974352,
+    "apply_cpu": 0.00112899999999172,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "lobject.o",
+   "raw": 35144,
+   "zstd": {
+    "size": 16810,
+    "cpu": 0.00022999999998774
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 35144,
+    "transfer_zstd": 16810,
+    "cpu": 0.0001720000000204891
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 35144,
+    "transfer_zstd": 16810,
+    "cpu": 0.0001560000000040418
+   },
+   "bsdiff": {
+    "size": 10096,
+    "diff_cpu": 0.005660000000034415,
+    "apply_cpu": 0.00048599999996667975,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 9374,
+    "diff_cpu": 0.009025000000008276,
+    "apply_cpu": 0.0013850000000275031,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "lopcodes.o",
+   "raw": 7264,
+   "zstd": {
+    "size": 2906,
+    "cpu": 7.80000000304426e-05
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 7264,
+    "transfer_zstd": 2906,
+    "cpu": 8.400000001529406e-05
+   },
+   "cdc16k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 7264,
+    "transfer_zstd": 2906,
+    "cpu": 5.699999996977567e-05
+   },
+   "bsdiff": {
+    "size": 1000,
+    "diff_cpu": 0.0008290000000101827,
+    "apply_cpu": 7.300000004306639e-05,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 810,
+    "diff_cpu": 0.0024540000000001783,
+    "apply_cpu": 0.0010559999999486536,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "loslib.o",
+   "raw": 20752,
+   "zstd": {
+    "size": 8343,
+    "cpu": 0.000183999999990192
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 20752,
+    "transfer_zstd": 8343,
+    "cpu": 0.00015100000001666558
+   },
+   "cdc16k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 20752,
+    "transfer_zstd": 8343,
+    "cpu": 0.00010600000001659282
+   },
+   "bsdiff": {
+    "size": 4089,
+    "diff_cpu": 0.002877000000012231,
+    "apply_cpu": 0.0002319999999826905,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3609,
+    "diff_cpu": 0.0057399999999461215,
+    "apply_cpu": 0.0011350000000334148,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "lparser.o",
+   "raw": 84360,
+   "zstd": {
+    "size": 38166,
+    "cpu": 0.00033600000000433283
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 84360,
+    "transfer_zstd": 38166,
+    "cpu": 0.0003209999999853608
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 84360,
+    "transfer_zstd": 38166,
+    "cpu": 0.00033899999999675856
+   },
+   "bsdiff": {
+    "size": 19494,
+    "diff_cpu": 0.013774000000012165,
+    "apply_cpu": 0.0009689999999977772,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 19593,
+    "diff_cpu": 0.023276000000009844,
+    "apply_cpu": 0.00191300000000183,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "lstate.o",
+   "raw": 25648,
+   "zstd": {
+    "size": 11982,
+    "cpu": 0.00021299999997381747
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 25648,
+    "transfer_zstd": 11982,
+    "cpu": 0.00014899999996487168
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 25648,
+    "transfer_zstd": 11982,
+    "cpu": 0.0001260000000229411
+   },
+   "bsdiff": {
+    "size": 6610,
+    "diff_cpu": 0.00395000000003165,
+    "apply_cpu": 0.000325999999972737,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 6134,
+    "diff_cpu": 0.006467999999983931,
+    "apply_cpu": 0.0012540000000171858,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "lstring.o",
+   "raw": 23008,
+   "zstd": {
+    "size": 11286,
+    "cpu": 0.0001699999999686952
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 23008,
+    "transfer_zstd": 11286,
+    "cpu": 0.00015700000000151704
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 23008,
+    "transfer_zstd": 11286,
+    "cpu": 0.0001420000000393884
+   },
+   "bsdiff": {
+    "size": 6865,
+    "diff_cpu": 0.004061999999976251,
+    "apply_cpu": 0.0003370000000018081,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 6541,
+    "diff_cpu": 0.006713999999931275,
+    "apply_cpu": 0.00137999999992644,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "lstrlib.o",
+   "raw": 67328,
+   "zstd": {
+    "size": 28522,
+    "cpu": 0.00037500000001955414
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 67328,
+    "transfer_zstd": 28522,
+    "cpu": 0.0003379999999992833
+   },
+   "cdc16k": {
+    "chunks": 5,
+    "new_chunks": 5,
+    "transfer": 67328,
+    "transfer_zstd": 28522,
+    "cpu": 0.00033200000001443186
+   },
+   "bsdiff": {
+    "size": 14283,
+    "diff_cpu": 0.01078300000000354,
+    "apply_cpu": 0.0007780000000252585,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 14010,
+    "diff_cpu": 0.0202239999999847,
+    "apply_cpu": 0.0016129999999634492,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "ltable.o",
+   "raw": 45912,
+   "zstd": {
+    "size": 22100,
+    "cpu": 0.00034299999998665953
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 45912,
+    "transfer_zstd": 22100,
+    "cpu": 0.0002319999999826905
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 45912,
+    "transfer_zstd": 22100,
+    "cpu": 0.0002160000000230866
+   },
+   "bsdiff": {
+    "size": 12330,
+    "diff_cpu": 0.007635999999990872,
+    "apply_cpu": 0.0005990000000224427,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 11911,
+    "diff_cpu": 0.012180999999941378,
+    "apply_cpu": 0.001381999999978234,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "ltablib.o",
+   "raw": 19736,
+   "zstd": {
+    "size": 8160,
+    "cpu": 0.00018099999999776628
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 19736,
+    "transfer_zstd": 8160,
+    "cpu": 0.0001310000000103173
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 19736,
+    "transfer_zstd": 8160,
+    "cpu": 0.0001080000000115433
+   },
+   "bsdiff": {
+    "size": 4282,
+    "diff_cpu": 0.002900000000011005,
+    "apply_cpu": 0.00025099999999156353,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3746,
+    "diff_cpu": 0.005739000000062333,
+    "apply_cpu": 0.00124399999998559,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "ltests.o",
+   "raw": 9808,
+   "zstd": {
+    "size": 3011,
+    "cpu": 8.400000001529406e-05
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 9808,
+    "transfer_zstd": 3011,
+    "cpu": 8.600000001024455e-05
+   },
+   "cdc16k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 9808,
+    "transfer_zstd": 3011,
+    "cpu": 6.600000000389628e-05
+   },
+   "bsdiff": {
+    "size": 1034,
+    "diff_cpu": 0.001052000000015596,
+    "apply_cpu": 7.999999996854967e-05,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 908,
+    "diff_cpu": 0.0028689999999755855,
+    "apply_cpu": 0.0011700000000018917,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "ltm.o",
+   "raw": 29448,
+   "zstd": {
+    "size": 13772,
+    "cpu": 0.00021899999995866892
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 29448,
+    "transfer_zstd": 13772,
+    "cpu": 0.0001790000000028158
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 29448,
+    "transfer_zstd": 13772,
+    "cpu": 0.00016899999997121995
+   },
+   "bsdiff": {
+    "size": 7984,
+    "diff_cpu": 0.004769000000010237,
+    "apply_cpu": 0.00039400000002842717,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 7709,
+    "diff_cpu": 0.006643999999994321,
+    "apply_cpu": 0.0012160000000562832,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "lua",
+   "raw": 835296,
+   "zstd": {
+    "size": 325732,
+    "cpu": 0.003758000000004813
+   },
+   "cdc512k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 835296,
+    "transfer_zstd": 325732,
+    "cpu": 0.004358999999965363
+   },
+   "cdc16k": {
+    "chunks": 46,
+    "new_chunks": 46,
+    "transfer": 835296,
+    "transfer_zstd": 325732,
+    "cpu": 0.004529999999988377
+   },
+   "bsdiff": {
+    "size": 49707,
+    "diff_cpu": 0.14429300000000467,
+    "apply_cpu": 0.005256000000031236,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 71676,
+    "diff_cpu": 0.31344799999999395,
+    "apply_cpu": 0.003406999999981508,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "lua.o",
+   "raw": 32968,
+   "zstd": {
+    "size": 13405,
+    "cpu": 0.00024000000001933586
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 32968,
+    "transfer_zstd": 13405,
+    "cpu": 0.00020100000000411455
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 32968,
+    "transfer_zstd": 13405,
+    "cpu": 0.00016800000003058813
+   },
+   "bsdiff": {
+    "size": 6569,
+    "diff_cpu": 0.004627000000027692,
+    "apply_cpu": 0.0003669999999829088,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 5800,
+    "diff_cpu": 0.009902000000010958,
+    "apply_cpu": 0.0014939999999796783,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "lundump.o",
+   "raw": 28088,
+   "zstd": {
+    "size": 12999,
+    "cpu": 0.00022799999999278953
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 28088,
+    "transfer_zstd": 12999,
+    "cpu": 0.0001560000000040418
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 28088,
+    "transfer_zstd": 12999,
+    "cpu": 0.00013500000000021828
+   },
+   "bsdiff": {
+    "size": 7974,
+    "diff_cpu": 0.004560000000026321,
+    "apply_cpu": 0.00038899999998420753,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 7250,
+    "diff_cpu": 0.0066100000000233194,
+    "apply_cpu": 0.0011790000000360124,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "lutf8lib.o",
+   "raw": 15080,
+   "zstd": {
+    "size": 6555,
+    "cpu": 0.00012699999996357292
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 15080,
+    "transfer_zstd": 6555,
+    "cpu": 0.00011599999999134525
+   },
+   "cdc16k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 15080,
+    "transfer_zstd": 6555,
+    "cpu": 8.900000000267028e-05
+   },
+   "bsdiff": {
+    "size": 3800,
+    "diff_cpu": 0.0022930000000087603,
+    "apply_cpu": 0.0002159999999662432,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3022,
+    "diff_cpu": 0.0045499999999378815,
+    "apply_cpu": 0.001232000000015887,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "lvm.o",
+   "raw": 103552,
+   "zstd": {
+    "size": 36801,
+    "cpu": 0.0003810000000044056
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 103552,
+    "transfer_zstd": 36801,
+    "cpu": 0.00034300000004350295
+   },
+   "cdc16k": {
+    "chunks": 5,
+    "new_chunks": 5,
+    "transfer": 103552,
+    "transfer_zstd": 36801,
+    "cpu": 0.00036599999998543353
+   },
+   "bsdiff": {
+    "size": 19498,
+    "diff_cpu": 0.016211999999995896,
+    "apply_cpu": 0.0010880000000383916,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 19653,
+    "diff_cpu": 0.03194800000005671,
+    "apply_cpu": 0.0016050000000404907,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0da6d320f757",
+   "path": "lzio.o",
+   "raw": 12656,
+   "zstd": {
+    "size": 6036,
+    "cpu": 0.00011500000005071342
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 12656,
+    "transfer_zstd": 6036,
+    "cpu": 0.00010399999996479892
+   },
+   "cdc16k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 12656,
+    "transfer_zstd": 6036,
+    "cpu": 7.700000003296736e-05
+   },
+   "bsdiff": {
+    "size": 3847,
+    "diff_cpu": 0.002090999999950327,
+    "apply_cpu": 0.00019699999995737016,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3370,
+    "diff_cpu": 0.00360300000005509,
+    "apply_cpu": 0.001113999999972748,
+    "verified": true
+   }
+  },
+  {
+   "commit": "36c1f6d949a4",
+   "path": "liblua.a",
+   "raw": 1145396,
+   "zstd": {
+    "size": 466141,
+    "cpu": 0.004221999999970194
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 1,
+    "transfer": 347049,
+    "transfer_zstd": 154150,
+    "cpu": 0.002127999999970598
+   },
+   "cdc16k": {
+    "chunks": 64,
+    "new_chunks": 1,
+    "transfer": 17484,
+    "transfer_zstd": 5466,
+    "cpu": 0.0011780000000385371
+   },
+   "bsdiff": {
+    "size": 160,
+    "diff_cpu": 0.15115299999996523,
+    "apply_cpu": 0.0030019999999808533,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 192,
+    "diff_cpu": 0.13154400000001942,
+    "apply_cpu": 0.003244999999992615,
+    "verified": true
+   }
+  },
+  {
+   "commit": "36c1f6d949a4",
+   "path": "lopcodes.o",
+   "raw": 7264,
+   "zstd": {
+    "size": 2906,
+    "cpu": 7.900000002791785e-05
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 7264,
+    "transfer_zstd": 2906,
+    "cpu": 9.299999999257125e-05
+   },
+   "cdc16k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 7264,
+    "transfer_zstd": 2906,
+    "cpu": 5.700000002661909e-05
+   },
+   "bsdiff": {
+    "size": 149,
+    "diff_cpu": 0.0005029999999806023,
+    "apply_cpu": 3.500000002532033e-05,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 28,
+    "diff_cpu": 0.0017069999999534957,
+    "apply_cpu": 0.001213000000007014,
+    "verified": true
+   }
+  },
+  {
+   "commit": "36c1f6d949a4",
+   "path": "lua",
+   "raw": 835296,
+   "zstd": {
+    "size": 325733,
+    "cpu": 0.0037149999999996908
+   },
+   "cdc512k": {
+    "chunks": 2,
+    "new_chunks": 1,
+    "transfer": 378493,
+    "transfer_zstd": 137707,
+    "cpu": 0.0024319999999988795
+   },
+   "cdc16k": {
+    "chunks": 46,
+    "new_chunks": 2,
+    "transfer": 61630,
+    "transfer_zstd": 20421,
+    "cpu": 0.001109000000042215
+   },
+   "bsdiff": {
+    "size": 207,
+    "diff_cpu": 0.09723500000001195,
+    "apply_cpu": 0.0021879999999896427,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 153,
+    "diff_cpu": 0.07588799999996354,
+    "apply_cpu": 0.002838000000053853,
+    "verified": true
+   }
+  },
+  {
+   "commit": "53b41d0cddd8",
+   "path": "liblua.a",
+   "raw": 1145396,
+   "zstd": {
+    "size": 466035,
+    "cpu": 0.004186000000004242
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 1,
+    "transfer": 347049,
+    "transfer_zstd": 154165,
+    "cpu": 0.002139999999997144
+   },
+   "cdc16k": {
+    "chunks": 65,
+    "new_chunks": 3,
+    "transfer": 73448,
+    "transfer_zstd": 36367,
+    "cpu": 0.0013450000000148066
+   },
+   "bsdiff": {
+    "size": 13037,
+    "diff_cpu": 0.15720299999998133,
+    "apply_cpu": 0.0034119999999688844,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 12530,
+    "diff_cpu": 0.13642599999997174,
+    "apply_cpu": 0.00373899999999594,
+    "verified": true
+   }
+  },
+  {
+   "commit": "53b41d0cddd8",
+   "path": "lparser.o",
+   "raw": 84360,
+   "zstd": {
+    "size": 38187,
+    "cpu": 0.0005209999999920001
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 84360,
+    "transfer_zstd": 38187,
+    "cpu": 0.00034800000003087916
+   },
+   "cdc16k": {
+    "chunks": 4,
+    "new_chunks": 3,
+    "transfer": 62652,
+    "transfer_zstd": 28048,
+    "cpu": 0.0002660000000105356
+   },
+   "bsdiff": {
+    "size": 13033,
+    "diff_cpu": 0.010844999999960692,
+    "apply_cpu": 0.001883999999961361,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 12358,
+    "diff_cpu": 0.009056000000043696,
+    "apply_cpu": 0.001553999999998723,
+    "verified": true
+   }
+  },
+  {
+   "commit": "53b41d0cddd8",
+   "path": "lua",
+   "raw": 835296,
+   "zstd": {
+    "size": 325745,
+    "cpu": 0.0038379999999733627
+   },
+   "cdc512k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 835296,
+    "transfer_zstd": 325745,
+    "cpu": 0.004507999999987078
+   },
+   "cdc16k": {
+    "chunks": 46,
+    "new_chunks": 3,
+    "transfer": 60077,
+    "transfer_zstd": 23298,
+    "cpu": 0.0010550000000080217
+   },
+   "bsdiff": {
+    "size": 360,
+    "diff_cpu": 0.10124000000001843,
+    "apply_cpu": 0.002172000000030039,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 571,
+    "diff_cpu": 0.07677999999992835,
+    "apply_cpu": 0.002971000000059121,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0465c23b3ee2",
+   "path": "lcode.o",
+   "raw": 73832,
+   "zstd": {
+    "size": 33006,
+    "cpu": 0.00034300000004350295
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 73832,
+    "transfer_zstd": 33006,
+    "cpu": 0.0002649999999562169
+   },
+   "cdc16k": {
+    "chunks": 6,
+    "new_chunks": 3,
+    "transfer": 45708,
+    "transfer_zstd": 22254,
+    "cpu": 0.00020799999998644125
+   },
+   "bsdiff": {
+    "size": 11969,
+    "diff_cpu": 0.009382000000016433,
+    "apply_cpu": 0.0006189999999719475,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 9808,
+    "diff_cpu": 0.008672999999987496,
+    "apply_cpu": 0.0015819999999848733,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0465c23b3ee2",
+   "path": "ldebug.o",
+   "raw": 44888,
+   "zstd": {
+    "size": 21396,
+    "cpu": 0.000298999999984062
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 44888,
+    "transfer_zstd": 21396,
+    "cpu": 0.00021900000001551234
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 44888,
+    "transfer_zstd": 21396,
+    "cpu": 0.0001930000000243126
+   },
+   "bsdiff": {
+    "size": 5915,
+    "diff_cpu": 0.005047999999987951,
+    "apply_cpu": 0.0003330000000119071,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 5087,
+    "diff_cpu": 0.004722000000015214,
+    "apply_cpu": 0.0013310000000501532,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0465c23b3ee2",
+   "path": "liblua.a",
+   "raw": 1145006,
+   "zstd": {
+    "size": 466126,
+    "cpu": 0.004332000000033531
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 523458,
+    "transfer_zstd": 231642,
+    "cpu": 0.002874000000019805
+   },
+   "cdc16k": {
+    "chunks": 65,
+    "new_chunks": 7,
+    "transfer": 125113,
+    "transfer_zstd": 54568,
+    "cpu": 0.0014729999999758547
+   },
+   "bsdiff": {
+    "size": 18668,
+    "diff_cpu": 0.16342700000001287,
+    "apply_cpu": 0.0035760000000095715,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 16736,
+    "diff_cpu": 0.14256000000005997,
+    "apply_cpu": 0.003578000000004522,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0465c23b3ee2",
+   "path": "lopcodes.o",
+   "raw": 6888,
+   "zstd": {
+    "size": 2726,
+    "cpu": 7.499999998117346e-05
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 6888,
+    "transfer_zstd": 2726,
+    "cpu": 9.000000000014552e-05
+   },
+   "cdc16k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 6888,
+    "transfer_zstd": 2726,
+    "cpu": 5.700000002661909e-05
+   },
+   "bsdiff": {
+    "size": 1839,
+    "diff_cpu": 0.0010899999999764987,
+    "apply_cpu": 0.00010799999995469989,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 1520,
+    "diff_cpu": 0.0031230000000732616,
+    "apply_cpu": 0.001354999999989559,
+    "verified": true
+   }
+  },
+  {
+   "commit": "0465c23b3ee2",
+   "path": "lua",
+   "raw": 835080,
+   "zstd": {
+    "size": 325885,
+    "cpu": 0.0036769999999819447
+   },
+   "cdc512k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 835080,
+    "transfer_zstd": 325885,
+    "cpu": 0.004345000000000709
+   },
+   "cdc16k": {
+    "chunks": 52,
+    "new_chunks": 50,
+    "transfer": 812093,
+    "transfer_zstd": 316243,
+    "cpu": 0.004312999999967815
+   },
+   "bsdiff": {
+    "size": 10369,
+    "diff_cpu": 0.11309899999997697,
+    "apply_cpu": 0.002774999999985539,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 23987,
+    "diff_cpu": 0.23704099999997652,
+    "apply_cpu": 0.0031369999999810716,
+    "verified": true
+   }
+  },
+  {
+   "commit": "40b76de2d77e",
+   "path": "lapi.o",
+   "raw": 61544,
+   "zstd": {
+    "size": 27279,
+    "cpu": 0.00032900000002200613
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 61544,
+    "transfer_zstd": 27279,
+    "cpu": 0.00036199999999553256
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 61544,
+    "transfer_zstd": 27279,
+    "cpu": 0.0003370000000018081
+   },
+   "bsdiff": {
+    "size": 7131,
+    "diff_cpu": 0.006906000000014956,
+    "apply_cpu": 0.0004230000000120526,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 5535,
+    "diff_cpu": 0.006455000000016753,
+    "apply_cpu": 0.0015109999999936008,
+    "verified": true
+   }
+  },
+  {
+   "commit": "40b76de2d77e",
+   "path": "lcode.o",
+   "raw": 73832,
+   "zstd": {
+    "size": 33006,
+    "cpu": 0.0005049999999755528
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 73832,
+    "transfer_zstd": 33006,
+    "cpu": 0.0003379999999992833
+   },
+   "cdc16k": {
+    "chunks": 6,
+    "new_chunks": 1,
+    "transfer": 11205,
+    "transfer_zstd": 10384,
+    "cpu": 0.00013000000001284207
+   },
+   "bsdiff": {
+    "size": 4841,
+    "diff_cpu": 0.00818400000002839,
+    "apply_cpu": 0.0005160000000046239,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 4251,
+    "diff_cpu": 0.008189999999956399,
+    "apply_cpu": 0.0015910000000189939,
+    "verified": true
+   }
+  },
+  {
+   "commit": "40b76de2d77e",
+   "path": "ldebug.o",
+   "raw": 44888,
+   "zstd": {
+    "size": 21399,
+    "cpu": 0.0003010000000358559
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 44888,
+    "transfer_zstd": 21399,
+    "cpu": 0.0002499999999940883
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 30438,
+    "transfer_zstd": 18217,
+    "cpu": 0.0001650000000381624
+   },
+   "bsdiff": {
+    "size": 5846,
+    "diff_cpu": 0.005043000000000575,
+    "apply_cpu": 0.00034499999998161,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 5237,
+    "diff_cpu": 0.004243000000030861,
+    "apply_cpu": 0.0013959999999428874,
+    "verified": true
+   }
+  },
+  {
+   "commit": "40b76de2d77e",
+   "path": "ldo.o",
+   "raw": 44488,
+   "zstd": {
+    "size": 20846,
+    "cpu": 0.0002780000000370819
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 44488,
+    "transfer_zstd": 20846,
+    "cpu": 0.00020999999998139174
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 44488,
+    "transfer_zstd": 20846,
+    "cpu": 0.00019700000001421358
+   },
+   "bsdiff": {
+    "size": 9225,
+    "diff_cpu": 0.0065140000000383225,
+    "apply_cpu": 0.0004569999999830543,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 8793,
+    "diff_cpu": 0.010444000000006781,
+    "apply_cpu": 0.0014140000000111286,
+    "verified": true
+   }
+  },
+  {
+   "commit": "40b76de2d77e",
+   "path": "lgc.o",
+   "raw": 52640,
+   "zstd": {
+    "size": 24290,
+    "cpu": 0.0002989999999272186
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 52640,
+    "transfer_zstd": 24290,
+    "cpu": 0.00023300000009385258
+   },
+   "cdc16k": {
+    "chunks": 4,
+    "new_chunks": 2,
+    "transfer": 34533,
+    "transfer_zstd": 18062,
+    "cpu": 0.00017500000001291482
+   },
+   "bsdiff": {
+    "size": 6073,
+    "diff_cpu": 0.005645999999956075,
+    "apply_cpu": 0.00035200000002078013,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 5067,
+    "diff_cpu": 0.004855000000077325,
+    "apply_cpu": 0.001400999999987107,
+    "verified": true
+   }
+  },
+  {
+   "commit": "40b76de2d77e",
+   "path": "liblua.a",
+   "raw": 1144718,
+   "zstd": {
+    "size": 465722,
+    "cpu": 0.004262999999980366
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 1144718,
+    "transfer_zstd": 465722,
+    "cpu": 0.005236999999965519
+   },
+   "cdc16k": {
+    "chunks": 64,
+    "new_chunks": 23,
+    "transfer": 464291,
+    "transfer_zstd": 219582,
+    "cpu": 0.002717000000018288
+   },
+   "bsdiff": {
+    "size": 53821,
+    "diff_cpu": 0.18355200000002014,
+    "apply_cpu": 0.004712999999981093,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 51200,
+    "diff_cpu": 0.1571440000000166,
+    "apply_cpu": 0.0033190000000331565,
+    "verified": true
+   }
+  },
+  {
+   "commit": "40b76de2d77e",
+   "path": "llex.o",
+   "raw": 38944,
+   "zstd": {
+    "size": 16723,
+    "cpu": 0.00024299999995491817
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 38944,
+    "transfer_zstd": 16723,
+    "cpu": 0.00018699999998261774
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 1,
+    "transfer": 21055,
+    "transfer_zstd": 9015,
+    "cpu": 0.0001260000000229411
+   },
+   "bsdiff": {
+    "size": 166,
+    "diff_cpu": 0.002884999999992033,
+    "apply_cpu": 0.0011380000000258406,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 37,
+    "diff_cpu": 0.004263000000037209,
+    "apply_cpu": 0.0015319999999974243,
+    "verified": true
+   }
+  },
+  {
+   "commit": "40b76de2d77e",
+   "path": "lmem.o",
+   "raw": 14928,
+   "zstd": {
+    "size": 6895,
+    "cpu": 0.00013400000000274304
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 14928,
+    "transfer_zstd": 6895,
+    "cpu": 0.00013000000001284207
+   },
+   "cdc16k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 14928,
+    "transfer_zstd": 6895,
+    "cpu": 0.00011399999999639476
+   },
+   "bsdiff": {
+    "size": 2597,
+    "diff_cpu": 0.0018159999999625143,
+    "apply_cpu": 0.00015200000001414082,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 2091,
+    "diff_cpu": 0.002135000000009768,
+    "apply_cpu": 0.0012640000000487817,
+    "verified": true
+   }
+  },
+  {
+   "commit": "40b76de2d77e",
+   "path": "lobject.o",
+   "raw": 35144,
+   "zstd": {
+    "size": 16810,
+    "cpu": 0.0001310000000103173
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 35144,
+    "transfer_zstd": 16810,
+    "cpu": 0.00016100000004826143
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 1,
+    "transfer": 27230,
+    "transfer_zstd": 15033,
+    "cpu": 0.00014299999998002022
+   },
+   "bsdiff": {
+    "size": 197,
+    "diff_cpu": 0.00263599999999542,
+    "apply_cpu": 0.00011600000004818867,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 51,
+    "diff_cpu": 0.004177000000026965,
+    "apply_cpu": 0.0015200000000277214,
+    "verified": true
+   }
+  },
+  {
+   "commit": "40b76de2d77e",
+   "path": "lparser.o",
+   "raw": 84360,
+   "zstd": {
+    "size": 38208,
+    "cpu": 0.0002729999999928623
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 84360,
+    "transfer_zstd": 38208,
+    "cpu": 0.00034099999999170905
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 1,
+    "transfer": 46410,
+    "transfer_zstd": 24355,
+    "cpu": 0.0002209999999536194
+   },
+   "bsdiff": {
+    "size": 5114,
+    "diff_cpu": 0.008411999999964337,
+    "apply_cpu": 0.0004130000000373002,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 4502,
+    "diff_cpu": 0.008301999999957843,
+    "apply_cpu": 0.0014000000000464752,
+    "verified": true
+   }
+  },
+  {
+   "commit": "40b76de2d77e",
+   "path": "lstate.o",
+   "raw": 25648,
+   "zstd": {
+    "size": 11980,
+    "cpu": 0.00020299999999906504
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 25648,
+    "transfer_zstd": 11980,
+    "cpu": 0.00022799999999278953
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 13796,
+    "transfer_zstd": 8977,
+    "cpu": 0.00014099999998506973
+   },
+   "bsdiff": {
+    "size": 3938,
+    "diff_cpu": 0.003092999999978474,
+    "apply_cpu": 0.00022899999999026477,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3190,
+    "diff_cpu": 0.003444000000001779,
+    "apply_cpu": 0.0012909999999806132,
+    "verified": true
+   }
+  },
+  {
+   "commit": "40b76de2d77e",
+   "path": "lstring.o",
+   "raw": 23008,
+   "zstd": {
+    "size": 11286,
+    "cpu": 0.00020799999998644125
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 23008,
+    "transfer_zstd": 11286,
+    "cpu": 0.00023399999997764098
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 1,
+    "transfer": 15704,
+    "transfer_zstd": 9618,
+    "cpu": 0.00015799999999899228
+   },
+   "bsdiff": {
+    "size": 4032,
+    "diff_cpu": 0.0028229999999780375,
+    "apply_cpu": 0.00022000000001298758,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3320,
+    "diff_cpu": 0.0028269999999679385,
+    "apply_cpu": 0.001214999999945121,
+    "verified": true
+   }
+  },
+  {
+   "commit": "40b76de2d77e",
+   "path": "ltable.o",
+   "raw": 45912,
+   "zstd": {
+    "size": 22098,
+    "cpu": 0.00027399999999033753
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 45912,
+    "transfer_zstd": 22098,
+    "cpu": 0.00029699999998911153
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 41478,
+    "transfer_zstd": 21013,
+    "cpu": 0.00026800000000548607
+   },
+   "bsdiff": {
+    "size": 6412,
+    "diff_cpu": 0.005448999999998705,
+    "apply_cpu": 0.00036599999998543353,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 5468,
+    "diff_cpu": 0.004323000000056254,
+    "apply_cpu": 0.0012839999999982865,
+    "verified": true
+   }
+  },
+  {
+   "commit": "40b76de2d77e",
+   "path": "lua",
+   "raw": 834952,
+   "zstd": {
+    "size": 325987,
+    "cpu": 0.00398799999993571
+   },
+   "cdc512k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 834952,
+    "transfer_zstd": 325987,
+    "cpu": 0.004541000000017448
+   },
+   "cdc16k": {
+    "chunks": 47,
+    "new_chunks": 46,
+    "transfer": 824709,
+    "transfer_zstd": 321566,
+    "cpu": 0.004697999999962121
+   },
+   "bsdiff": {
+    "size": 11432,
+    "diff_cpu": 0.1169160000000602,
+    "apply_cpu": 0.002838999999994485,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 27145,
+    "diff_cpu": 0.24777599999993072,
+    "apply_cpu": 0.0033480000000736254,
+    "verified": true
+   }
+  },
+  {
+   "commit": "40b76de2d77e",
+   "path": "lundump.o",
+   "raw": 28088,
+   "zstd": {
+    "size": 12999,
+    "cpu": 0.00021900000001551234
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 28088,
+    "transfer_zstd": 12999,
+    "cpu": 0.00017800000000534055
+   },
+   "cdc16k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 28088,
+    "transfer_zstd": 12999,
+    "cpu": 0.00013599999999769352
+   },
+   "bsdiff": {
+    "size": 4229,
+    "diff_cpu": 0.0032160000000089894,
+    "apply_cpu": 0.00023700000002691013,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 3657,
+    "diff_cpu": 0.003531000000066342,
+    "apply_cpu": 0.0014789999999607062,
+    "verified": true
+   }
+  },
+  {
+   "commit": "bc4bbcef651b",
+   "path": "lauxlib.o",
+   "raw": 52920,
+   "zstd": {
+    "size": 21285,
+    "cpu": 0.0003669999999829088
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 52920,
+    "transfer_zstd": 21285,
+    "cpu": 0.00020799999998644125
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 52920,
+    "transfer_zstd": 21285,
+    "cpu": 0.0002250000000003638
+   },
+   "bsdiff": {
+    "size": 9711,
+    "diff_cpu": 0.008802000000002863,
+    "apply_cpu": 0.0005160000000046239,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 10588,
+    "diff_cpu": 0.011160000000018044,
+    "apply_cpu": 0.0015819999999848733,
+    "verified": true
+   }
+  },
+  {
+   "commit": "bc4bbcef651b",
+   "path": "liblua.a",
+   "raw": 1145094,
+   "zstd": {
+    "size": 465832,
+    "cpu": 0.003976999999963482
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 798701,
+    "transfer_zstd": 313158,
+    "cpu": 0.003777000000013686
+   },
+   "cdc16k": {
+    "chunks": 62,
+    "new_chunks": 4,
+    "transfer": 78459,
+    "transfer_zstd": 29332,
+    "cpu": 0.0013620000000287291
+   },
+   "bsdiff": {
+    "size": 9779,
+    "diff_cpu": 0.1613320000000158,
+    "apply_cpu": 0.0033650000000307045,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 10790,
+    "diff_cpu": 0.14676399999996192,
+    "apply_cpu": 0.00330700000000661,
+    "verified": true
+   }
+  },
+  {
+   "commit": "bc4bbcef651b",
+   "path": "lua",
+   "raw": 835072,
+   "zstd": {
+    "size": 325915,
+    "cpu": 0.003846000000010008
+   },
+   "cdc512k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 835072,
+    "transfer_zstd": 325915,
+    "cpu": 0.00440099999997301
+   },
+   "cdc16k": {
+    "chunks": 48,
+    "new_chunks": 42,
+    "transfer": 748692,
+    "transfer_zstd": 294850,
+    "cpu": 0.003991999999982454
+   },
+   "bsdiff": {
+    "size": 8176,
+    "diff_cpu": 0.11670300000002953,
+    "apply_cpu": 0.0026310000000080436,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 18011,
+    "diff_cpu": 0.20351699999997663,
+    "apply_cpu": 0.002892000000031203,
+    "verified": true
+   }
+  },
+  {
+   "commit": "b996f8fd1be7",
+   "path": "liblua.a",
+   "raw": 1145150,
+   "zstd": {
+    "size": 465809,
+    "cpu": 0.00415200000003324
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 798757,
+    "transfer_zstd": 313280,
+    "cpu": 0.0038470000000074833
+   },
+   "cdc16k": {
+    "chunks": 63,
+    "new_chunks": 7,
+    "transfer": 115209,
+    "transfer_zstd": 50033,
+    "cpu": 0.001449000000036449
+   },
+   "bsdiff": {
+    "size": 14053,
+    "diff_cpu": 0.1635559999999714,
+    "apply_cpu": 0.003732999999954245,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 14273,
+    "diff_cpu": 0.1436409999999455,
+    "apply_cpu": 0.003355000000055952,
+    "verified": true
+   }
+  },
+  {
+   "commit": "b996f8fd1be7",
+   "path": "lua",
+   "raw": 835104,
+   "zstd": {
+    "size": 325964,
+    "cpu": 0.0036749999999869942
+   },
+   "cdc512k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 835104,
+    "transfer_zstd": 325964,
+    "cpu": 0.004718000000025313
+   },
+   "cdc16k": {
+    "chunks": 52,
+    "new_chunks": 39,
+    "transfer": 653881,
+    "transfer_zstd": 254023,
+    "cpu": 0.0037250000000312866
+   },
+   "bsdiff": {
+    "size": 4954,
+    "diff_cpu": 0.10903600000000324,
+    "apply_cpu": 0.0025350000000230466,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 12496,
+    "diff_cpu": 0.1705910000000017,
+    "apply_cpu": 0.0032820000000128857,
+    "verified": true
+   }
+  },
+  {
+   "commit": "b996f8fd1be7",
+   "path": "lvm.o",
+   "raw": 103608,
+   "zstd": {
+    "size": 36768,
+    "cpu": 0.00046499999996285624
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 103608,
+    "transfer_zstd": 36768,
+    "cpu": 0.00037099999997280975
+   },
+   "cdc16k": {
+    "chunks": 6,
+    "new_chunks": 6,
+    "transfer": 103608,
+    "transfer_zstd": 36768,
+    "cpu": 0.00037800000001197986
+   },
+   "bsdiff": {
+    "size": 14005,
+    "diff_cpu": 0.013608000000033371,
+    "apply_cpu": 0.0007600000000138607,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 14051,
+    "diff_cpu": 0.016076999999938835,
+    "apply_cpu": 0.0016660000000001673,
+    "verified": true
+   }
+  },
+  {
+   "commit": "6ca33260d26f",
+   "path": "liblua.a",
+   "raw": 1145142,
+   "zstd": {
+    "size": 465853,
+    "cpu": 0.0041819999999574975
+   },
+   "cdc512k": {
+    "chunks": 3,
+    "new_chunks": 2,
+    "transfer": 523162,
+    "transfer_zstd": 231327,
+    "cpu": 0.0028269999999679385
+   },
+   "cdc16k": {
+    "chunks": 63,
+    "new_chunks": 4,
+    "transfer": 103012,
+    "transfer_zstd": 46099,
+    "cpu": 0.0013920000000098298
+   },
+   "bsdiff": {
+    "size": 13161,
+    "diff_cpu": 0.15752800000001344,
+    "apply_cpu": 0.003535999999996875,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 12152,
+    "diff_cpu": 0.1351659999999697,
+    "apply_cpu": 0.003501000000028398,
+    "verified": true
+   }
+  },
+  {
+   "commit": "6ca33260d26f",
+   "path": "lparser.o",
+   "raw": 84352,
+   "zstd": {
+    "size": 38167,
+    "cpu": 0.0003699999999753345
+   },
+   "cdc512k": {
+    "chunks": 1,
+    "new_chunks": 1,
+    "transfer": 84352,
+    "transfer_zstd": 38167,
+    "cpu": 0.00038000000006377377
+   },
+   "cdc16k": {
+    "chunks": 3,
+    "new_chunks": 3,
+    "transfer": 84352,
+    "transfer_zstd": 38167,
+    "cpu": 0.0003540000000157306
+   },
+   "bsdiff": {
+    "size": 13109,
+    "diff_cpu": 0.010745999999926426,
+    "apply_cpu": 0.0006769999999960419,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 11917,
+    "diff_cpu": 0.009498000000007778,
+    "apply_cpu": 0.0016289999999798965,
+    "verified": true
+   }
+  },
+  {
+   "commit": "6ca33260d26f",
+   "path": "lua",
+   "raw": 835104,
+   "zstd": {
+    "size": 325955,
+    "cpu": 0.0036719999999945685
+   },
+   "cdc512k": {
+    "chunks": 2,
+    "new_chunks": 2,
+    "transfer": 835104,
+    "transfer_zstd": 325955,
+    "cpu": 0.004355000000032305
+   },
+   "cdc16k": {
+    "chunks": 53,
+    "new_chunks": 18,
+    "transfer": 254067,
+    "transfer_zstd": 109924,
+    "cpu": 0.0021229999999832216
+   },
+   "bsdiff": {
+    "size": 431,
+    "diff_cpu": 0.09856600000000526,
+    "apply_cpu": 0.002188999999987118,
+    "verified": true
+   },
+   "zstd_patch": {
+    "size": 478,
+    "diff_cpu": 0.0828639999999723,
+    "apply_cpu": 0.0026790000000573855,
+    "verified": true
+   }
+  }
+ ]
+}
