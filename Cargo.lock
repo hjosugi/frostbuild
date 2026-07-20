@@ -376,6 +376,7 @@ name = "frostbuild-daemon"
 version = "0.2.0"
 dependencies = [
  "anyhow",
+ "blake3",
  "clap",
  "notify",
  "serde",
