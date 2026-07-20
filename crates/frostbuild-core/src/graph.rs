@@ -13,6 +13,14 @@ pub const OBJ_DIR: &str = ".frost/obj";
 pub const LIB_DIR: &str = ".frost/lib";
 pub const BIN_DIR: &str = ".frost/bin";
 
+/// The interpreter frost runs every genrule and shell test through.
+///
+/// frost chooses it, so its identity is frost's responsibility in exactly the
+/// way the compiler's is: the toolchain fingerprint hashes it alongside the
+/// C drivers. Tools the command itself reaches are a different matter — those
+/// are undeclared inputs, and no build system can name them for you.
+pub const SHELL: &str = "/bin/sh";
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FileNode {
     pub path: String,
@@ -186,7 +194,7 @@ impl BuildGraph {
                         kind: ActionKind::Genrule,
                         target: name.clone(),
                         sandbox: target.sandbox,
-                        argv: vec!["/bin/sh".into(), "-c".into(), expanded],
+                        argv: vec![SHELL.into(), "-c".into(), expanded],
                         inputs,
                         order_only_inputs: Vec::new(),
                         outputs: outputs.clone(),
@@ -224,7 +232,7 @@ impl BuildGraph {
                         kind: ActionKind::Test,
                         target: name.clone(),
                         sandbox: target.sandbox,
-                        argv: vec!["/bin/sh".into(), "-c".into(), command],
+                        argv: vec![SHELL.into(), "-c".into(), command],
                         inputs,
                         order_only_inputs: Vec::new(),
                         outputs: vec![stamp_id],
@@ -376,7 +384,7 @@ impl BuildGraph {
                                     kind: ActionKind::Test,
                                     target: name.clone(),
                                     sandbox: target.sandbox,
-                                    argv: vec!["/bin/sh".into(), "-c".into(), command],
+                                    argv: vec![SHELL.into(), "-c".into(), command],
                                     inputs: vec![bin_id],
                                     order_only_inputs: Vec::new(),
                                     outputs: vec![stamp_id],

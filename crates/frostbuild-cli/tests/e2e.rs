@@ -1005,3 +1005,38 @@ fn a_mode_change_invalidates_and_a_restored_output_keeps_its_mode() {
     );
     assert_eq!(ws.run_app(), "frost: 42\n");
 }
+
+#[test]
+#[cfg(unix)]
+fn a_different_toolchain_binary_invalidates_the_workspace() {
+    // The fingerprint covers the resolved driver binaries, so pointing the
+    // manifest at a different one has to invalidate even though no source
+    // changed. (That the shell is in the same set is asserted in
+    // frostbuild-exec, where the stamp can be read directly — swapping the
+    // machine's /bin/sh is not something a test should do.)
+    let ws = Workspace::new("shell");
+    let (ok, out) = ws.build_explain();
+    assert!(ok, "{out}");
+    let (ok, out) = ws.build_explain();
+    assert!(ok && out.contains("up to date"), "{out}");
+
+    // Point the workspace at a private copy of the shell, so the fingerprint
+    // has something to notice without touching the machine's /bin/sh.
+    let fake = ws.dir.join("fake-cc");
+    std::fs::copy("/bin/sh", &fake).unwrap();
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
+    }
+    ws.write(
+        "frost.toml",
+        &std::fs::read_to_string(ws.dir.join("frost.toml"))
+            .unwrap()
+            .replace("cc = \"cc\"", &format!("cc = {:?}", fake.to_str().unwrap())),
+    );
+    let (_, out) = ws.build_explain();
+    assert!(
+        !out.contains("up to date"),
+        "a different C driver must invalidate:\n{out}"
+    );
+}
