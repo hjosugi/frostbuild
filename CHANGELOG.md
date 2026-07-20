@@ -5,6 +5,23 @@ All notable changes follow Keep a Changelog and Semantic Versioning. Before
 
 ## [Unreleased]
 
+### Fixed
+
+- A file's mode was not part of its digest, so `chmod -x` on a script a
+  genrule runs changed no bytes and frost reported the build as current —
+  while a clean build of the same tree failed. The executable bit now joins
+  the content digest, and the stat check notices a mode change so the cached
+  digest is not reused. The hash cache format is bumped, so the first build
+  after upgrading re-hashes.
+
+### Added
+
+- `docs/16_action_key_audit.md` enumerates every input that can change what an
+  action produces, whether it reaches the action key, and the argument for
+  each deliberate exclusion. Three known gaps are named rather than left to be
+  rediscovered: interpreters a genrule invokes, umask, and filesystems with
+  whole-second mtime.
+
 ### Added
 
 - `frost init` writes a starter manifest for the C or C++ sources already in a

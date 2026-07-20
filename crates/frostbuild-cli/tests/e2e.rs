@@ -924,3 +924,66 @@ fn init_refuses_a_directory_it_cannot_describe() {
 
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+#[cfg(unix)]
+fn a_mode_change_invalidates_and_a_restored_output_keeps_its_mode() {
+    use std::os::unix::fs::PermissionsExt;
+
+    // `chmod -x` on a script a genrule runs leaves every byte in place. With
+    // a content-only digest frost reported the build as current while a clean
+    // build of the same tree failed — the cache disagreeing with the source.
+    let ws = Workspace::new("mode");
+    ws.write("tools/run.sh", "#!/bin/sh\nprintf 'ran\\n' > \"$1\"\n");
+    std::fs::set_permissions(
+        ws.dir.join("tools/run.sh"),
+        std::fs::Permissions::from_mode(0o755),
+    )
+    .unwrap();
+    ws.append(
+        "frost.toml",
+        "\n[target.viashell]\nkind = \"genrule\"\ncmd = \"./tools/run.sh ${out}\"\n\
+         inputs = [\"tools/run.sh\"]\noutputs = [\"gen/ran.txt\"]\n",
+    );
+
+    let (ok, out) = ws.frost(&["build", "viashell"]);
+    assert!(ok, "{out}");
+
+    std::fs::set_permissions(
+        ws.dir.join("tools/run.sh"),
+        std::fs::Permissions::from_mode(0o644),
+    )
+    .unwrap();
+    let (ok, out) = ws.frost(&["build", "viashell"]);
+    assert!(
+        !ok,
+        "a build that a clean tree cannot reproduce must not report success:\n{out}"
+    );
+    assert!(!out.contains("up to date"), "{out}");
+
+    // Restoring the bit restores the build.
+    std::fs::set_permissions(
+        ws.dir.join("tools/run.sh"),
+        std::fs::Permissions::from_mode(0o755),
+    )
+    .unwrap();
+    let (ok, out) = ws.frost(&["build", "viashell"]);
+    assert!(ok, "{out}");
+
+    // An executable output restored from the CAS has to come back executable,
+    // or the next action that runs it fails.
+    let (ok, out) = ws.frost(&["build"]);
+    assert!(ok, "{out}");
+    let app = ws.dir.join(".frost/bin/debug/app");
+    let before = std::fs::metadata(&app).unwrap().permissions().mode();
+    assert!(before & 0o111 != 0, "the built binary is executable");
+    std::fs::remove_file(&app).unwrap();
+    let (ok, out) = ws.frost(&["build"]);
+    assert!(ok, "{out}");
+    assert_eq!(
+        std::fs::metadata(&app).unwrap().permissions().mode() & 0o111,
+        before & 0o111,
+        "a binary restored from the CAS must still be executable"
+    );
+    assert_eq!(ws.run_app(), "frost: 42\n");
+}

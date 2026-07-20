@@ -56,7 +56,7 @@ pub struct HashCache {
 pub const CACHE_REL_PATH: &str = ".frost/hashcache.bin";
 /// Pre-0.2 JSON cache location, removed opportunistically on save.
 pub const LEGACY_CACHE_REL_PATH: &str = ".frost/hashcache.json";
-const CACHE_MAGIC: &[u8; 8] = b"FRSTHC01";
+const CACHE_MAGIC: &[u8; 8] = b"FRSTHC02";
 
 impl HashCache {
     pub fn load(workspace_root: &Path) -> Self {
@@ -241,6 +241,17 @@ impl HashCache {
     }
 }
 
+#[cfg(unix)]
+fn is_executable(meta: &std::fs::Metadata) -> bool {
+    use std::os::unix::fs::PermissionsExt;
+    meta.permissions().mode() & 0o111 != 0
+}
+
+#[cfg(not(unix))]
+fn is_executable(_meta: &std::fs::Metadata) -> bool {
+    false
+}
+
 fn resolve(workspace_root: &Path, rel: &str) -> std::path::PathBuf {
     let p = Path::new(rel);
     if p.is_absolute() {
@@ -255,7 +266,9 @@ fn stat_triple(meta: &std::fs::Metadata) -> (i128, u64, u64) {
     use std::os::unix::fs::MetadataExt;
     (
         i128::from(meta.mtime()) * 1_000_000_000 + i128::from(meta.mtime_nsec()),
-        meta.size(),
+        // chmod updates ctime, not mtime, so a mode change would otherwise
+        // reuse the cached digest and never reach the hash above.
+        meta.size() ^ ((meta.mode() as u64 & 0o111) << 40),
         meta.ino(),
     )
 }
@@ -271,9 +284,23 @@ fn stat_triple(meta: &std::fs::Metadata) -> (i128, u64, u64) {
     (mtime, meta.len(), 0)
 }
 
+/// Content digest of a file, including whether it is executable.
+///
+/// The mode is part of the digest rather than a separate field because it is
+/// part of what the file *is*: `chmod -x` on a script a genrule runs leaves
+/// the bytes untouched, so a content-only digest reports the build as current
+/// while a clean build of the same tree fails. Mixing one bit into the hash
+/// costs nothing and closes that gap; the CAS then stores the two modes as
+/// distinct objects, which is also what restoring them correctly requires.
 pub fn hash_file(path: &Path) -> Result<String> {
-    let mut file = std::fs::File::open(path)?;
+    let file = std::fs::File::open(path)?;
     let mut hasher = blake3::Hasher::new();
+    hasher.update(if is_executable(&file.metadata()?) {
+        b"x"
+    } else {
+        b"-"
+    });
+    let mut file = file;
     let mut buf = vec![0u8; 4 * 1024 * 1024];
     loop {
         let n = file.read(&mut buf)?;

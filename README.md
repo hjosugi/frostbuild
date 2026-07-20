@@ -157,5 +157,8 @@ Contributions follow [CONTRIBUTING.md](CONTRIBUTING.md). Research decisions for
 predictive selection, learned scheduling, platform support and language adapters
 live in `docs/` and keep safe behavior as the default.
 
+What the action key covers, and the gaps it does not, are enumerated in
+[docs/16_action_key_audit.md](docs/16_action_key_audit.md).
+
 The [issue implementation matrix](docs/13_issue_implementation_matrix.md) maps
 the roadmap to code and identifies acceptance gates needing external evidence.
