@@ -29,6 +29,33 @@ static CANCELLED: AtomicBool = AtomicBool::new(false);
 static RUNNING_PROCESS_GROUPS: OnceLock<Mutex<BTreeSet<i32>>> = OnceLock::new();
 static SIGNAL_HANDLER: OnceLock<()> = OnceLock::new();
 
+/// Environment an action inherits whose value must not change its output.
+/// These name scratch locations and the search path for tools; an action
+/// whose result depends on them is not hermetic, which is what `--sandbox`
+/// and `--check-determinism` exist to surface. Keying on them would rebuild
+/// the world every time a shell exports a different TMPDIR.
+///
+/// PATH is here rather than in the key for a specific reason: its effect on
+/// the compiler is already captured, because the toolchain fingerprint hashes
+/// the *resolved* cc/cxx/ar binaries. What it does not capture is a genrule
+/// invoking some other tool found on PATH — the same blind spot as any
+/// undeclared input.
+const ENV_PASSTHROUGH: &[&str] = &["PATH", "HOME", "TMPDIR", "TMP", "TEMP"];
+
+/// Environment that changes what a compiler produces, so it belongs in the
+/// action key. `CPATH=/a` and `CPATH=/b` select different headers with an
+/// identical command line and identical declared inputs; without these in the
+/// key, frost hands back the binary built against the other one.
+const ENV_IN_KEY: &[&str] = &[
+    "SystemRoot",
+    "SDKROOT",
+    "MACOSX_DEPLOYMENT_TARGET",
+    "CPATH",
+    "C_INCLUDE_PATH",
+    "CPLUS_INCLUDE_PATH",
+    "LIBRARY_PATH",
+];
+
 pub fn install_signal_handler() -> Result<()> {
     if SIGNAL_HANDLER.get().is_some() {
         return Ok(());
@@ -1014,6 +1041,11 @@ impl<'a> Engine<'a> {
             self.root,
             &self.toolchain_hash,
         );
+        for name in ENV_IN_KEY {
+            if let Some(value) = std::env::var_os(name) {
+                key = key.with_env(*name, value.to_string_lossy().into_owned());
+            }
+        }
         for (path, digest) in inputs {
             key = key.with_input(path.clone(), digest.clone());
         }
@@ -1081,22 +1113,10 @@ impl<'a> Engine<'a> {
             command.args(&action.argv[1..]).current_dir(self.root);
             command
         };
-        let whitelist = [
-            "PATH",
-            "HOME",
-            "TMPDIR",
-            "TMP",
-            "TEMP",
-            "SystemRoot",
-            "SDKROOT",
-            "MACOSX_DEPLOYMENT_TARGET",
-            "CPATH",
-            "C_INCLUDE_PATH",
-            "CPLUS_INCLUDE_PATH",
-            "LIBRARY_PATH",
-        ];
-        let env = whitelist
-            .into_iter()
+        let env = ENV_PASSTHROUGH
+            .iter()
+            .chain(ENV_IN_KEY)
+            .copied()
             .filter_map(|key| std::env::var_os(key).map(|value| (key, value)))
             .collect::<Vec<_>>();
         command
@@ -1422,24 +1442,6 @@ pub fn toolchain_fingerprint(cc: &str) -> Result<String> {
         .with_context(|| format!("compiler {} not accessible", resolved.display()))
 }
 
-pub fn toolchain_closure_fingerprint(
-    toolchain: &frostbuild_core::manifest::Toolchain,
-) -> Result<String> {
-    let mut hasher = blake3::Hasher::new();
-    for tool in [&toolchain.cc, &toolchain.cxx, &toolchain.ar] {
-        hasher.update(tool.as_bytes());
-        hasher.update(b"\0");
-        hasher.update(toolchain_fingerprint(tool)?.as_bytes());
-        hasher.update(b"\0");
-    }
-    if let Ok(output) = Command::new(&toolchain.cc).arg("--print-sysroot").output() {
-        if output.status.success() {
-            hasher.update(&output.stdout);
-        }
-    }
-    Ok(hasher.finalize().to_hex().to_string())
-}
-
 /// Stat identity of the toolchain binaries that produced a fingerprint.
 #[derive(Serialize, Deserialize, PartialEq, Eq)]
 struct ToolchainStamp {
@@ -1451,6 +1453,14 @@ const TOOLCHAIN_STAMP_PATH: &str = ".frost/toolchain.bin";
 
 /// Fingerprint of the compiler closure, cached by the stat identity of the
 /// three driver binaries.
+///
+/// A second function used to exist that also mixed in `cc --print-sysroot`,
+/// but nothing called it, so the fingerprint frost actually used was the
+/// weaker of the two. Rather than pay a process spawn per build to reconcile
+/// them, note why the sysroot needs no separate treatment: an explicit
+/// `--sysroot=` reaches the action key through argv, a default sysroot is a
+/// property of the driver binary whose contents are hashed here, and the
+/// headers actually read from it arrive as depfile-discovered inputs.
 ///
 /// This used to load the workspace-wide content cache — megabytes covering
 /// every source file — to digest three executables. It now keeps its own
