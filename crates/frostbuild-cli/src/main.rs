@@ -961,39 +961,60 @@ fn run_build(root: &std::path::Path, request: BuildRequest) -> Result<i32> {
 
     let failed = report.failed();
     let skipped = report.count(|outcome| matches!(outcome, Outcome::Skipped { .. }));
-    let mut summary = format!(
-        "frost: {} executed, {} cached",
-        report.executed(),
-        report.cached()
+    println!(
+        "{}",
+        summarize(
+            report.executed(),
+            report.cached(),
+            failed,
+            skipped,
+            total,
+            graph.actions.len(),
+            elapsed,
+        )
     );
-    if failed > 0 || skipped > 0 {
-        summary.push_str(&format!(", {failed} failed, {skipped} skipped"));
-    }
-    summary.push_str(&format!(
-        " ({total} actions, {} pruned of {}) in {elapsed} ms",
-        graph.actions.len().saturating_sub(total),
-        graph.actions.len()
-    ));
-    println!("{summary}");
     if request.stats {
         let st = &report.stats;
         println!(
             "  strategy    {} / {}  (-j {})",
             st.scheduler, st.estimator, st.jobs
         );
-        println!(
-            "  makespan    {} ms   busy {} ms across {} executed actions",
-            st.makespan_ms, st.busy_ms, st.executed
-        );
-        println!(
-            "  utilization {:.1}% of worker capacity",
-            st.utilization_pct()
-        );
-        if let Some(ratio) = st.critical_path_ratio() {
+        // Scheduling statistics describe how work was spread across workers.
+        // A run that executed nothing has none to describe, and printing
+        // "0 ms, 0.0%, 0.00x" reads like something went wrong.
+        if st.executed == 0 {
+            println!("  scheduling  nothing ran, so there was nothing to schedule");
+        } else {
             println!(
-                "  critical    {} ms estimated  ({:.2}x makespan; 1.00x means the graph, not the ordering, is the limit)",
-                st.critical_path_ms, ratio
+                "  makespan    {} ms, {} ms of work across {} actions",
+                st.makespan_ms, st.busy_ms, st.executed
             );
+            println!(
+                "  utilization {:.0}% of worker capacity",
+                st.utilization_pct()
+            );
+            // makespan / critical path. Near 1 the graph is the limit; above
+            // it there is ordering to win back; below it the estimate simply
+            // over-predicted, and saying anything about scheduling on that
+            // basis would be a claim the numbers do not support.
+            match st.critical_path_ratio() {
+                Some(ratio) if ratio < 0.95 => println!(
+                    "  critical    {} ms estimated, longer than the run itself — \
+                     the recorded durations are stale, so run again to compare",
+                    st.critical_path_ms
+                ),
+                Some(ratio) if ratio <= 1.05 => println!(
+                    "  critical    {} ms estimated — the dependency graph bounds \
+                     this build, so no scheduler can improve it",
+                    st.critical_path_ms
+                ),
+                Some(ratio) => println!(
+                    "  critical    {} ms estimated, {:.1}x under the run — that \
+                     gap is what a better schedule could win",
+                    st.critical_path_ms, ratio
+                ),
+                None => {}
+            }
         }
     }
     if failed > 0 {
@@ -1220,4 +1241,90 @@ fn run_simulate(
     }
     println!("  compare against a real run: frost build --stats -j <n>");
     Ok(0)
+}
+
+/// The line every build ends with, and the one people actually read.
+///
+/// It leads with what happened rather than a fixed set of counters, and drops
+/// every term that is zero: a build where nothing needed doing says so in
+/// three words instead of reporting four zeroes. The action count and the
+/// share of the graph left out of this build appear only when they say
+/// something — a full build of everything does not need to be told it built
+/// everything.
+fn summarize(
+    executed: usize,
+    cached: usize,
+    failed: usize,
+    skipped: usize,
+    selected: usize,
+    total_in_graph: usize,
+    elapsed_ms: u128,
+) -> String {
+    let mut parts: Vec<String> = Vec::new();
+    if failed > 0 {
+        parts.push(format!("{failed} failed"));
+    }
+    if executed > 0 {
+        parts.push(format!("{executed} built"));
+    }
+    if skipped > 0 {
+        parts.push(format!("{skipped} skipped"));
+    }
+    // A run where everything was already current is the common case and
+    // deserves words, not a row of counters.
+    let headline = if parts.is_empty() && cached > 0 {
+        "up to date".to_string()
+    } else {
+        if cached > 0 {
+            parts.push(format!("{cached} cached"));
+        }
+        if parts.is_empty() {
+            "nothing to do".to_string()
+        } else {
+            parts.join(", ")
+        }
+    };
+
+    let pruned = total_in_graph.saturating_sub(selected);
+    let scope = if pruned > 0 {
+        format!("{selected} of {total_in_graph} actions")
+    } else {
+        format!("{selected} actions")
+    };
+    format!("frost: {headline} · {scope} · {elapsed_ms} ms")
+}
+
+#[cfg(test)]
+mod summary_tests {
+    use super::summarize;
+
+    #[test]
+    fn says_what_happened_and_omits_what_did_not() {
+        assert_eq!(
+            summarize(0, 5, 0, 0, 5, 5, 12),
+            "frost: up to date · 5 actions · 12 ms"
+        );
+        assert_eq!(
+            summarize(5, 0, 0, 0, 5, 5, 70),
+            "frost: 5 built · 5 actions · 70 ms"
+        );
+        assert_eq!(
+            summarize(2, 3, 0, 0, 5, 5, 40),
+            "frost: 2 built, 3 cached · 5 actions · 40 ms"
+        );
+        // Failures lead, because that is what the reader needs first.
+        assert_eq!(
+            summarize(0, 3, 1, 1, 5, 5, 20),
+            "frost: 1 failed, 1 skipped, 3 cached · 5 actions · 20 ms"
+        );
+        // Building a subset is worth saying; building everything is not.
+        assert_eq!(
+            summarize(0, 2, 0, 0, 2, 9, 5),
+            "frost: up to date · 2 of 9 actions · 5 ms"
+        );
+        assert_eq!(
+            summarize(0, 0, 0, 0, 0, 0, 1),
+            "frost: nothing to do · 0 actions · 1 ms"
+        );
+    }
 }

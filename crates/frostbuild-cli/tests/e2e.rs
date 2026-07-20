@@ -111,7 +111,7 @@ fn platforms_isolate_outputs_and_caches() {
     let (ok, out) = ws.frost(&["build", "--platform", "devsim", "--explain"]);
     assert!(ok, "devsim build failed:\n{out}");
     assert!(
-        out.contains("5 executed"),
+        out.contains("5 built"),
         "platform build must not reuse host action results:\n{out}"
     );
     assert!(
@@ -127,9 +127,9 @@ fn platforms_isolate_outputs_and_caches() {
     // forth is a cache lookup, never a rebuild (the Bazel analysis-cache
     // wipe pain, avoided by keying every action on its configuration).
     let (ok, out) = ws.frost(&["build", "--platform", "devsim", "--explain"]);
-    assert!(ok && out.contains("0 executed, 5 cached"), "{out}");
+    assert!(ok && out.contains("up to date"), "{out}");
     let (ok, out) = ws.build_explain();
-    assert!(ok && out.contains("0 executed, 5 cached"), "{out}");
+    assert!(ok && out.contains("up to date"), "{out}");
 }
 
 #[test]
@@ -176,7 +176,7 @@ fn cross_compile_aarch64_device_build() {
 
     // Cross results are cached independently of the host tree.
     let (ok, out) = ws.frost(&["build", "--platform", "aarch64", "--explain"]);
-    assert!(ok && out.contains("0 executed, 5 cached"), "{out}");
+    assert!(ok && out.contains("up to date"), "{out}");
 }
 
 #[test]
@@ -211,16 +211,13 @@ fn clean_build_then_noop_is_fully_cached() {
 
     let (ok, out) = ws.build_explain();
     assert!(ok, "clean build failed:\n{out}");
-    assert!(
-        out.contains("5 executed, 0 cached"),
-        "unexpected summary:\n{out}"
-    );
+    assert!(out.contains("5 built"), "unexpected summary:\n{out}");
     assert_eq!(ws.run_app(), "frost: 42\n");
 
     let (ok, out) = ws.build_explain();
     assert!(ok, "no-op build failed:\n{out}");
     assert!(
-        out.contains("0 executed, 5 cached"),
+        out.contains("up to date"),
         "no-op should be fully cached:\n{out}"
     );
     assert!(
@@ -273,7 +270,7 @@ fn genrule_rerun_with_identical_output_cuts_off_downstream() {
     assert!(ok, "incremental build failed:\n{out}");
     assert!(out.contains("ran genrule:gen_config"), "{out}");
     assert!(
-        out.contains("1 executed, 4 cached"),
+        out.contains("1 built, 4 cached"),
         "early cutoff should keep downstream cached:\n{out}"
     );
 }
@@ -315,10 +312,7 @@ fn deleted_output_is_rebuilt() {
 
     let (ok, out) = ws.build_explain();
     assert!(ok, "rebuild failed:\n{out}");
-    assert!(
-        out.contains("0 executed, 5 cached"),
-        "CAS restore expected:\n{out}"
-    );
+    assert!(out.contains("up to date"), "CAS restore expected:\n{out}");
     assert_eq!(ws.run_app(), "frost: 42\n");
 }
 
@@ -377,8 +371,8 @@ fn clean_removes_outputs_and_full_rebuild_works() {
     let (ok, out) = ws.build_explain();
     assert!(ok, "rebuild after clean failed:\n{out}");
     assert!(
-        out.contains("5 cached"),
-        "CAS should restore outputs:\n{out}"
+        out.contains("up to date") && out.contains("5 actions"),
+        "the CAS should restore the outputs rather than rebuild them:\n{out}"
     );
 }
 
@@ -406,7 +400,7 @@ fn profiles_coexist_and_switch_back_is_cached() {
     assert!(ws.dir.join(".frost/bin/debug/app").exists());
     assert!(ws.dir.join(".frost/bin/release/app").exists());
     let (ok, out) = ws.frost(&["build", "--profile", "debug"]);
-    assert!(ok && out.contains("0 executed, 5 cached"), "{out}");
+    assert!(ok && out.contains("up to date"), "{out}");
 }
 
 #[test]
@@ -510,21 +504,21 @@ fn daemon_build_status_and_stop() {
     let (ok, out) = ws.frost(&["build", "--daemon"]);
     assert!(ok, "{out}");
     let (ok, out) = ws.frost(&["build", "--daemon"]);
-    assert!(ok && out.contains("0 executed, 5 cached"), "{out}");
+    assert!(ok && out.contains("up to date"), "{out}");
 
     // The daemon must not trust only watcher state: build outputs live under
     // .frost (which the watcher intentionally ignores). The engine still has
     // to validate outputs and restore a manually deleted artifact from CAS.
     std::fs::remove_file(ws.dir.join(".frost/bin/debug/app")).unwrap();
     let (ok, out) = ws.frost(&["build", "--daemon", "--explain"]);
-    assert!(ok && out.contains("0 executed, 5 cached"), "{out}");
+    assert!(ok && out.contains("up to date"), "{out}");
     assert_eq!(ws.run_app(), "frost: 42\n");
 
     ws.append("src/util.c", "\n/* daemon watcher change */\n");
     std::thread::sleep(std::time::Duration::from_millis(100));
     let (ok, out) = ws.frost(&["build", "--daemon"]);
     assert!(
-        ok && out.contains("1 executed"),
+        ok && out.contains("1 built"),
         "source change missed:\n{out}"
     );
     let (ok, out) = ws.frost(&["daemon", "status"]);
@@ -616,7 +610,7 @@ fn strategies_are_selectable_and_measured() {
         assert!(ok, "{scheduler}/{estimator} failed:\n{out}");
         // Every strategy runs the same actions and reports what it cost, so a
         // comparison never depends on rerunning with a stopwatch.
-        assert!(out.contains("5 executed"), "{out}");
+        assert!(out.contains("5 built"), "{out}");
         assert!(
             out.contains(&format!("strategy    {scheduler} / {estimator}")),
             "stats must name the strategy in effect:\n{out}"
@@ -692,7 +686,7 @@ fn a_path_is_stat_checked_once_per_build() {
     // Both checks run in the same build; the second must reuse the first's
     // result rather than stat the file again.
     let (ok, out) = ws.build_explain();
-    assert!(ok && out.contains("0 executed, 5 cached"), "{out}");
+    assert!(ok && out.contains("up to date"), "{out}");
 
     // The saving must not cost correctness: a change between builds is still
     // seen, because each build starts from a fresh cache.
@@ -750,7 +744,7 @@ fn daemon_works_from_a_deeply_nested_workspace() {
     assert!(ok, "daemon must start from a nested workspace:\n{out}");
     let (ok, out) = frost(&["build", "--daemon"]);
     assert!(ok, "build through the daemon failed:\n{out}");
-    assert!(out.contains("5 executed"), "{out}");
+    assert!(out.contains("5 built"), "{out}");
     let (ok, out) = frost(&["daemon", "stop"]);
     assert!(ok, "{out}");
     let _ = std::fs::remove_dir_all(deep.ancestors().nth(5).unwrap());
@@ -801,7 +795,7 @@ fn include_path_environment_selects_a_different_header_and_is_keyed() {
         "a different header must produce a different binary:\n{out}"
     );
     assert!(
-        !out.contains("0 executed"),
+        !out.contains("up to date"),
         "the environment change must invalidate, not report everything cached:\n{out}"
     );
 

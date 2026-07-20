@@ -14,7 +14,7 @@ is [docs/06_manifest_spec.md](docs/06_manifest_spec.md).
 cargo build --release --locked
 ./target/release/frost -C sample_c build
 ./sample_c/.frost/bin/debug/app                 # frost: 42
-./target/release/frost -C sample_c build        # fully cached
+./target/release/frost -C sample_c build        # frost: up to date
 ./target/release/frost -C sample_c build --explain
 ./target/release/frost -C sample_c plan
 ./target/release/frost -C sample_c graph --dot

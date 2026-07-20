@@ -44,6 +44,18 @@ All notable changes follow Keep a Changelog and Semantic Versioning. Before
 
 ### Changed
 
+- The line every build ends with now leads with what happened and drops every
+  term that is zero. `frost: 0 executed, 5 cached (5 actions, 0 pruned of 5)
+  in 12 ms` reads `frost: up to date · 5 actions · 12 ms`; a partial build
+  reads `frost: 2 built, 3 cached · 5 actions · 40 ms`; a failure leads with
+  the failure. The share of the graph left out appears only when a subset was
+  built (`2 of 9 actions`), since a full build does not need to be told it
+  built everything.
+- `--stats` no longer reports `0 ms, 0.0%, 0.00x` for a build that executed
+  nothing, and distinguishes three cases it previously conflated: the graph
+  bounds the build, there is scheduling headroom, or the recorded durations
+  are stale and predict a longer critical path than the run took.
+
 - Unknown target, profile and platform names suggest the closest declared one
   instead of printing the whole list: `unknown target "ap". did you mean
   "app"?`. A name that resembles nothing still gets the list, because a wrong
