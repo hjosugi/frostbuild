@@ -46,10 +46,28 @@ impl LocalCas {
     }
 
     /// Restore an output using a hardlink where possible, falling back to copy.
+    ///
+    /// The object is verified against the digest that names it before it is
+    /// published. A content-addressed store whose object no longer hashes to
+    /// its own address is corrupt — bit rot, a truncated write, an editor
+    /// pointed at the wrong directory — and restoring it would hand back an
+    /// artifact that never existed while reporting the build as current. The
+    /// bad object is removed and this returns `false`, which the caller reads
+    /// as a miss and re-runs the action.
+    ///
+    /// The cost is one hash, and only on the restore path: an action whose
+    /// outputs are already intact never reaches here.
     pub fn materialize(&self, digest: &str, destination: &Path) -> Result<bool> {
         let object = self.object(digest);
         if !object.is_file() {
             return Ok(false);
+        }
+        match crate::hashcache::hash_file(&object) {
+            Ok(actual) if actual == digest => {}
+            _ => {
+                let _ = std::fs::remove_file(&object);
+                return Ok(false);
+            }
         }
         if let Some(parent) = destination.parent() {
             std::fs::create_dir_all(parent)?;

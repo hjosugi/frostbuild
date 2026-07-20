@@ -1179,3 +1179,56 @@ fn a_different_toolchain_binary_invalidates_the_workspace() {
         "a different C driver must invalidate:\n{out}"
     );
 }
+
+#[test]
+fn a_corrupt_cas_object_is_rebuilt_rather_than_handed_back() {
+    // The CAS is content-addressed: an object's name is its digest. An object
+    // that no longer hashes to its own name is corrupt, and restoring it
+    // would deliver an artifact that never existed while reporting the build
+    // as current — the worst failure a build system has.
+    let ws = Workspace::new("cas-corrupt");
+    let (ok, out) = ws.build_explain();
+    assert!(ok, "{out}");
+    let app = ws.dir.join(".frost/bin/debug/app");
+    let correct = std::fs::read(&app).unwrap();
+
+    // Find the object backing the built binary and flip one byte, keeping the
+    // size identical so nothing but a content check can notice.
+    let mut objects = Vec::new();
+    let mut stack = vec![ws.dir.join(".frost/cas")];
+    while let Some(dir) = stack.pop() {
+        let Ok(entries) = std::fs::read_dir(&dir) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+            } else {
+                objects.push(path);
+            }
+        }
+    }
+    let object = objects
+        .iter()
+        .find(|p| std::fs::read(p).is_ok_and(|b| b == correct))
+        .expect("the built binary is in the CAS");
+    let mut bytes = std::fs::read(object).unwrap();
+    let middle = bytes.len() / 2;
+    bytes[middle] ^= 0xFF;
+    std::fs::write(object, &bytes).unwrap();
+    std::fs::remove_file(&app).unwrap();
+
+    let (ok, out) = ws.build_explain();
+    assert!(ok, "{out}");
+    assert!(
+        !out.contains("up to date"),
+        "a corrupt object must not be restored as if current:\n{out}"
+    );
+    assert_eq!(
+        std::fs::read(&app).unwrap(),
+        correct,
+        "the action is re-run, so the output matches a correct build"
+    );
+    assert_eq!(ws.run_app(), "frost: 42\n");
+}
