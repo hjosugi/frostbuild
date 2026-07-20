@@ -33,6 +33,20 @@ impl Workspace {
         (out.status.success(), text)
     }
 
+    fn frost_env(&self, args: &[&str], env: &[(&str, &str)]) -> (bool, String) {
+        let mut command = Command::new(frost_bin());
+        command.arg("-C").arg(&self.dir).args(args);
+        for (key, value) in env {
+            command.env(key, value);
+        }
+        let out = command.output().expect("spawn frost");
+        (
+            out.status.success(),
+            String::from_utf8_lossy(&out.stdout).to_string()
+                + &String::from_utf8_lossy(&out.stderr),
+        )
+    }
+
     fn build_explain(&self) -> (bool, String) {
         self.frost(&["build", "--explain"])
     }
@@ -740,4 +754,57 @@ fn daemon_works_from_a_deeply_nested_workspace() {
     let (ok, out) = frost(&["daemon", "stop"]);
     assert!(ok, "{out}");
     let _ = std::fs::remove_dir_all(deep.ancestors().nth(5).unwrap());
+}
+
+#[test]
+fn include_path_environment_selects_a_different_header_and_is_keyed() {
+    // CPATH changes which header the compiler finds without touching the
+    // command line or any declared input. The depfile records the header that
+    // was resolved *last* time, so re-digesting it proves nothing: unless the
+    // environment is part of the action key, frost reports everything cached
+    // and hands back a binary built against the other header.
+    let ws = Workspace::new("cpath");
+    let one = ws.dir.join("inc-one");
+    let two = ws.dir.join("inc-two");
+    std::fs::create_dir_all(&one).unwrap();
+    std::fs::create_dir_all(&two).unwrap();
+    std::fs::write(one.join("tuning.h"), "#define TUNING 1\n").unwrap();
+    std::fs::write(two.join("tuning.h"), "#define TUNING 99\n").unwrap();
+
+    let util = std::fs::read_to_string(ws.dir.join("src/util.c")).unwrap();
+    ws.write(
+        "src/util.c",
+        &format!(
+            "#include <tuning.h>\n{}",
+            util.replace(
+                "return a + b + FROST_INTERNAL_BIAS;",
+                "return a + b + FROST_INTERNAL_BIAS + TUNING;"
+            )
+        ),
+    );
+
+    let run_with = |dir: &std::path::Path| {
+        let (ok, out) = ws.frost_env(&["build"], &[("CPATH", dir.to_str().unwrap())]);
+        assert!(ok, "build failed:\n{out}");
+        let app = Command::new(ws.dir.join(".frost/bin/debug/app"))
+            .output()
+            .expect("run built app");
+        (out, String::from_utf8_lossy(&app.stdout).to_string())
+    };
+
+    let (_, first) = run_with(&one);
+    assert_eq!(first, "frost: 43\n");
+
+    let (out, second) = run_with(&two);
+    assert_eq!(
+        second, "frost: 141\n",
+        "a different header must produce a different binary:\n{out}"
+    );
+    assert!(
+        !out.contains("0 executed"),
+        "the environment change must invalidate, not report everything cached:\n{out}"
+    );
+
+    let (_, back) = run_with(&one);
+    assert_eq!(back, "frost: 43\n", "switching back is equally observable");
 }

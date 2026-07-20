@@ -7,6 +7,23 @@ All notable changes follow Keep a Changelog and Semantic Versioning. Before
 
 ### Fixed
 
+- **Wrong binary returned from cache when an include-path environment variable
+  changed.** `CPATH`, `C_INCLUDE_PATH`, `CPLUS_INCLUDE_PATH`, `LIBRARY_PATH`,
+  `SDKROOT`, `MACOSX_DEPLOYMENT_TARGET` and `SystemRoot` select which headers
+  and libraries a compiler finds, with no change to the command line or to any
+  declared input, and none of them were part of the action key. Building with
+  `CPATH=/a` and then `CPATH=/b` reported everything cached and left the
+  binary built against `/a` in place. These variables are now keyed;
+  `PATH`, `HOME`, `TMPDIR`, `TMP` and `TEMP` stay out of the key, since PATH's
+  effect on the compiler is already captured by hashing the resolved driver
+  binaries and the rest name scratch locations that must not change output.
+- Two toolchain fingerprint functions computed different values — one mixed in
+  `cc --print-sysroot`, the other did not — and the CLI only ever called the
+  weaker one. The unused function is gone, with a note on why the sysroot
+  needs no separate treatment: an explicit `--sysroot=` reaches the key
+  through argv, a default sysroot is a property of the hashed driver binary,
+  and the headers read from it arrive as depfile-discovered inputs.
+
 - `--profile` accepted any name. A typo built with no profile flags into its
   own output tree and said nothing, so `--profile relase` quietly produced a
   different binary than `--profile release`. Once a workspace declares any
