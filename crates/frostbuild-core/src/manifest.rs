@@ -557,6 +557,7 @@ fn expand_paths(root: &Path, package: &str, paths: &[String]) -> Result<Vec<Stri
         }
         let pattern = root.join(&rel).to_string_lossy().to_string();
         let matches = glob::glob(&pattern).with_context(|| format!("invalid glob {path:?}"))?;
+        let before = expanded.len();
         for item in matches {
             let item = item.with_context(|| format!("failed to expand glob {path:?}"))?;
             if !item.is_file() {
@@ -577,6 +578,14 @@ fn expand_paths(root: &Path, package: &str, paths: &[String]) -> Result<Vec<Stri
                 expanded.push(relative);
             }
         }
+        // A pattern that matches nothing is a typo far more often than an
+        // intent, and the damage shows up somewhere else: a cc_library whose
+        // srcs vanished still archives, and the build fails at the link with
+        // a message about symbols rather than about the glob. Say it here,
+        // where the cause is.
+        if expanded.len() == before {
+            bail!("{path:?} matched no files");
+        }
     }
     expanded.sort();
     expanded.dedup();
@@ -584,10 +593,12 @@ fn expand_paths(root: &Path, package: &str, paths: &[String]) -> Result<Vec<Stri
 }
 
 fn expand_manifest_paths(manifest: &mut Manifest, root: &Path, package: &str) -> Result<()> {
-    for target in manifest.targets.values_mut() {
+    for (name, target) in manifest.targets.iter_mut() {
         target.package = package.to_string();
-        target.srcs = expand_paths(root, package, &target.srcs)?;
-        target.inputs = expand_paths(root, package, &target.inputs)?;
+        target.srcs = expand_paths(root, package, &target.srcs)
+            .with_context(|| format!("target {name:?} srcs"))?;
+        target.inputs = expand_paths(root, package, &target.inputs)
+            .with_context(|| format!("target {name:?} inputs"))?;
         target.includes = target
             .includes
             .iter()
