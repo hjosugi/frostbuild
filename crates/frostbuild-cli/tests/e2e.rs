@@ -802,3 +802,36 @@ fn include_path_environment_selects_a_different_header_and_is_keyed() {
     let (_, back) = run_with(&one);
     assert_eq!(back, "frost: 43\n", "switching back is equally observable");
 }
+
+#[test]
+fn a_glob_that_matches_nothing_is_reported_where_it_is_written() {
+    // A typo in a srcs glob used to produce an empty archive that built
+    // happily, and the build then failed at the link with a message about
+    // symbols — nowhere near the cause.
+    let ws = Workspace::new("empty-glob");
+    let good = std::fs::read_to_string(ws.dir.join("frost.toml")).unwrap();
+    let (ok, out) = ws.frost(&["build"]);
+    assert!(
+        ok,
+        "the workspace builds before the typo is introduced:\n{out}"
+    );
+
+    ws.append(
+        "frost.toml",
+        "\n[target.typo]\nkind = \"cc_library\"\nsrcs = [\"srcs/**/*.c\"]\n",
+    );
+    let (ok, out) = ws.frost(&["build", "typo"]);
+    assert!(!ok, "an empty glob must not build:\n{out}");
+    assert!(out.contains("matched no files"), "{out}");
+    assert!(out.contains("typo"), "the target must be named:\n{out}");
+
+    // The manifest is rejected as a whole, so an unrelated target cannot be
+    // built around it either — a broken manifest is broken for everyone.
+    let (ok, out) = ws.frost(&["build", "util"]);
+    assert!(!ok, "{out}");
+    assert!(out.contains("matched no files"), "{out}");
+
+    ws.write("frost.toml", &good);
+    let (ok, out) = ws.frost(&["build"]);
+    assert!(ok, "removing the typo restores the build:\n{out}");
+}

@@ -7,6 +7,12 @@ All notable changes follow Keep a Changelog and Semantic Versioning. Before
 
 ### Fixed
 
+- A `srcs` or `inputs` glob that matched no files was accepted. A typo like
+  `srcs/**/*.c` for `src/**/*.c` produced a library with nothing in it, built
+  without complaint, and failed later at the link with a message about symbols
+  rather than about the glob. An empty match is now an error naming the target
+  and the pattern.
+
 - **Wrong binary returned from cache when an include-path environment variable
   changed.** `CPATH`, `C_INCLUDE_PATH`, `CPLUS_INCLUDE_PATH`, `LIBRARY_PATH`,
   `SDKROOT`, `MACOSX_DEPLOYMENT_TARGET` and `SystemRoot` select which headers
