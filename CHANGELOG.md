@@ -5,6 +5,21 @@ All notable changes follow Keep a Changelog and Semantic Versioning. Before
 
 ## [Unreleased]
 
+### Fixed
+
+- `--profile` accepted any name. A typo built with no profile flags into its
+  own output tree and said nothing, so `--profile relase` quietly produced a
+  different binary than `--profile release`. Once a workspace declares any
+  profile, an undeclared name is now an error; `debug` always works, and an
+  empty `[profile.<name>]` section still asks for a bare tree on purpose.
+
+### Changed
+
+- Unknown target, profile and platform names suggest the closest declared one
+  instead of printing the whole list: `unknown target "ap". did you mean
+  "app"?`. A name that resembles nothing still gets the list, because a wrong
+  suggestion is worse than none.
+
 ### Performance
 
 - 10k-target no-op build: 285 ms -> 176 ms (-38%), closing the gap to Ninja
