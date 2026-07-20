@@ -694,3 +694,50 @@ fn a_path_is_stat_checked_once_per_build() {
     assert!(ok, "{out}");
     assert!(out.contains("ran genrule:gen_config"), "{out}");
 }
+
+#[test]
+#[cfg(unix)]
+fn daemon_works_from_a_deeply_nested_workspace() {
+    // A Unix socket address is capped near 100 bytes. Keeping the socket in
+    // the workspace made the daemon unusable a few directories deep, and the
+    // failure surfaced as `SUN_LEN` with no mention of paths.
+    let ws = Workspace::new("deep");
+    // Nest outside the source workspace, or the copy recurses into itself.
+    let deep = std::env::temp_dir()
+        .join(format!("frost-nested-root-{}", std::process::id()))
+        .join("a-directory-with-a-fairly-long-name")
+        .join("and-another-level-here-as-well")
+        .join("plus-a-third-level-for-good-measure")
+        .join("and-a-fourth-one-to-be-quite-sure")
+        .join("finally-the-workspace-itself");
+    let _ = std::fs::remove_dir_all(deep.ancestors().nth(5).unwrap());
+    std::fs::create_dir_all(&deep).unwrap();
+    copy_dir(&ws.dir, &deep).unwrap();
+    assert!(
+        deep.to_string_lossy().len() > 100,
+        "the test is pointless unless the path exceeds the socket limit"
+    );
+
+    let frost = |args: &[&str]| {
+        let out = Command::new(frost_bin())
+            .arg("-C")
+            .arg(&deep)
+            .args(args)
+            .output()
+            .expect("spawn frost");
+        (
+            out.status.success(),
+            String::from_utf8_lossy(&out.stdout).to_string()
+                + &String::from_utf8_lossy(&out.stderr),
+        )
+    };
+
+    let (ok, out) = frost(&["daemon", "start"]);
+    assert!(ok, "daemon must start from a nested workspace:\n{out}");
+    let (ok, out) = frost(&["build", "--daemon"]);
+    assert!(ok, "build through the daemon failed:\n{out}");
+    assert!(out.contains("5 executed"), "{out}");
+    let (ok, out) = frost(&["daemon", "stop"]);
+    assert!(ok, "{out}");
+    let _ = std::fs::remove_dir_all(deep.ancestors().nth(5).unwrap());
+}

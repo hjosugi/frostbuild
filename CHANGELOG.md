@@ -12,6 +12,18 @@ All notable changes follow Keep a Changelog and Semantic Versioning. Before
   different binary than `--profile release`. Once a workspace declares any
   profile, an undeclared name is now an error; `debug` always works, and an
   empty `[profile.<name>]` section still asks for a bare tree on purpose.
+- The daemon could not start from a workspace more than a few directories
+  deep. Its socket lived inside the workspace, and a Unix socket address is
+  capped near 100 bytes, so `frost daemon start` failed with `SUN_LEN` and no
+  mention of paths. The socket is now a short, stable name in the user's
+  runtime directory, derived from the workspace path so each workspace still
+  gets its own daemon.
+- A daemon killed rather than shut down left a socket file that blocked every
+  later start. A stale socket is now detected and replaced; a live one reports
+  that the daemon is already running.
+- `frost build --daemon` slept 20 ms after every successful build, to let the
+  watcher deliver events for the build's own writes before clearing a counter
+  that only `daemon status` reads. Every build paid it. Removed.
 
 ### Changed
 

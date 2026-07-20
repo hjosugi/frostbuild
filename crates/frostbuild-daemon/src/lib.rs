@@ -38,8 +38,27 @@ pub struct Response {
     pub stderr: String,
 }
 
+/// Socket for a workspace's daemon.
+///
+/// Not inside the workspace: a Unix socket address is capped at roughly 100
+/// bytes, so `<workspace>/.frost/frostd.sock` fails outright once the
+/// workspace sits a few directories deep — with `SUN_LEN` in the message and
+/// no hint that the path is the problem. The address is instead a short,
+/// stable name in the user's runtime directory, derived from the workspace
+/// path so that each workspace still gets its own daemon.
 pub fn socket_path(root: &Path) -> PathBuf {
-    root.join(".frost/frostd.sock")
+    let key = blake3::hash(root.as_os_str().as_encoded_bytes()).to_hex();
+    runtime_dir().join(format!("frostd-{}.sock", &key[..16]))
+}
+
+fn runtime_dir() -> PathBuf {
+    if let Some(dir) = std::env::var_os("XDG_RUNTIME_DIR") {
+        let dir = PathBuf::from(dir);
+        if dir.is_dir() {
+            return dir;
+        }
+    }
+    std::env::temp_dir()
 }
 
 pub fn request(root: &Path, request: &Request) -> Result<Response> {
@@ -51,8 +70,14 @@ pub fn request(root: &Path, request: &Request) -> Result<Response> {
 pub fn serve(root: &Path) -> Result<()> {
     std::fs::create_dir_all(root.join(".frost"))?;
     let socket = socket_path(root);
+    // A stale socket from a daemon that was killed rather than shut down
+    // would otherwise make bind fail until someone deletes it by hand.
+    if UnixStream::connect(&socket).is_ok() {
+        anyhow::bail!("frostd is already running for {}", root.display());
+    }
     let _ = std::fs::remove_file(&socket);
-    let listener = UnixListener::bind(&socket)?;
+    let listener = UnixListener::bind(&socket)
+        .with_context(|| format!("failed to bind {}", socket.display()))?;
     let state = Arc::new(Mutex::new(DaemonState::default()));
     let event_state = Arc::clone(&state);
     let root_owned = root.to_path_buf();
@@ -131,9 +156,15 @@ fn handle(root: &Path, request: Request, state: &Mutex<DaemonState>) -> (Respons
             {
                 Ok(output) => {
                     if output.status.success() {
-                        std::thread::sleep(std::time::Duration::from_millis(20));
-                        let mut state = state.lock().unwrap();
-                        state.dirty.clear();
+                        // The dirty set feeds `daemon status` only. It used to
+                        // be cleared after a fixed 20 ms sleep, meant to let
+                        // the watcher deliver events for the build's own
+                        // output writes first — a delay every build paid to
+                        // keep a reported count tidy. Clearing immediately can
+                        // leave frost's own writes counted until the next
+                        // build, which is cosmetic. Before this set may prune
+                        // real work it has to identify self-writes properly.
+                        state.lock().unwrap().dirty.clear();
                     }
                     (
                         Response {

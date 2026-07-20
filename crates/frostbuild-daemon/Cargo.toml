@@ -13,6 +13,7 @@ name = "frostd"
 path = "src/main.rs"
 
 [dependencies]
+blake3.workspace = true
 anyhow.workspace = true
 serde.workspace = true
 serde_json.workspace = true
