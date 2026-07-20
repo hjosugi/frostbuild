@@ -71,7 +71,7 @@ frost -C myrepo daemon status
   scrollable logs, automatic plain CI/pipe output and `--no-tui`
 - stat cache, parallel BLAKE3 hashing and toolchain closure fingerprinting
 - append-only crash-tolerant binary journal with per-action flush
-- immutable local CAS, hardlink/copy materialization and bounded GC
+- immutable local CAS, digest-verified copy materialization and bounded GC
 - early cutoff, affected test selection and opt-in determinism checking
 - mmap/versioned graph cache, `plan`, `explain`, Chrome trace and compdb
 - `init` scaffolds a manifest from the sources already present
