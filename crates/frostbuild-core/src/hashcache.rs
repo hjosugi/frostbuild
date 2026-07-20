@@ -233,6 +233,46 @@ impl HashCache {
         Ok(ready)
     }
 
+    /// Check a large set of expected digests without populating the per-build
+    /// `settled` map. This is the fully-cached build path: every unique file
+    /// is checked exactly once, stat calls run in parallel, and only entries
+    /// whose stat identity changed are re-hashed and written back.
+    pub fn matches_many(&self, workspace_root: &Path, expected: &[(&str, &str)]) -> Result<bool> {
+        let checked: Result<Vec<_>> = expected
+            .par_iter()
+            .map(|&(rel, digest)| {
+                let full = resolve(workspace_root, rel);
+                let Ok(meta) = std::fs::metadata(&full) else {
+                    return Ok((digest == MISSING, None));
+                };
+                let stat = stat_triple(&meta);
+                if let Some(entry) = self.lookup(rel) {
+                    if !entry.hash.is_empty() && (entry.mtime_ns, entry.size, entry.ino) == stat {
+                        return Ok((entry.hash == digest, None));
+                    }
+                }
+                let hash = hash_file(&full)
+                    .with_context(|| format!("failed to hash {}", full.display()))?;
+                let entry = Entry {
+                    mtime_ns: stat.0,
+                    size: stat.1,
+                    ino: stat.2,
+                    hash: hash.clone(),
+                };
+                Ok((hash == digest, Some((rel.to_string(), entry))))
+            })
+            .collect();
+
+        let mut matches = true;
+        for (matched, update) in checked? {
+            matches &= matched;
+            if let Some((rel, entry)) = update {
+                self.store(&rel, entry);
+            }
+        }
+        Ok(matches)
+    }
+
     /// Drop the cached stat for a path we just (re)wrote, forcing a re-hash.
     /// Needed for action outputs: a fast rewrite can land in the same mtime
     /// granule with the same size.

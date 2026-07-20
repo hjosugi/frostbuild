@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 use std::io::{Read, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -30,6 +30,12 @@ pub struct JournalEntry {
 pub struct Journal {
     /// Keyed by stable action id (e.g. `compile:app:src/main.c`).
     pub actions: BTreeMap<String, JournalEntry>,
+    /// Reused by the execution engine so a 10k-action build does not
+    /// open/close the same append-only file 10k times. Each record is still
+    /// flushed before the action is reported complete, preserving crash-tail
+    /// recovery.
+    #[serde(skip)]
+    writer: Option<(PathBuf, std::fs::File)>,
 }
 
 pub const JOURNAL_REL_PATH: &str = ".frost/journal.bin";
@@ -59,7 +65,10 @@ impl Journal {
                 .and_then(|text| serde_json::from_str(&text).ok())
                 .unwrap_or_default();
         }
-        Self { actions }
+        Self {
+            actions,
+            writer: None,
+        }
     }
 
     /// Append one completed action. A torn final frame is ignored on load.
@@ -68,14 +77,22 @@ impl Journal {
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)?;
         }
-        let new_file = !path.exists() || std::fs::metadata(&path)?.len() == 0;
-        let mut file = std::fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(&path)?;
-        if new_file {
-            file.write_all(MAGIC)?;
+        let reuse = self
+            .writer
+            .as_ref()
+            .is_some_and(|(writer_path, _)| writer_path == &path);
+        if !reuse {
+            let new_file = !path.exists() || std::fs::metadata(&path)?.len() == 0;
+            let mut file = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(&path)?;
+            if new_file {
+                file.write_all(MAGIC)?;
+            }
+            self.writer = Some((path.clone(), file));
         }
+        let file = &mut self.writer.as_mut().unwrap().1;
         let payload = postcard::to_allocvec(&Record {
             id: id.clone(),
             entry: entry.clone(),

@@ -1,0 +1,79 @@
+{
+  "schema": "frostbuild.performance-profile/v1",
+  "issue": 17,
+  "title": "10k-action Frost versus Ninja performance",
+  "base_commit": "d72a86d",
+  "benchmark_result": "../baselines/2026-07-20-issue-17-performance.json",
+  "harness": {
+    "command": "FROST_BIN=<isolated-release-frost> python3 frost_bench.py run --suite standard --tools frost,ninja --sizes 10000 --iterations 5 --jobs 8",
+    "graph": "10,000-action linear chain",
+    "iterations": 5,
+    "jobs": 8,
+    "comparison": "identical frost_bench.py generated graph and commands"
+  },
+  "baseline": {
+    "source": "../baselines/2026-07-19-E14-v0.2.0.json",
+    "iterations": 5,
+    "frost_clean_median_ms": 27484.193,
+    "ninja_clean_median_ms": 11430.446,
+    "clean_ratio": 2.404,
+    "frost_noop_median_ms": 232.734,
+    "ninja_noop_median_ms": 46.565,
+    "noop_ratio": 4.998
+  },
+  "local_pre_change_diagnostic": {
+    "iterations": 3,
+    "frost_clean_median_ms": 31642.581,
+    "frost_noop_median_ms": 200.162,
+    "note": "Same-day diagnostic used to locate bottlenecks; not the issue acceptance baseline."
+  },
+  "final": {
+    "frost_clean_median_ms": 15566.066,
+    "ninja_clean_median_ms": 9984.558,
+    "clean_ratio": 1.559,
+    "clean_speedup_over_baseline": 1.766,
+    "frost_noop_median_ms": 70.413,
+    "ninja_noop_median_ms": 44.32,
+    "noop_ratio": 1.589,
+    "noop_speedup_over_baseline": 3.305
+  },
+  "acceptance": {
+    "clean_target_ratio": 1.2,
+    "clean_met": false,
+    "noop_target_ratio": 1.5,
+    "noop_met": false,
+    "issue_should_remain_open": true
+  },
+  "phase_profile": {
+    "method": "frost build --jobs 8 --stats on a fresh 10k generated workspace",
+    "clean_engine_makespan_ms": 14700,
+    "clean_child_setup_spawn_wait_ms": 6862,
+    "clean_engine_bookkeeping_ms": 7838,
+    "clean_engine_bookkeeping_per_action_ms": 0.784,
+    "remaining_clean_work": [
+      "declared input stat/hash and action-key validation",
+      "output stat/hash and immutable CAS copy publication",
+      "append-only journal serialization",
+      "scheduler and progress bookkeeping"
+    ],
+    "remaining_noop_work": [
+      "deserialize the graph, journal, and hash cache",
+      "parallel stat validation of all unique inputs and outputs",
+      "parallel action-key verification"
+    ]
+  },
+  "implemented_optimizations": [
+    "skip repeated CAS scans with a bounded successful-GC stamp while retaining periodic cap recovery",
+    "reuse one append-only journal writer per build",
+    "validate a fully cached closure in parallel before constructing scheduler state",
+    "stream action keys directly into BLAKE3 and cache environment lookups",
+    "let a worker directly continue a newly-ready dependency-chain action",
+    "deduplicate output-directory creation and skip depfile bookkeeping for actions without depfiles"
+  ],
+  "correctness_guards": [
+    "CAS publication and restore use copies so workspace mutation cannot alter immutable objects",
+    "CAS objects are content-verified before restore",
+    "a restarted process scans and repairs a pre-existing over-budget CAS",
+    "the streamed action-key digest is tested against the canonical ActionKey implementation"
+  ]
+}

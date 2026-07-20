@@ -1,0 +1,198 @@
+{
+  "config": {
+    "iterations": 5,
+    "jobs": 8,
+    "scenarios": [
+      "clean",
+      "noop",
+      "incremental_leaf",
+      "hot_header",
+      "cache_hit_rebuild"
+    ],
+    "sizes": [
+      10000
+    ],
+    "tools": [
+      "frost",
+      "ninja"
+    ]
+  },
+  "digest": "d1aa5c3f8eaaaaf829201dc19f3af80dfd9b84659b74afdb4f1dd4de9e6437bb",
+  "environment": {
+    "captured_at": "2026-07-20T05:56:46Z",
+    "cpu_count": 8,
+    "cpu_governor": "performance",
+    "hostname": "E14",
+    "load_avg": [
+      1.55615234375,
+      2.15869140625,
+      2.94384765625
+    ],
+    "machine": "x86_64",
+    "platform": "Linux-7.1.2-3-cachyos-x86_64-with-glibc2.42",
+    "processor": "",
+    "python": "3.14.6",
+    "turbo": "enabled"
+  },
+  "generated_at": "2026-07-20T05:56:46Z",
+  "results": [
+    {
+      "graph": {
+        "action_count": 10000,
+        "dependency_edge_count": 9999,
+        "edge_digest_sha256": "5b3c52974b5a9e081939d1ddbfd14cc61e77dc4ec8941b159722a521d3c71c67",
+        "manifests_verified_equivalent": true,
+        "per_action_source_inputs": [
+          "src/nodeNNNNN.txt",
+          "include/hot.h"
+        ],
+        "shape": "linear-chain"
+      },
+      "iterations": 5,
+      "jobs": 8,
+      "scenarios": {
+        "cache_hit_rebuild": {
+          "max_ms": 2140.661,
+          "median_ms": 1898.186,
+          "min_ms": 1743.886,
+          "samples_ms": [
+            1743.886,
+            1898.186,
+            2140.661,
+            1953.4,
+            1882.711
+          ]
+        },
+        "clean": {
+          "max_ms": 15644.423,
+          "median_ms": 15566.066,
+          "min_ms": 15462.764,
+          "samples_ms": [
+            15613.435,
+            15566.066,
+            15644.423,
+            15486.722,
+            15462.764
+          ]
+        },
+        "hot_header": {
+          "max_ms": 14674.567,
+          "median_ms": 12785.602,
+          "min_ms": 12435.278,
+          "samples_ms": [
+            12628.748,
+            12435.278,
+            12785.602,
+            14641.13,
+            14674.567
+          ]
+        },
+        "incremental_leaf": {
+          "max_ms": 156.306,
+          "median_ms": 153.634,
+          "min_ms": 150.121,
+          "samples_ms": [
+            151.074,
+            156.306,
+            153.634,
+            150.121,
+            156.292
+          ]
+        },
+        "noop": {
+          "max_ms": 78.393,
+          "median_ms": 70.413,
+          "min_ms": 68.644,
+          "samples_ms": [
+            70.188,
+            73.57,
+            78.393,
+            68.644,
+            70.413
+          ]
+        }
+      },
+      "size": 10000,
+      "status": "ok",
+      "target_count": 10000,
+      "tool": "frost",
+      "version": "frost 0.2.0"
+    },
+    {
+      "graph": {
+        "action_count": 10000,
+        "dependency_edge_count": 9999,
+        "edge_digest_sha256": "5b3c52974b5a9e081939d1ddbfd14cc61e77dc4ec8941b159722a521d3c71c67",
+        "manifests_verified_equivalent": true,
+        "per_action_source_inputs": [
+          "src/nodeNNNNN.txt",
+          "include/hot.h"
+        ],
+        "shape": "linear-chain"
+      },
+      "iterations": 5,
+      "jobs": 8,
+      "scenarios": {
+        "cache_hit_rebuild": {
+          "applicable": false,
+          "reason": "ninja has no content-addressed action cache in this harness"
+        },
+        "clean": {
+          "max_ms": 11281.366,
+          "median_ms": 9984.558,
+          "min_ms": 9952.632,
+          "samples_ms": [
+            11281.366,
+            10644.274,
+            9978.924,
+            9952.632,
+            9984.558
+          ]
+        },
+        "hot_header": {
+          "max_ms": 10006.268,
+          "median_ms": 9962.081,
+          "min_ms": 9926.297,
+          "samples_ms": [
+            10006.268,
+            9928.874,
+            9926.297,
+            9987.629,
+            9962.081
+          ]
+        },
+        "incremental_leaf": {
+          "max_ms": 47.365,
+          "median_ms": 46.875,
+          "min_ms": 46.179,
+          "samples_ms": [
+            46.875,
+            47.154,
+            46.179,
+            46.618,
+            47.365
+          ]
+        },
+        "noop": {
+          "max_ms": 44.666,
+          "median_ms": 44.32,
+          "min_ms": 43.548,
+          "samples_ms": [
+            43.548,
+            44.332,
+            44.32,
+            44.666,
+            43.925
+          ]
+        }
+      },
+      "size": 10000,
+      "status": "ok",
+      "target_count": 10000,
+      "tool": "ninja",
+      "version": "1.13.2"
+    }
+  ],
+  "schema": "frost-bench-standard-v2",
+  "suite": "standard"
+}

@@ -10,6 +10,7 @@
 
 use std::cmp::Reverse;
 use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap};
+use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -19,10 +20,11 @@ use std::time::Instant;
 
 use anyhow::{Context, Result};
 use frostbuild_core::cas::LocalCas;
+use frostbuild_core::depfile;
 use frostbuild_core::graph::{ActionId, ActionKind, BuildGraph};
 use frostbuild_core::hashcache::HashCache;
 use frostbuild_core::journal::{Journal, JournalEntry};
-use frostbuild_core::{depfile, ActionKey};
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 
 static CANCELLED: AtomicBool = AtomicBool::new(false);
@@ -284,6 +286,11 @@ pub struct Engine<'a> {
     critical_path_ms: u64,
     estimated_work_ms: u64,
     toolchain_hash: String,
+    /// Output-affecting environment captured once per invocation. Looking up
+    /// the same handful of variables for every action is surprisingly visible
+    /// in a 10k-action no-op build.
+    key_env: BTreeMap<String, String>,
+    command_env: Vec<(OsString, OsString)>,
     opts: BuildOptions,
     cache: HashCache,
     /// Entries recorded by the *previous* build. Immutable for the duration
@@ -513,43 +520,39 @@ impl<'a> Engine<'a> {
         opts: BuildOptions,
     ) -> Self {
         let journal = Journal::load(root);
-        let plan = Schedule::plan(graph, closure, &journal, opts.scheduler, opts.estimator);
-        let Schedule {
-            closure,
-            closure_index,
-            dependents,
-            waiting,
-            priority,
-            critical_path_ms,
-            work_ms: estimated_work_ms,
-            ..
-        } = plan;
-        let ready = waiting
-            .iter()
-            .enumerate()
-            .filter(|(_, &w)| w == 0)
-            .map(|(i, _)| (priority[i], Reverse(i)))
-            .collect();
-
         let n = closure.len();
         let cas_max_bytes = opts.cas_max_bytes;
+        let key_env = ENV_IN_KEY
+            .iter()
+            .filter_map(|name| {
+                std::env::var_os(name)
+                    .map(|value| ((*name).to_string(), value.to_string_lossy().into_owned()))
+            })
+            .collect();
+        let command_env = ENV_PASSTHROUGH
+            .iter()
+            .chain(ENV_IN_KEY)
+            .filter_map(|name| std::env::var_os(name).map(|value| (OsString::from(name), value)))
+            .collect();
         Self {
             root,
             graph,
             closure,
-            closure_index,
-            dependents,
-            priority,
-            critical_path_ms,
-            estimated_work_ms,
+            closure_index: HashMap::new(),
+            dependents: Vec::new(),
+            priority: Vec::new(),
+            critical_path_ms: 0,
+            estimated_work_ms: 0,
             toolchain_hash,
+            key_env,
+            command_env,
             opts,
             cache: HashCache::load(root),
             previous: journal,
             journal: Mutex::new(Journal::default()),
             shared: Mutex::new(Shared {
-                ready,
-                waiting,
+                ready: BinaryHeap::new(),
+                waiting: vec![0; n],
                 outcomes: vec![None; n],
                 pending: n,
                 abort: false,
@@ -560,14 +563,25 @@ impl<'a> Engine<'a> {
         }
     }
 
-    pub fn run(self) -> Result<BuildReport> {
+    pub fn run(mut self) -> Result<BuildReport> {
         let workers = self.opts.jobs.max(1).min(self.closure.len().max(1));
         let started = std::time::Instant::now();
-        std::thread::scope(|scope| {
-            for _ in 0..workers {
-                scope.spawn(|| self.worker());
+        if self.all_cached().unwrap_or(false) {
+            let mut shared = self.shared.lock().unwrap();
+            shared.outcomes.fill(Some(Outcome::Cached));
+            shared.pending = 0;
+            shared.ready.clear();
+        } else {
+            if !self.opts.dry_run {
+                self.prepare_output_dirs()?;
             }
-        });
+            self.prepare_schedule();
+            std::thread::scope(|scope| {
+                for _ in 0..workers {
+                    scope.spawn(|| self.worker());
+                }
+            });
+        }
         let makespan_ms = started.elapsed().as_millis() as u64;
 
         let shared = self.shared.into_inner().unwrap();
@@ -617,9 +631,155 @@ impl<'a> Engine<'a> {
         Ok(BuildReport { results, stats })
     }
 
+    /// Scheduling data is irrelevant when a whole closure is cached. Delay
+    /// its O(actions + edges) allocation until the cache preflight finds work.
+    fn prepare_schedule(&mut self) {
+        let plan = Schedule::plan(
+            self.graph,
+            self.closure.clone(),
+            &self.previous,
+            self.opts.scheduler,
+            self.opts.estimator,
+        );
+        self.closure_index = plan.closure_index;
+        self.dependents = plan.dependents;
+        self.priority = plan.priority;
+        self.critical_path_ms = plan.critical_path_ms;
+        self.estimated_work_ms = plan.work_ms;
+        let mut shared = self.shared.lock().unwrap();
+        shared.waiting = plan.waiting;
+        shared.ready = shared
+            .waiting
+            .iter()
+            .enumerate()
+            .filter(|(_, &waiting)| waiting == 0)
+            .map(|(local, _)| (self.priority[local], Reverse(local)))
+            .collect();
+    }
+
+    /// Validate a fully cached closure in two passes instead of sending every
+    /// action through the scheduler. The normal path stats the same output as
+    /// one action's output and the next action's input, and takes the shared
+    /// scheduler lock for every cached node. A workspace-wide pass stats each
+    /// unique path once, then verifies the exact same action keys and output
+    /// digests before declaring the closure cached.
+    fn all_cached(&self) -> Result<bool> {
+        if self.opts.dry_run {
+            return Ok(false);
+        }
+
+        let mut expected_by_file = vec![None; self.graph.files.len()];
+        let mut discovered_expected = HashMap::new();
+        for &action_id in &self.closure {
+            let action = &self.graph.actions[action_id];
+            if self.opts.no_cache && action.kind == ActionKind::Test {
+                return Ok(false);
+            }
+            let Some(previous) = self.previous.actions.get(&journal_id(self.graph, action)) else {
+                return Ok(false);
+            };
+
+            // Reusing `previous.inputs` for the key is valid only when the
+            // current declared-input set is identical. Discovered inputs are
+            // explicitly recorded, so they can be separated without changing
+            // the journal format.
+            if previous.discovered.is_empty() {
+                if action.inputs.len() != previous.inputs.len()
+                    || action
+                        .inputs
+                        .iter()
+                        .any(|&file| !previous.inputs.contains_key(&self.graph.files[file].path))
+                {
+                    return Ok(false);
+                }
+            } else {
+                let discovered: BTreeSet<&str> =
+                    previous.discovered.iter().map(String::as_str).collect();
+                let previous_declared: BTreeSet<&str> = previous
+                    .inputs
+                    .keys()
+                    .map(String::as_str)
+                    .filter(|path| !discovered.contains(path))
+                    .collect();
+                let current_declared: BTreeSet<&str> = action
+                    .inputs
+                    .iter()
+                    .map(|&file| self.graph.files[file].path.as_str())
+                    .collect();
+                if current_declared != previous_declared {
+                    return Ok(false);
+                }
+            }
+
+            for &file in &action.inputs {
+                let path = &self.graph.files[file].path;
+                let Some(digest) = previous.inputs.get(path) else {
+                    return Ok(false);
+                };
+                if expected_by_file[file]
+                    .replace(digest.as_str())
+                    .is_some_and(|other| other != digest)
+                {
+                    return Ok(false);
+                }
+            }
+            for path in &previous.discovered {
+                let Some(digest) = previous.inputs.get(path) else {
+                    return Ok(false);
+                };
+                if discovered_expected
+                    .insert(path.as_str(), digest.as_str())
+                    .is_some_and(|other| other != digest)
+                {
+                    return Ok(false);
+                }
+            }
+            if action.outputs.len() != previous.outputs.len() {
+                return Ok(false);
+            }
+            for &file in &action.outputs {
+                let path = &self.graph.files[file].path;
+                let Some(digest) = previous.outputs.get(path) else {
+                    return Ok(false);
+                };
+                if expected_by_file[file]
+                    .replace(digest.as_str())
+                    .is_some_and(|other| other != digest)
+                {
+                    return Ok(false);
+                }
+            }
+        }
+
+        let mut expected = Vec::with_capacity(
+            expected_by_file
+                .len()
+                .saturating_add(discovered_expected.len()),
+        );
+        expected.extend(
+            self.graph
+                .files
+                .iter()
+                .zip(expected_by_file)
+                .filter_map(|(file, digest)| digest.map(|digest| (file.path.as_str(), digest))),
+        );
+        expected.extend(discovered_expected);
+        if !self.cache.matches_many(self.root, &expected)? {
+            return Ok(false);
+        }
+        Ok(self.closure.par_iter().all(|&action_id| {
+            let action = &self.graph.actions[action_id];
+            let previous = &self.previous.actions[&journal_id(self.graph, action)];
+            self.action_key(action, &previous.inputs) == previous.key
+        }))
+    }
+
     fn worker(&self) {
+        let mut continuation = None;
         loop {
-            let local = {
+            let local = if let Some(local) = continuation.take() {
+                local
+            } else {
                 let mut s = self.shared.lock().unwrap();
                 loop {
                     if s.abort && s.ready.is_empty() {
@@ -657,6 +817,14 @@ impl<'a> Engine<'a> {
                 }
             }
             let finished = s.pending == 0 || s.abort;
+            // The worker that just made an action ready is already awake.
+            // Let it claim the highest-priority next action while holding the
+            // scheduler lock. On a dependency chain this avoids 10k kernel
+            // wakeups and ready-heap push/pop handoffs between workers.
+            if !finished {
+                continuation = s.ready.pop().map(|(_, Reverse(local))| local);
+            }
+            let claimed = usize::from(continuation.is_some());
             drop(s);
             if finished {
                 // Everyone must wake to observe the end and return.
@@ -667,7 +835,7 @@ impl<'a> Engine<'a> {
                 // dependency chain unlocks one action at a time, so on a chain
                 // of N actions `notify_all` costs N * jobs wakeups to do N
                 // units of work.
-                for _ in 0..unlocked {
+                for _ in 0..unlocked.saturating_sub(claimed) {
                     self.cv.notify_one();
                 }
             }
@@ -783,13 +951,6 @@ impl<'a> Engine<'a> {
             return Outcome::WouldRun { reason };
         }
 
-        if let Err(err) = self.prepare_output_dirs(action) {
-            return Outcome::Failed {
-                reason,
-                detail: format!("{err:#}"),
-            };
-        }
-
         for &out in &action.outputs {
             let path = &self.graph.files[out].path;
             self.cache.invalidate(path);
@@ -873,23 +1034,23 @@ impl<'a> Engine<'a> {
                     }
                 }
             }
-        }
-        let declared: BTreeSet<String> = action
-            .inputs
-            .iter()
-            .map(|&f| self.graph.files[f].path.clone())
-            .collect();
-        discovered.retain(|d| !declared.contains(d));
-        inputs.retain(|path, _| declared.contains(path));
-        match self.digest_all(&discovered) {
-            Ok(extra) => inputs.extend(extra),
-            Err(err) => {
-                return Outcome::Failed {
-                    reason,
-                    detail: format!("failed to hash discovered deps: {err:#}"),
+            let declared: BTreeSet<String> = action
+                .inputs
+                .iter()
+                .map(|&f| self.graph.files[f].path.clone())
+                .collect();
+            discovered.retain(|d| !declared.contains(d));
+            inputs.retain(|path, _| declared.contains(path));
+            match self.digest_all(&discovered) {
+                Ok(extra) => inputs.extend(extra),
+                Err(err) => {
+                    return Outcome::Failed {
+                        reason,
+                        detail: format!("failed to hash discovered deps: {err:#}"),
+                    }
                 }
             }
-        }
+        };
 
         let output_paths: Vec<String> = action
             .outputs
@@ -1034,22 +1195,15 @@ impl<'a> Engine<'a> {
         action: &frostbuild_core::graph::ActionNode,
         inputs: &BTreeMap<String, String>,
     ) -> String {
-        let mut key = ActionKey::new(
+        streamed_action_key(
             "frost-engine-v1",
             &action.id,
-            action.argv.iter().cloned(),
-            self.root,
+            &action.argv,
+            ".",
             &self.toolchain_hash,
-        );
-        for name in ENV_IN_KEY {
-            if let Some(value) = std::env::var_os(name) {
-                key = key.with_env(*name, value.to_string_lossy().into_owned());
-            }
-        }
-        for (path, digest) in inputs {
-            key = key.with_input(path.clone(), digest.clone());
-        }
-        key.digest(self.root)
+            &self.key_env,
+            inputs,
+        )
     }
 
     fn digest_all(&self, paths: &[String]) -> Result<BTreeMap<String, String>> {
@@ -1068,19 +1222,26 @@ impl<'a> Engine<'a> {
         Ok(None)
     }
 
-    fn prepare_output_dirs(&self, action: &frostbuild_core::graph::ActionNode) -> Result<()> {
-        for &out in &action.outputs {
-            let path = self.root.join(&self.graph.files[out].path);
-            if let Some(parent) = path.parent() {
-                std::fs::create_dir_all(parent)
-                    .with_context(|| format!("failed to create {}", parent.display()))?;
+    fn prepare_output_dirs(&self) -> Result<()> {
+        let mut directories = BTreeSet::new();
+        for &action_id in &self.closure {
+            let action = &self.graph.actions[action_id];
+            for &out in &action.outputs {
+                let path = self.root.join(&self.graph.files[out].path);
+                if let Some(parent) = path.parent() {
+                    directories.insert(parent.to_path_buf());
+                }
+            }
+            if let Some(dep) = &action.depfile {
+                let path = self.root.join(dep);
+                if let Some(parent) = path.parent() {
+                    directories.insert(parent.to_path_buf());
+                }
             }
         }
-        if let Some(dep) = &action.depfile {
-            let path = self.root.join(dep);
-            if let Some(parent) = path.parent() {
-                std::fs::create_dir_all(parent)?;
-            }
+        for parent in directories {
+            std::fs::create_dir_all(&parent)
+                .with_context(|| format!("failed to create {}", parent.display()))?;
         }
         Ok(())
     }
@@ -1113,15 +1274,9 @@ impl<'a> Engine<'a> {
             command.args(&action.argv[1..]).current_dir(self.root);
             command
         };
-        let env = ENV_PASSTHROUGH
-            .iter()
-            .chain(ENV_IN_KEY)
-            .copied()
-            .filter_map(|key| std::env::var_os(key).map(|value| (key, value)))
-            .collect::<Vec<_>>();
         command
             .env_clear()
-            .envs(env)
+            .envs(self.command_env.iter().map(|(key, value)| (key, value)))
             .env("LC_ALL", "C")
             .env("LANG", "C")
             // Actions never read from the terminal. Inheriting stdin lets a
@@ -1428,6 +1583,58 @@ fn shell_join(argv: &[String]) -> String {
         .join(" ")
 }
 
+/// Hash the same length-prefixed payload as `ActionKey::digest`, but feed it
+/// directly to BLAKE3. This avoids cloning argv/input maps and allocating a
+/// complete canonical string for every cache check.
+fn streamed_action_key(
+    builder: &str,
+    target: &str,
+    argv: &[String],
+    cwd: &str,
+    toolchain_hash: &str,
+    env: &BTreeMap<String, String>,
+    inputs: &BTreeMap<String, String>,
+) -> String {
+    let mut hasher = blake3::Hasher::new();
+    update_key_field(&mut hasher, "schema", "frost-action-key-v2");
+    update_key_field(&mut hasher, "builder", builder);
+    update_key_field(&mut hasher, "target", target);
+    update_key_field(&mut hasher, "cwd", cwd);
+    update_key_field(&mut hasher, "toolchain", toolchain_hash);
+    for arg in argv {
+        update_key_field(&mut hasher, "argv", arg);
+    }
+    for (key, value) in env {
+        update_key_field(&mut hasher, "env", key);
+        update_key_field(&mut hasher, "env", value);
+    }
+    for (path, digest) in inputs {
+        update_key_field(&mut hasher, "input", path);
+        update_key_field(&mut hasher, "input", digest);
+    }
+    hasher.finalize().to_hex().to_string()
+}
+
+fn update_key_field(hasher: &mut blake3::Hasher, key: &str, value: &str) {
+    hasher.update(key.as_bytes());
+    hasher.update(b"\0");
+    let mut digits = [0u8; 20];
+    let mut cursor = digits.len();
+    let mut length = value.len();
+    loop {
+        cursor -= 1;
+        digits[cursor] = b'0' + (length % 10) as u8;
+        length /= 10;
+        if length == 0 {
+            break;
+        }
+    }
+    hasher.update(&digits[cursor..]);
+    hasher.update(b"\0");
+    hasher.update(value.as_bytes());
+    hasher.update(b"\0");
+}
+
 /// Hash identifying the compiler binary so a toolchain swap invalidates the
 /// cache (a lightweight stand-in for the closure hashing planned in #28).
 pub fn toolchain_fingerprint(cc: &str) -> Result<String> {
@@ -1574,6 +1781,49 @@ mod tests {
     fn shell_join_quotes_specials() {
         let argv = vec!["cc".to_string(), "a b".to_string(), "plain".to_string()];
         assert_eq!(shell_join(&argv), "cc 'a b' plain");
+    }
+
+    #[test]
+    fn streamed_action_key_matches_the_canonical_core_key() {
+        let root = Path::new("/workspace");
+        let argv = vec![
+            "/bin/sh".to_string(),
+            "-c".to_string(),
+            "cp $in $out".to_string(),
+        ];
+        let env = BTreeMap::from([
+            ("CPATH".to_string(), "/headers".to_string()),
+            ("SDKROOT".to_string(), "/sdk".to_string()),
+        ]);
+        let inputs = BTreeMap::from([
+            ("include/a.h".to_string(), "abc".to_string()),
+            ("src/main.c".to_string(), "def".to_string()),
+        ]);
+        let mut canonical = frostbuild_core::ActionKey::new(
+            "frost-engine-v1",
+            "compile:main",
+            argv.clone(),
+            root,
+            "toolchain",
+        );
+        for (key, value) in &env {
+            canonical = canonical.with_env(key, value);
+        }
+        for (path, digest) in &inputs {
+            canonical = canonical.with_input(path, digest);
+        }
+        assert_eq!(
+            streamed_action_key(
+                "frost-engine-v1",
+                "compile:main",
+                &argv,
+                ".",
+                "toolchain",
+                &env,
+                &inputs,
+            ),
+            canonical.digest(root)
+        );
     }
 
     #[test]
