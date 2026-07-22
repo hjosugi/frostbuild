@@ -5,6 +5,16 @@ All notable changes follow Keep a Changelog and Semantic Versioning. Before
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-07-23
+
+### Documentation
+
+- Preserve the reusable correctness and performance lessons from the 20 July
+  investigation as a dated snapshot, while recording the later v0.3.0 daemon,
+  DeltaCDC and language-adapter results separately.
+- Record which v0.3.0 issue gates are complete and which external evidence
+  remains intentionally open, without treating publication as acceptance.
+
 ## [0.3.0] - 2026-07-22
 
 ### Added
