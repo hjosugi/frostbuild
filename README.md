@@ -395,7 +395,10 @@ predictive selection, learned scheduling, platform support and language adapters
 live in `docs/` and keep safe behavior as the default.
 
 What the action key covers, and the gaps it does not, are enumerated in
-[docs/16_action_key_audit.md](docs/16_action_key_audit.md).
+[docs/16_action_key_audit.md](docs/16_action_key_audit.md). What was learned in
+the 20 July 2026 investigation — including two performance hypotheses that
+were wrong and a benchmark that was not measuring what it claimed — is in
+[docs/17_session_log_2026-07.md](docs/17_session_log_2026-07.md).
 
 The [issue implementation matrix](docs/13_issue_implementation_matrix.md) maps
 the roadmap to code and identifies acceptance gates needing external evidence.
