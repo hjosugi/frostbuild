@@ -14,8 +14,9 @@ POSIX shell snippets, shell actions use `cmd.exe /C`, and cancellation uses
 cross-checked for `x86_64-pc-windows-gnu`. CI defines native macOS and Windows
 gates for all-target compilation, library/binary unit tests, daemon
 status/shutdown, and a real command-target build followed by a cached no-op.
-This document does not call those gates green until they have run on the
-published branch.
+Those gates passed on the published v0.3.0 commit, including the Windows CLI's
+dedicated-stack entry point. Tagged releases publish host-built macOS and
+Windows archives alongside static Linux.
 
 The Windows C/C++ adapter still emits GCC/Clang-style depfile and link flags;
 it is suitable for a GNU-like or explicitly wrapped toolchain, not yet a
