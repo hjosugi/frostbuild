@@ -9,6 +9,8 @@ All notable changes follow Keep a Changelog and Semantic Versioning. Before
 
 ### Added
 
+- Tagged releases publish checksummed `frost` + `frostd` archives for static
+  x86_64 Linux, the current macOS runner architecture and x86_64 Windows.
 - Language-neutral `command` targets run a named `[toolchain.tools]` executable
   with direct argv, declared configuration-isolated file outputs, optional
   Makefile depfiles, static environment and explicit `pass_env`. Named tools

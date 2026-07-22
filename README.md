@@ -387,7 +387,8 @@ contract, not arbitrary PEP 517 backends, extensions or pytest. See
 
 Before 1.0, FrostBuild follows SemVer with breaking changes allowed in minor
 versions. Build locally with Cargo, use `cargo install --path crates/frostbuild-cli`,
-or download the static Linux binary and checksum from a tagged GitHub release.
+or download a checksummed Linux, macOS or Windows archive from a tagged GitHub
+release. Each archive contains both `frost` and the optional `frostd` daemon.
 
 Contributions follow [CONTRIBUTING.md](CONTRIBUTING.md). Research decisions for
 predictive selection, learned scheduling, platform support and language adapters
