@@ -1,0 +1,195 @@
+{
+  "config": {
+    "clean_policy": "delete the project artifact/frontend state and reset an isolated Go cache to a prewarmed runtime-only seed",
+    "compiler": {
+      "goarch": "amd64",
+      "goos": "linux",
+      "path": "/home/hsugi/.nix-profile/bin/go",
+      "version": "go1.26.4"
+    },
+    "execution_order": "round-robin; reverse frontend order on every measured iteration",
+    "iterations": 15,
+    "jobs": 8,
+    "native_policy": "frost-native directly invokes the selected Go distribution's compile and link tools with a declared copied runtime export closure",
+    "profile": {
+      "buildvcs": false,
+      "cgo_enabled": false,
+      "link_buildid": "",
+      "pgo": "off",
+      "trimpath": false
+    },
+    "scenarios": [
+      "clean"
+    ],
+    "size": 100,
+    "tools": [
+      "frost-native",
+      "go"
+    ],
+    "warm_policy": "retain each frontend's project cache for no-op and one-file-change samples"
+  },
+  "digest": "80047250759cb039439e4fac612d70b23791366103775ff00fb7467d7ceab702",
+  "environment": {
+    "captured_at": "2026-07-20T21:11:00Z",
+    "cpu_count": 8,
+    "cpu_governor": "performance",
+    "hostname": "E14",
+    "load_avg": [
+      2.716796875,
+      2.1142578125,
+      1.673828125
+    ],
+    "machine": "x86_64",
+    "platform": "Linux-7.1.3-2-cachyos-x86_64-with-glibc2.42",
+    "processor": "",
+    "python": "3.14.6",
+    "turbo": "enabled"
+  },
+  "generated_at": "2026-07-20T21:11:13Z",
+  "graph": {
+    "compilation_boundary": "one Go package and executable link",
+    "contract_sha256": "31e1f863a84509c298c41faef08b1f08d25fe6f0d3f237c9ad0cbf42e1621671",
+    "function_file_count": 100,
+    "initial_expected_stderr": "4950",
+    "language": "Go",
+    "package_count": 1,
+    "same_source_graph": true,
+    "shape": "single-main-package-file-set",
+    "source_count": 101
+  },
+  "output_equivalence": {
+    "artifact_digests": {
+      "frost-native": "ac1f3d911fb5c0e048dbf54e2a3c1f574d97d99248a3deb5d7dd6db08efbedc2",
+      "go": "ee7bcfd890bdd6f68d54f71d47b13909ee73c9de3dbae6b8b149477a8e5beb72"
+    },
+    "build_metadata_digests": {
+      "frost-native": "49bf4d2678a1337c98971fefb0bd67b714e2574504da43aa4786ff111b5b7171",
+      "go": "49bf4d2678a1337c98971fefb0bd67b714e2574504da43aa4786ff111b5b7171"
+    },
+    "build_metadata_equal": true,
+    "byte_identical": false,
+    "comparison_unit": "successful execution, exit code 0, empty stdout, and exact stderr plus exact normalized module/build metadata after every timed build; compiler-internal binary bytes may differ",
+    "semantic_digests": {
+      "frost-native": "9f7f71032c92ca036cc244d36b891d177f6460c9d12fc4bfcb8ea8db4f54b19a",
+      "go": "9f7f71032c92ca036cc244d36b891d177f6460c9d12fc4bfcb8ea8db4f54b19a"
+    },
+    "semantic_equal": true,
+    "validated_after_every_timed_build": true
+  },
+  "results": [
+    {
+      "artifact": {
+        "artifact_bytes": 1830216,
+        "artifact_sha256": "ac1f3d911fb5c0e048dbf54e2a3c1f574d97d99248a3deb5d7dd6db08efbedc2",
+        "build_metadata_sha256": "49bf4d2678a1337c98971fefb0bd67b714e2574504da43aa4786ff111b5b7171",
+        "semantic_sha256": "9f7f71032c92ca036cc244d36b891d177f6460c9d12fc4bfcb8ea8db4f54b19a",
+        "stderr": "4950"
+      },
+      "compiler_version": "go1.26.4",
+      "configuration": {
+        "configuration_bytes": 2666,
+        "configuration_lines": 17,
+        "declared_compilation_partitions": 1,
+        "files": [
+          "frost.toml"
+        ],
+        "generated_toolchain_bundle_excluded_from_configuration_size": [
+          ".go-sdk"
+        ],
+        "one_source_change_compiler_scope": "one Go package"
+      },
+      "iterations": 15,
+      "jobs": 8,
+      "observed_summaries": [
+        "frost: 1 built \u00b7 1 actions \u00b7 108 ms",
+        "frost: 1 built \u00b7 1 actions \u00b7 110 ms",
+        "frost: 1 built \u00b7 1 actions \u00b7 107 ms"
+      ],
+      "package_count": 1,
+      "scenarios": {
+        "clean": {
+          "max_ms": 190.904,
+          "median_ms": 151.074,
+          "min_ms": 147.201,
+          "samples_ms": [
+            147.201,
+            150.812,
+            147.892,
+            155.243,
+            190.904,
+            151.058,
+            151.106,
+            150.078,
+            154.822,
+            151.074,
+            156.935,
+            156.316,
+            148.454,
+            151.165,
+            149.065
+          ]
+        }
+      },
+      "size": 100,
+      "source_count": 101,
+      "status": "ok",
+      "tool": "frost-native",
+      "version": "frost 0.2.0"
+    },
+    {
+      "artifact": {
+        "artifact_bytes": 1830208,
+        "artifact_sha256": "ee7bcfd890bdd6f68d54f71d47b13909ee73c9de3dbae6b8b149477a8e5beb72",
+        "build_metadata_sha256": "49bf4d2678a1337c98971fefb0bd67b714e2574504da43aa4786ff111b5b7171",
+        "semantic_sha256": "9f7f71032c92ca036cc244d36b891d177f6460c9d12fc4bfcb8ea8db4f54b19a",
+        "stderr": "4950"
+      },
+      "compiler_version": "go1.26.4",
+      "configuration": {
+        "configuration_bytes": 43,
+        "configuration_lines": 3,
+        "declared_compilation_partitions": 1,
+        "files": [
+          "go.mod"
+        ],
+        "generated_toolchain_bundle_excluded_from_configuration_size": [],
+        "one_source_change_compiler_scope": "one Go package"
+      },
+      "iterations": 15,
+      "jobs": 8,
+      "observed_summaries": [],
+      "package_count": 1,
+      "scenarios": {
+        "clean": {
+          "max_ms": 176.53,
+          "median_ms": 160.333,
+          "min_ms": 156.599,
+          "samples_ms": [
+            165.564,
+            158.293,
+            157.389,
+            171.471,
+            163.659,
+            161.315,
+            162.962,
+            156.599,
+            160.333,
+            159.751,
+            176.53,
+            159.403,
+            157.609,
+            175.276,
+            158.467
+          ]
+        }
+      },
+      "size": 100,
+      "source_count": 101,
+      "status": "ok",
+      "tool": "go",
+      "version": "go version go1.26.4 linux/amd64"
+    }
+  ],
+  "schema": "frost-bench-go-v1",
+  "suite": "go"
+}

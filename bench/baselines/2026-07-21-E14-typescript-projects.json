@@ -1,0 +1,262 @@
+{
+  "config": {
+    "checkers_per_process": {
+      "frost": 1,
+      "tsc": 2
+    },
+    "clean_policy": "delete all solution outputs/buildinfo and Frost state; retain copied compiler closure",
+    "compiler": {
+      "path": "/tmp/frost-ts-tools/node_modules/@typescript/typescript-linux-x64/lib/tsc",
+      "version": "Version 7.0.2"
+    },
+    "execution_order": "round-robin frontends; reverse order on every measured iteration",
+    "iterations": 7,
+    "jobs": 8,
+    "modules_per_project": 25,
+    "projects": 8,
+    "runtime": {
+      "path": "/home/hsugi/.nix-profile/bin/node",
+      "version": "v26.5.0"
+    },
+    "scenarios": [
+      "clean",
+      "noop",
+      "incremental_leaf"
+    ],
+    "tools": [
+      "frost",
+      "tsc"
+    ]
+  },
+  "digest": "0e99e7ab022a1ab1e50dfb7dbbc8f3a3e5878814f39a9f32859187bc30edbff7",
+  "environment": {
+    "captured_at": "2026-07-20T22:26:19Z",
+    "cpu_count": 8,
+    "cpu_governor": "performance",
+    "hostname": "E14",
+    "load_avg": [
+      2.94140625,
+      2.58447265625,
+      1.8505859375
+    ],
+    "machine": "x86_64",
+    "platform": "Linux-7.1.3-2-cachyos-x86_64-with-glibc2.42",
+    "processor": "",
+    "python": "3.14.6",
+    "turbo": "enabled"
+  },
+  "generated_at": "2026-07-20T22:26:19Z",
+  "graph": {
+    "contract_sha256": "64048b775a3ea999194bcc368ea4b8191cb1b6e144adc7fef56068458d7f58d0",
+    "language": "TypeScript",
+    "modules_per_project": 25,
+    "project_count": 8,
+    "same_source_graph": true,
+    "shape": "independent-project-reference-solution",
+    "source_count": 208
+  },
+  "output_equivalence": {
+    "artifact_digests": {
+      "frost": "51f27b736ba4d163cc8c196fd6e1f30be863f89dffba85a22ad63e4bdbe35446",
+      "tsc": "51f27b736ba4d163cc8c196fd6e1f30be863f89dffba85a22ad63e4bdbe35446"
+    },
+    "byte_identical": true,
+    "comparison_unit": "exact JavaScript/declaration names and bytes plus exact Node execution for every project after every timed build",
+    "semantic_digests": {
+      "frost": "165074c85fca209ed19e7aa5f3159bac6ccb2f340ba2addede51cfdee9488b6b",
+      "tsc": "165074c85fca209ed19e7aa5f3159bac6ccb2f340ba2addede51cfdee9488b6b"
+    },
+    "semantic_equal": true,
+    "validated_after_every_timed_build": true
+  },
+  "results": [
+    {
+      "artifact": {
+        "artifact_bytes": 34488,
+        "artifact_sha256": "51f27b736ba4d163cc8c196fd6e1f30be863f89dffba85a22ad63e4bdbe35446",
+        "file_count": 416,
+        "semantic_sha256": "165074c85fca209ed19e7aa5f3159bac6ccb2f340ba2addede51cfdee9488b6b"
+      },
+      "checkers_per_process": 1,
+      "compiler_version": "Version 7.0.2",
+      "configuration": {
+        "configuration_bytes": 30318,
+        "configuration_lines": 288,
+        "declared_compilation_partitions": 8,
+        "files": [
+          "frost.toml",
+          "package.json",
+          "tsconfig.json",
+          "projects/project000/tsconfig.json",
+          "projects/project001/tsconfig.json",
+          "projects/project002/tsconfig.json",
+          "projects/project003/tsconfig.json",
+          "projects/project004/tsconfig.json",
+          "projects/project005/tsconfig.json",
+          "projects/project006/tsconfig.json",
+          "projects/project007/tsconfig.json"
+        ],
+        "generated_toolchain_bundle_excluded_from_configuration_size": [
+          "typescript-sdk/lib"
+        ],
+        "one_source_change_compiler_scope": "one referenced project"
+      },
+      "iterations": 7,
+      "jobs": 8,
+      "maximum_compiler_processes": 8,
+      "maximum_worker_budget": 8,
+      "observed_summaries": [
+        "frost: 1 built, 7 cached \u00b7 8 actions \u00b7 47 ms",
+        "frost: 1 built, 7 cached \u00b7 8 actions \u00b7 49 ms",
+        "frost: 1 built, 7 cached \u00b7 8 actions \u00b7 50 ms"
+      ],
+      "project_count": 8,
+      "runtime_version": "v26.5.0",
+      "scenarios": {
+        "clean": {
+          "max_ms": 1001.217,
+          "median_ms": 940.313,
+          "min_ms": 900.933,
+          "samples_ms": [
+            913.36,
+            900.933,
+            926.921,
+            971.98,
+            940.313,
+            977.72,
+            1001.217
+          ]
+        },
+        "incremental_leaf": {
+          "max_ms": 54.614,
+          "median_ms": 50.792,
+          "min_ms": 49.293,
+          "samples_ms": [
+            54.56,
+            49.999,
+            49.293,
+            50.483,
+            50.792,
+            53.028,
+            54.614
+          ]
+        },
+        "noop": {
+          "max_ms": 3.24,
+          "median_ms": 3.2,
+          "min_ms": 2.92,
+          "samples_ms": [
+            3.237,
+            3.041,
+            3.2,
+            3.24,
+            3.067,
+            3.239,
+            2.92
+          ]
+        }
+      },
+      "source_count": 208,
+      "status": "ok",
+      "tool": "frost",
+      "version": "frost 0.2.0"
+    },
+    {
+      "artifact": {
+        "artifact_bytes": 34488,
+        "artifact_sha256": "51f27b736ba4d163cc8c196fd6e1f30be863f89dffba85a22ad63e4bdbe35446",
+        "file_count": 416,
+        "semantic_sha256": "165074c85fca209ed19e7aa5f3159bac6ccb2f340ba2addede51cfdee9488b6b"
+      },
+      "checkers_per_process": 2,
+      "compiler_version": "Version 7.0.2",
+      "configuration": {
+        "configuration_bytes": 4485,
+        "configuration_lines": 211,
+        "declared_compilation_partitions": 1,
+        "files": [
+          "package.json",
+          "tsconfig.json",
+          "projects/project000/tsconfig.json",
+          "projects/project001/tsconfig.json",
+          "projects/project002/tsconfig.json",
+          "projects/project003/tsconfig.json",
+          "projects/project004/tsconfig.json",
+          "projects/project005/tsconfig.json",
+          "projects/project006/tsconfig.json",
+          "projects/project007/tsconfig.json"
+        ],
+        "generated_toolchain_bundle_excluded_from_configuration_size": [
+          "typescript-sdk/lib"
+        ],
+        "one_source_change_compiler_scope": "one referenced project"
+      },
+      "iterations": 7,
+      "jobs": 8,
+      "maximum_compiler_processes": 1,
+      "maximum_worker_budget": 2,
+      "observed_summaries": [],
+      "project_count": 8,
+      "runtime_version": "v26.5.0",
+      "scenarios": {
+        "clean": {
+          "max_ms": 769.614,
+          "median_ms": 656.893,
+          "min_ms": 635.576,
+          "samples_ms": [
+            656.893,
+            650.47,
+            651.89,
+            635.576,
+            769.614,
+            743.438,
+            763.812
+          ]
+        },
+        "incremental_leaf": {
+          "max_ms": 47.079,
+          "median_ms": 44.386,
+          "min_ms": 42.375,
+          "samples_ms": [
+            47.079,
+            44.232,
+            45.402,
+            42.375,
+            44.386,
+            45.986,
+            44.316
+          ]
+        },
+        "noop": {
+          "max_ms": 7.893,
+          "median_ms": 6.556,
+          "min_ms": 6.097,
+          "samples_ms": [
+            7.893,
+            7.584,
+            6.556,
+            6.097,
+            7.169,
+            6.372,
+            6.481
+          ]
+        }
+      },
+      "source_count": 208,
+      "status": "ok",
+      "tool": "tsc",
+      "version": "Version 7.0.2"
+    }
+  ],
+  "schema": "frost-bench-typescript-projects-v1",
+  "suite": "typescript-projects",
+  "toolchain_closure": {
+    "bytes": 27886272,
+    "compiler_executable_fingerprinted": true,
+    "file_count": 109,
+    "sha256": "c75b053c39958d68b2f79f9bbb58eb97d0830b783310f8081ca8d051fe6cdc5b",
+    "source_directory": "/tmp/frost-ts-tools/node_modules/@typescript/typescript-linux-x64/lib",
+    "standard_library_declarations_declared_as_frost_inputs": true,
+    "workspace_copy": "typescript-sdk/lib"
+  }
+}

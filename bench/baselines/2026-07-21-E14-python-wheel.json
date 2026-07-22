@@ -1,0 +1,295 @@
+{
+  "config": {
+    "build_backend": "setuptools.build_meta",
+    "build_isolation": false,
+    "clean_policy": "delete wheel, backend build tree and egg-info; retain Python, installed build dependencies and uv cache",
+    "execution_order": "round-robin frontends; reverse order on every measured iteration",
+    "iterations": 7,
+    "jobs": 4,
+    "python": {
+      "path": "/home/hsugi/.nix-profile/bin/python3",
+      "version": "Python 3.14.6"
+    },
+    "scenarios": [
+      "clean",
+      "noop",
+      "incremental_leaf"
+    ],
+    "size": 100,
+    "source_date_epoch": 946684800,
+    "tools": [
+      "frost",
+      "python-build",
+      "uv"
+    ]
+  },
+  "digest": "fc040ff72b605d855d09dcb2c6d5204f85005207d055fe5bb124f1e6509347ef",
+  "environment": {
+    "captured_at": "2026-07-20T22:42:15Z",
+    "cpu_count": 8,
+    "cpu_governor": "performance",
+    "hostname": "E14",
+    "load_avg": [
+      2.00439453125,
+      1.89697265625,
+      1.705078125
+    ],
+    "machine": "x86_64",
+    "platform": "Linux-7.1.3-2-cachyos-x86_64-with-glibc2.42",
+    "processor": "",
+    "python": "3.14.6",
+    "turbo": "enabled"
+  },
+  "generated_at": "2026-07-20T22:42:15Z",
+  "graph": {
+    "contract_sha256": "99f5c909d09372c99e3268ad80fb5f48f464cac6e63333efad85c78655fe93d0",
+    "distribution": "frost-python-bench",
+    "language": "Python",
+    "module_count": 100,
+    "same_source_graph": true,
+    "shape": "one pure-Python source-layout distribution",
+    "source_count": 101,
+    "version": "1.0.0",
+    "wheel_tag": "py3-none-any"
+  },
+  "output_equivalence": {
+    "artifact_digests": {
+      "frost": "3e0bbe62eea9fd2be2b71089674cd937ba134fe90dc8c2a5595ee370a59d82bc",
+      "python-build": "c9cd361fc414f01049ce95616004d9bf8a2b6f50e930d2631ccedf6e02dcda33",
+      "uv": "c9cd361fc414f01049ce95616004d9bf8a2b6f50e930d2631ccedf6e02dcda33"
+    },
+    "byte_identical": false,
+    "comparison_unit": "exact installed Python source names and bytes; Name/Version, py3-none-any tag, complete verified RECORD, and exact execution after extracting every timed wheel",
+    "metadata_outside_contract": "backend-specific optional metadata and archive layout may differ",
+    "semantic_digests": {
+      "frost": "7b31e410157235aac2c9f45924a8ee4b9f6655e12749242c888e0335303a4108",
+      "python-build": "7b31e410157235aac2c9f45924a8ee4b9f6655e12749242c888e0335303a4108",
+      "uv": "7b31e410157235aac2c9f45924a8ee4b9f6655e12749242c888e0335303a4108"
+    },
+    "semantic_equal": true,
+    "validated_after_every_timed_build": true
+  },
+  "results": [
+    {
+      "artifact": {
+        "artifact_bytes": 22440,
+        "artifact_sha256": "3e0bbe62eea9fd2be2b71089674cd937ba134fe90dc8c2a5595ee370a59d82bc",
+        "record_entry_count": 104,
+        "semantic_sha256": "7b31e410157235aac2c9f45924a8ee4b9f6655e12749242c888e0335303a4108",
+        "source_file_count": 101
+      },
+      "configuration": {
+        "configuration_bytes": 756,
+        "configuration_lines": 28,
+        "declared_packaging_partitions": 1,
+        "files": [
+          "frost.toml",
+          "pyproject.toml"
+        ],
+        "one_source_change_packaging_scope": "one pure-Python wheel"
+      },
+      "iterations": 7,
+      "jobs": 4,
+      "observed_summaries": [
+        "frost: 1 built \u00b7 1 actions \u00b7 6 ms",
+        "frost: packed 101 files -> .frost/out/debug/frost_python_bench-1.0.0-py3-none-any.whl",
+        "frost: 1 built \u00b7 1 actions \u00b7 4 ms"
+      ],
+      "runtime_version": "Python 3.14.6",
+      "scenarios": {
+        "clean": {
+          "max_ms": 27.011,
+          "median_ms": 21.295,
+          "min_ms": 19.092,
+          "samples_ms": [
+            20.234,
+            23.82,
+            21.295,
+            20.488,
+            19.092,
+            27.011,
+            21.853
+          ]
+        },
+        "incremental_leaf": {
+          "max_ms": 9.253,
+          "median_ms": 7.806,
+          "min_ms": 7.422,
+          "samples_ms": [
+            8.89,
+            7.422,
+            7.73,
+            7.652,
+            7.806,
+            9.253,
+            8.113
+          ]
+        },
+        "noop": {
+          "max_ms": 2.779,
+          "median_ms": 2.6,
+          "min_ms": 2.262,
+          "samples_ms": [
+            2.6,
+            2.522,
+            2.364,
+            2.262,
+            2.779,
+            2.649,
+            2.603
+          ]
+        }
+      },
+      "source_count": 101,
+      "status": "ok",
+      "tool": "frost",
+      "version": "frost 0.2.0"
+    },
+    {
+      "artifact": {
+        "artifact_bytes": 21274,
+        "artifact_sha256": "c9cd361fc414f01049ce95616004d9bf8a2b6f50e930d2631ccedf6e02dcda33",
+        "record_entry_count": 105,
+        "semantic_sha256": "7b31e410157235aac2c9f45924a8ee4b9f6655e12749242c888e0335303a4108",
+        "source_file_count": 101
+      },
+      "configuration": {
+        "configuration_bytes": 323,
+        "configuration_lines": 15,
+        "declared_packaging_partitions": 1,
+        "files": [
+          "pyproject.toml"
+        ],
+        "one_source_change_packaging_scope": "one pure-Python wheel"
+      },
+      "iterations": 7,
+      "jobs": null,
+      "observed_summaries": [
+        "Successfully built frost_python_bench-1.0.0-py3-none-any.whl",
+        "Successfully built frost_python_bench-1.0.0-py3-none-any.whl",
+        "Successfully built frost_python_bench-1.0.0-py3-none-any.whl"
+      ],
+      "runtime_version": "Python 3.14.6",
+      "scenarios": {
+        "clean": {
+          "max_ms": 875.3,
+          "median_ms": 766.806,
+          "min_ms": 611.545,
+          "samples_ms": [
+            759.194,
+            848.953,
+            821.891,
+            708.133,
+            766.806,
+            875.3,
+            611.545
+          ]
+        },
+        "incremental_leaf": {
+          "max_ms": 625.21,
+          "median_ms": 612.785,
+          "min_ms": 594.621,
+          "samples_ms": [
+            621.785,
+            609.346,
+            594.621,
+            615.37,
+            612.785,
+            625.21,
+            606.559
+          ]
+        },
+        "noop": {
+          "max_ms": 641.15,
+          "median_ms": 619.512,
+          "min_ms": 606.807,
+          "samples_ms": [
+            619.045,
+            619.512,
+            641.15,
+            637.328,
+            639.394,
+            606.807,
+            611.385
+          ]
+        }
+      },
+      "source_count": 101,
+      "status": "ok",
+      "tool": "python-build",
+      "version": "build 1.5.0 (/home/hsugi/.local/lib/python3.14/site-packages/build); Python 3.14.6"
+    },
+    {
+      "artifact": {
+        "artifact_bytes": 21274,
+        "artifact_sha256": "c9cd361fc414f01049ce95616004d9bf8a2b6f50e930d2631ccedf6e02dcda33",
+        "record_entry_count": 105,
+        "semantic_sha256": "7b31e410157235aac2c9f45924a8ee4b9f6655e12749242c888e0335303a4108",
+        "source_file_count": 101
+      },
+      "configuration": {
+        "configuration_bytes": 323,
+        "configuration_lines": 15,
+        "declared_packaging_partitions": 1,
+        "files": [
+          "pyproject.toml"
+        ],
+        "one_source_change_packaging_scope": "one pure-Python wheel"
+      },
+      "iterations": 7,
+      "jobs": null,
+      "observed_summaries": [],
+      "runtime_version": "Python 3.14.6",
+      "scenarios": {
+        "clean": {
+          "max_ms": 362.533,
+          "median_ms": 326.911,
+          "min_ms": 288.112,
+          "samples_ms": [
+            358.203,
+            362.533,
+            356.297,
+            316.996,
+            326.911,
+            317.06,
+            288.112
+          ]
+        },
+        "incremental_leaf": {
+          "max_ms": 322.529,
+          "median_ms": 290.786,
+          "min_ms": 278.176,
+          "samples_ms": [
+            322.529,
+            307.841,
+            288.498,
+            290.786,
+            278.176,
+            283.9,
+            306.642
+          ]
+        },
+        "noop": {
+          "max_ms": 294.426,
+          "median_ms": 290.841,
+          "min_ms": 276.74,
+          "samples_ms": [
+            294.426,
+            290.841,
+            276.74,
+            291.286,
+            279.857,
+            294.082,
+            286.868
+          ]
+        }
+      },
+      "source_count": 101,
+      "status": "ok",
+      "tool": "uv",
+      "version": "uv 0.11.29 (901092ee1 2026-07-15 x86_64-unknown-linux-gnu)"
+    }
+  ],
+  "schema": "frost-bench-python-wheel-v1",
+  "suite": "python"
+}

@@ -1,0 +1,284 @@
+{
+  "config": {
+    "clean_policy": "delete produced class directory; retain tool installation, Gradle daemon, Maven repository, and JDK",
+    "execution_order": "round-robin; reverse frontend order on every measured iteration",
+    "gradle_policy": "daemon and configuration cache enabled; build cache disabled",
+    "iterations": 3,
+    "jobs": 8,
+    "scenarios": [
+      "clean",
+      "noop",
+      "incremental_leaf"
+    ],
+    "size": 100,
+    "tools": [
+      "frost-unit",
+      "frost-batch",
+      "gradle",
+      "maven"
+    ]
+  },
+  "digest": "bc252c03661d07cc4b4a04ca75a21436bbad379b8c6aa12424ed19a1989681fa",
+  "environment": {
+    "captured_at": "2026-07-20T13:45:11Z",
+    "cpu_count": 8,
+    "cpu_governor": "performance",
+    "hostname": "E14",
+    "load_avg": [
+      0.65576171875,
+      1.779296875,
+      2.28564453125
+    ],
+    "machine": "x86_64",
+    "platform": "Linux-7.1.3-2-cachyos-x86_64-with-glibc2.42",
+    "processor": "",
+    "python": "3.14.6",
+    "turbo": "enabled"
+  },
+  "generated_at": "2026-07-20T13:46:44Z",
+  "graph": {
+    "contract_sha256": "618e13f4049390fbe68bdca9a2c4d9ac0a1c407a0a69aa043c1cbb2ab2ee5e3b",
+    "javac_release": 21,
+    "language": "Java",
+    "note": "Frost-unit declares one javac action per source; Frost-batch, Gradle and Maven receive the same source set at a coarser boundary",
+    "required_class_count": 100,
+    "same_source_and_output_name_sets": true,
+    "shape": "independent-source-set",
+    "source_count": 100
+  },
+  "output_equivalence": {
+    "byte_identical": true,
+    "digests": {
+      "frost-batch": "2c9ee5b7e1e0c98ad33205472c1d36ce92a7ff046980b329952e68cc78ffe55c",
+      "frost-unit": "2c9ee5b7e1e0c98ad33205472c1d36ce92a7ff046980b329952e68cc78ffe55c",
+      "gradle": "2c9ee5b7e1e0c98ad33205472c1d36ce92a7ff046980b329952e68cc78ffe55c",
+      "maven": "2c9ee5b7e1e0c98ad33205472c1d36ce92a7ff046980b329952e68cc78ffe55c"
+    }
+  },
+  "results": [
+    {
+      "configuration": {
+        "configuration_bytes": 31466,
+        "configuration_lines": 705,
+        "declared_compilation_partitions": 100,
+        "files": [
+          "frost.toml"
+        ],
+        "one_source_change_compiler_scope": 1
+      },
+      "iterations": 3,
+      "jobs": 8,
+      "observed_summaries": [
+        "frost: 1 built, 99 cached \u00b7 100 actions \u00b7 388 ms",
+        "frost: 1 built, 99 cached \u00b7 100 actions \u00b7 397 ms",
+        "frost: 1 built, 99 cached \u00b7 100 actions \u00b7 395 ms"
+      ],
+      "output_class_count": 100,
+      "output_set_sha256": "2c9ee5b7e1e0c98ad33205472c1d36ce92a7ff046980b329952e68cc78ffe55c",
+      "scenarios": {
+        "clean": {
+          "max_ms": 22289.356,
+          "median_ms": 21200.95,
+          "min_ms": 21192.428,
+          "samples_ms": [
+            22289.356,
+            21200.95,
+            21192.428
+          ]
+        },
+        "incremental_leaf": {
+          "max_ms": 399.749,
+          "median_ms": 398.477,
+          "min_ms": 391.64,
+          "samples_ms": [
+            391.64,
+            399.749,
+            398.477
+          ]
+        },
+        "noop": {
+          "max_ms": 2.197,
+          "median_ms": 1.941,
+          "min_ms": 1.695,
+          "samples_ms": [
+            2.197,
+            1.941,
+            1.695
+          ]
+        }
+      },
+      "size": 100,
+      "source_count": 100,
+      "status": "ok",
+      "tool": "frost-unit",
+      "version": "frost 0.2.0"
+    },
+    {
+      "configuration": {
+        "configuration_bytes": 9650,
+        "configuration_lines": 12,
+        "declared_compilation_partitions": 1,
+        "files": [
+          "frost.toml"
+        ],
+        "one_source_change_compiler_scope": 100
+      },
+      "iterations": 3,
+      "jobs": 8,
+      "observed_summaries": [
+        "frost: 1 built \u00b7 1 actions \u00b7 505 ms",
+        "frost: 1 built \u00b7 1 actions \u00b7 500 ms",
+        "frost: 1 built \u00b7 1 actions \u00b7 510 ms"
+      ],
+      "output_class_count": 100,
+      "output_set_sha256": "2c9ee5b7e1e0c98ad33205472c1d36ce92a7ff046980b329952e68cc78ffe55c",
+      "scenarios": {
+        "clean": {
+          "max_ms": 519.918,
+          "median_ms": 513.421,
+          "min_ms": 498.047,
+          "samples_ms": [
+            519.918,
+            498.047,
+            513.421
+          ]
+        },
+        "incremental_leaf": {
+          "max_ms": 512.812,
+          "median_ms": 508.577,
+          "min_ms": 503.245,
+          "samples_ms": [
+            508.577,
+            503.245,
+            512.812
+          ]
+        },
+        "noop": {
+          "max_ms": 2.133,
+          "median_ms": 1.936,
+          "min_ms": 1.79,
+          "samples_ms": [
+            1.79,
+            2.133,
+            1.936
+          ]
+        }
+      },
+      "size": 100,
+      "source_count": 100,
+      "status": "ok",
+      "tool": "frost-batch",
+      "version": "frost 0.2.0"
+    },
+    {
+      "configuration": {
+        "configuration_bytes": 332,
+        "configuration_lines": 15,
+        "declared_compilation_partitions": 1,
+        "files": [
+          "settings.gradle",
+          "build.gradle",
+          "gradle.properties"
+        ],
+        "one_source_change_compiler_scope": "Gradle JavaCompile incremental analysis"
+      },
+      "iterations": 3,
+      "jobs": 8,
+      "observed_summaries": [],
+      "output_class_count": 100,
+      "output_set_sha256": "2c9ee5b7e1e0c98ad33205472c1d36ce92a7ff046980b329952e68cc78ffe55c",
+      "scenarios": {
+        "clean": {
+          "max_ms": 661.888,
+          "median_ms": 603.643,
+          "min_ms": 578.105,
+          "samples_ms": [
+            661.888,
+            578.105,
+            603.643
+          ]
+        },
+        "incremental_leaf": {
+          "max_ms": 565.738,
+          "median_ms": 565.518,
+          "min_ms": 562.841,
+          "samples_ms": [
+            562.841,
+            565.518,
+            565.738
+          ]
+        },
+        "noop": {
+          "max_ms": 550.951,
+          "median_ms": 548.287,
+          "min_ms": 547.519,
+          "samples_ms": [
+            548.287,
+            547.519,
+            550.951
+          ]
+        }
+      },
+      "size": 100,
+      "source_count": 100,
+      "status": "ok",
+      "tool": "gradle",
+      "version": "Gradle 8.14.4"
+    },
+    {
+      "configuration": {
+        "configuration_bytes": 789,
+        "configuration_lines": 21,
+        "declared_compilation_partitions": 1,
+        "files": [
+          "pom.xml"
+        ],
+        "one_source_change_compiler_scope": "Maven compiler-plugin incremental analysis"
+      },
+      "iterations": 3,
+      "jobs": 8,
+      "observed_summaries": [],
+      "output_class_count": 100,
+      "output_set_sha256": "2c9ee5b7e1e0c98ad33205472c1d36ce92a7ff046980b329952e68cc78ffe55c",
+      "scenarios": {
+        "clean": {
+          "max_ms": 1892.944,
+          "median_ms": 1717.647,
+          "min_ms": 1712.73,
+          "samples_ms": [
+            1717.647,
+            1892.944,
+            1712.73
+          ]
+        },
+        "incremental_leaf": {
+          "max_ms": 1728.849,
+          "median_ms": 1723.897,
+          "min_ms": 1689.206,
+          "samples_ms": [
+            1723.897,
+            1689.206,
+            1728.849
+          ]
+        },
+        "noop": {
+          "max_ms": 1327.912,
+          "median_ms": 1322.76,
+          "min_ms": 1300.045,
+          "samples_ms": [
+            1300.045,
+            1322.76,
+            1327.912
+          ]
+        }
+      },
+      "size": 100,
+      "source_count": 100,
+      "status": "ok",
+      "tool": "maven",
+      "version": "Apache Maven 3.9.16 (2bdd9fddda4b155ebf8000e807eb73fd829a51d5)"
+    }
+  ],
+  "schema": "frost-bench-java-v1",
+  "suite": "java"
+}

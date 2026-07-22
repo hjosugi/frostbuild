@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import json
 import pathlib
 import shutil
 import socket
@@ -335,6 +336,349 @@ class FrostBenchTestCase(unittest.TestCase):
             },
         )
 
+    def test_java_unit_and_batch_manifests_have_the_same_artifact_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            base = pathlib.Path(tmp)
+            unit = base / "unit"
+            batch = base / "batch"
+            frost_bench.generate_java_workspace(unit, 4, "frost-unit")
+            frost_bench.generate_java_workspace(batch, 4, "frost-batch")
+
+            with (unit / "frost.toml").open("rb") as file:
+                import tomllib
+
+                unit_manifest = tomllib.load(file)
+            with (batch / "frost.toml").open("rb") as file:
+                batch_manifest = tomllib.load(file)
+
+        unit_outputs = sorted(
+            output
+            for target in unit_manifest["target"].values()
+            for output in target["outputs"]
+        )
+        batch_outputs = sorted(
+            output
+            for target in batch_manifest["target"].values()
+            for output in target["outputs"]
+        )
+        self.assertEqual(unit_outputs, batch_outputs)
+        self.assertEqual(len(unit_manifest["target"]), 4)
+        self.assertEqual(len(batch_manifest["target"]), 1)
+        self.assertEqual(
+            frost_bench.java_graph_contract(4)["required_class_count"],
+            4,
+        )
+
+    def test_java_jar_manifest_is_one_concise_multi_step_artifact(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            frost_bench.generate_java_workspace(root, 4, "frost-jar")
+            with (root / "frost.toml").open("rb") as file:
+                import tomllib
+
+                manifest = tomllib.load(file)
+
+        self.assertEqual(list(manifest["target"]), ["archive"])
+        target = manifest["target"]["archive"]
+        self.assertEqual(target["inputs"], ["src/main/java/**/*.java"])
+        self.assertEqual(
+            target["outputs"],
+            [".frost/out/${config}/java-bench.jar"],
+        )
+        self.assertEqual(target["clean_dirs"], [".frost/tmp/${config}/java-classes"])
+        self.assertEqual(target["steps"][0]["tool"], "pack_jar")
+
+    def test_java_suite_records_missing_tools_instead_of_silently_omitting_them(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(
+            os.environ,
+            {"GRADLE_BIN": ""},
+        ), mock.patch("frost_bench.shutil.which", return_value=None):
+            report = frost_bench.run_java_benchmark(
+                SimpleNamespace(
+                    tools="gradle",
+                    size=2,
+                    scenarios="noop",
+                    iterations=1,
+                    jobs=1,
+                    workdir=tmp,
+                    keep_workdir=True,
+                )
+            )
+
+        self.assertEqual(report["schema"], frost_bench.JAVA_SCHEMA)
+        self.assertEqual(
+            report["config"]["execution_order"],
+            "round-robin; reverse frontend order on every measured iteration",
+        )
+        self.assertEqual(report["results"][0]["status"], "skipped")
+        self.assertIn("was not found", report["results"][0]["reason"])
+
+    def test_rust_frost_and_cargo_workspaces_have_the_same_crate_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            base = pathlib.Path(tmp)
+            frost_root = base / "frost"
+            cargo_root = base / "cargo"
+            frost_bench.generate_rust_workspace(
+                frost_root,
+                4,
+                "frost",
+                "/toolchains/rustc",
+            )
+            frost_bench.generate_rust_workspace(cargo_root, 4, "cargo")
+            frost_sources = sorted(
+                path.relative_to(frost_root).as_posix()
+                for path in (frost_root / "src").glob("*.rs")
+            )
+            cargo_sources = sorted(
+                path.relative_to(cargo_root).as_posix()
+                for path in (cargo_root / "src").glob("*.rs")
+            )
+            with (frost_root / "frost.toml").open("rb") as file:
+                import tomllib
+
+                manifest = tomllib.load(file)
+            cargo_manifest = (cargo_root / "Cargo.toml").read_text(encoding="utf-8")
+
+        self.assertEqual(frost_sources, cargo_sources)
+        self.assertEqual(manifest["toolchain"]["tools"]["rustc"], "/toolchains/rustc")
+        self.assertEqual(manifest["target"]["binary"]["inputs"], ["src/**/*.rs"])
+        self.assertIn("incremental = true", cargo_manifest)
+        self.assertEqual(
+            frost_bench.rust_graph_contract(4)["initial_expected_stdout"],
+            "6",
+        )
+
+    def test_rust_suite_records_a_missing_compiler_for_every_frontend(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(
+            os.environ,
+            {"RUSTC_BIN": "", "CARGO_BIN": ""},
+        ), mock.patch("frost_bench.shutil.which", return_value=None):
+            report = frost_bench.run_rust_benchmark(
+                SimpleNamespace(
+                    tools="frost,cargo",
+                    size=2,
+                    scenarios="noop",
+                    iterations=1,
+                    jobs=1,
+                    workdir=tmp,
+                    keep_workdir=True,
+                )
+            )
+
+        self.assertEqual(report["schema"], frost_bench.RUST_SCHEMA)
+        self.assertEqual(
+            report["config"]["execution_order"],
+            "round-robin; reverse frontend order on every measured iteration",
+        )
+        self.assertEqual(
+            [result["status"] for result in report["results"]],
+            ["skipped", "skipped"],
+        )
+        self.assertTrue(
+            all(
+                "rustc executable was not found" in result["reason"]
+                for result in report["results"]
+            )
+        )
+
+    def test_go_frontends_share_sources_and_native_declares_toolchain_closure(self) -> None:
+        info = {
+            "GOARCH": "amd64",
+            "GOAMD64": "v1",
+            "GOOS": "linux",
+            "GOROOT": "/toolchains/go",
+            "GOTOOLDIR": "/toolchains/go/pkg/tool/linux_amd64",
+            "GOVERSION": "go1.26.4",
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            base = pathlib.Path(tmp)
+            roots = {
+                tool: base / tool
+                for tool in ("frost-native", "frost-go", "go")
+            }
+            for tool, root in roots.items():
+                frost_bench.generate_go_workspace(
+                    root,
+                    4,
+                    tool,
+                    2,
+                    None,
+                    info,
+                )
+            source_sets = {
+                tool: sorted(path.name for path in root.glob("*.go"))
+                for tool, root in roots.items()
+            }
+            with (roots["frost-native"] / "frost.toml").open("rb") as file:
+                import tomllib
+
+                native = tomllib.load(file)
+            with (roots["frost-go"] / "frost.toml").open("rb") as file:
+                wrapper = tomllib.load(file)
+
+        self.assertEqual(len({tuple(paths) for paths in source_sets.values()}), 1)
+        self.assertEqual(native["target"]["binary"]["tool"], "compile")
+        self.assertEqual(native["target"]["binary"]["steps"][0]["tool"], "link")
+        self.assertIn(".go-sdk/**/*", native["target"]["binary"]["inputs"])
+        self.assertEqual(wrapper["target"]["binary"]["tool"], "go")
+        self.assertEqual(
+            frost_bench.go_graph_contract(4)["initial_expected_stderr"],
+            "6",
+        )
+
+    def test_typescript_frontends_share_sources_and_preserve_incremental_outputs(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            base = pathlib.Path(tmp)
+            frost_root = base / "frost"
+            tsc_root = base / "tsc"
+            frost_bench.generate_typescript_workspace(
+                frost_root,
+                4,
+                "frost",
+                checkers=3,
+            )
+            frost_bench.generate_typescript_workspace(tsc_root, 4, "tsc")
+            source_sets = [
+                sorted(path.name for path in (root / "src").glob("*.ts"))
+                for root in (frost_root, tsc_root)
+            ]
+            with (frost_root / "frost.toml").open("rb") as file:
+                import tomllib
+
+                manifest = tomllib.load(file)
+
+        self.assertEqual(source_sets[0], source_sets[1])
+        action = manifest["target"]["javascript"]
+        self.assertTrue(action["preserve_outputs"])
+        self.assertEqual(action["outputs"], frost_bench.typescript_frost_outputs(4))
+        self.assertIn("typescript-sdk/lib/lib*.d.ts", action["inputs"])
+        self.assertIn("3", action["args"])
+        self.assertEqual(
+            frost_bench.typescript_graph_contract(4)["initial_expected_stdout"],
+            "6",
+        )
+
+    def test_typescript_suite_records_missing_native_compiler(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(
+            os.environ,
+            {"TSC_BIN": "", "NODE_BIN": ""},
+        ), mock.patch("frost_bench.shutil.which", return_value=None):
+            report = frost_bench.run_typescript_benchmark(
+                SimpleNamespace(
+                    tools="frost,tsc",
+                    size=2,
+                    scenarios="noop",
+                    iterations=1,
+                    jobs=1,
+                    checkers=1,
+                    workdir=tmp,
+                    keep_workdir=True,
+                )
+            )
+
+        self.assertEqual(report["schema"], frost_bench.TYPESCRIPT_SCHEMA)
+        self.assertEqual(
+            [result["status"] for result in report["results"]],
+            ["skipped", "skipped"],
+        )
+        self.assertTrue(
+            all(
+                "TypeScript 7 compiler was not found" in result["reason"]
+                for result in report["results"]
+            )
+        )
+
+    def test_typescript_project_solution_declares_parallel_incremental_boundaries(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            base = pathlib.Path(tmp)
+            compiler = base / "compiler/lib/tsc"
+            compiler.parent.mkdir(parents=True)
+            compiler.write_bytes(b"\x7fELF-test-compiler")
+            (compiler.parent / "lib.es2022.d.ts").write_text(
+                "interface Array<T> {}\n",
+                encoding="utf-8",
+            )
+            root = base / "workspace"
+            frost_bench.generate_typescript_solution(
+                root,
+                projects=3,
+                modules=2,
+                tool="frost",
+                tsc=compiler.as_posix(),
+                checkers=1,
+            )
+            with (root / "frost.toml").open("rb") as file:
+                import tomllib
+
+                manifest = tomllib.load(file)
+            solution = json.loads((root / "tsconfig.json").read_text(encoding="utf-8"))
+
+        self.assertEqual(len(manifest["target"]), 3)
+        self.assertTrue(
+            all(target["preserve_outputs"] for target in manifest["target"].values())
+        )
+        self.assertEqual(len(solution["references"]), 3)
+        self.assertIn(
+            ".frost/typescript/${config}/project000.tsbuildinfo",
+            manifest["target"]["project000"]["outputs"],
+        )
+
+    def test_python_frontends_share_a_standard_wheel_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            base = pathlib.Path(tmp)
+            roots = {name: base / name for name in frost_bench.PYTHON_TOOLS}
+            for name, root in roots.items():
+                frost_bench.generate_python_workspace(
+                    root,
+                    size=4,
+                    tool=name,
+                    frost="/tmp/frost",
+                )
+            source_sets = {
+                name: sorted(
+                    path.relative_to(root).as_posix()
+                    for path in (root / "src").rglob("*.py")
+                )
+                for name, root in roots.items()
+            }
+            with (roots["frost"] / "frost.toml").open("rb") as file:
+                import tomllib
+
+                manifest = tomllib.load(file)
+
+        self.assertEqual(len({tuple(paths) for paths in source_sets.values()}), 1)
+        action = manifest["target"]["wheel"]
+        self.assertEqual(action["tool"], "pack_wheel")
+        self.assertIn("pack-wheel", action["args"])
+        self.assertEqual(
+            action["outputs"],
+            [f".frost/out/${{config}}/{frost_bench.PYTHON_WHEEL}"],
+        )
+        self.assertEqual(frost_bench.python_graph_contract(4)["source_count"], 5)
+
+    def test_python_suite_records_missing_tools(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(
+            os.environ,
+            {"PYTHON_BIN": "", "UV_BIN": "", "FROST_BIN": ""},
+        ), mock.patch("frost_bench.shutil.which", return_value=None):
+            report = frost_bench.run_python_benchmark(
+                SimpleNamespace(
+                    tools=",".join(frost_bench.PYTHON_TOOLS),
+                    size=2,
+                    scenarios="noop",
+                    iterations=1,
+                    jobs=1,
+                    workdir=tmp,
+                    keep_workdir=True,
+                )
+            )
+
+        self.assertEqual(report["schema"], frost_bench.PYTHON_SCHEMA)
+        self.assertEqual(
+            [result["status"] for result in report["results"]],
+            ["skipped", "skipped", "skipped"],
+        )
+
     @unittest.skipUnless(shutil.which("ninja") or shutil.which("make"), "requires ninja or make")
     def test_standard_suite_reports_median_scenarios(self) -> None:
         tool = "ninja" if shutil.which("ninja") else "make"
@@ -360,6 +704,29 @@ class FrostBenchTestCase(unittest.TestCase):
         self.assertGreaterEqual(scenarios["incremental_leaf"]["median_ms"], 0)
         self.assertGreaterEqual(scenarios["hot_header"]["median_ms"], 0)
         self.assertFalse(scenarios["cache_hit_rebuild"]["applicable"])
+
+    @unittest.skipUnless(shutil.which("ninja") or shutil.which("make"), "requires ninja or make")
+    def test_standard_suite_can_run_only_the_requested_scenario(self) -> None:
+        tool = "ninja" if shutil.which("ninja") else "make"
+        with tempfile.TemporaryDirectory() as tmp:
+            report = frost_bench.run_standard(
+                SimpleNamespace(
+                    suite="standard",
+                    tools=tool,
+                    sizes="3",
+                    scenarios="noop",
+                    iterations=1,
+                    jobs=1,
+                    workdir=tmp,
+                    keep_workdir=True,
+                ),
+            )
+
+        self.assertEqual(report["config"]["scenarios"], ["noop"])
+        self.assertEqual(list(report["results"][0]["scenarios"]), ["noop"])
+        self.assertGreaterEqual(
+            report["results"][0]["scenarios"]["noop"]["median_ms"], 0
+        )
 
 
 if __name__ == "__main__":

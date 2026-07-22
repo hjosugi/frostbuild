@@ -8,6 +8,7 @@
 //! *content*, an action that re-runs but reproduces identical outputs stops
 //! dirtiness from propagating (early cutoff).
 
+use std::borrow::Cow;
 use std::cmp::Reverse;
 use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap};
 use std::ffi::OsString;
@@ -27,11 +28,13 @@ use frostbuild_core::journal::{Journal, JournalEntry};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 
+mod fast_noop;
 mod progress;
+pub use fast_noop::FastNoopHit;
 pub use progress::{progress_channel, ProgressEvent, ProgressSender, ProgressState};
 
 static CANCELLED: AtomicBool = AtomicBool::new(false);
-static RUNNING_PROCESS_GROUPS: OnceLock<Mutex<BTreeSet<i32>>> = OnceLock::new();
+static RUNNING_PROCESS_GROUPS: OnceLock<Mutex<BTreeSet<u32>>> = OnceLock::new();
 static SIGNAL_HANDLER: OnceLock<()> = OnceLock::new();
 
 /// Environment an action inherits whose value must not change its output.
@@ -61,6 +64,35 @@ const ENV_IN_KEY: &[&str] = &[
     "LIBRARY_PATH",
 ];
 
+pub const DEFAULT_CAS_MAX_BYTES: u64 = 10 * 1024 * 1024 * 1024;
+
+pub fn key_environment_snapshot() -> BTreeMap<String, String> {
+    ENV_IN_KEY
+        .iter()
+        .filter_map(|name| {
+            std::env::var_os(name)
+                .map(|value| ((*name).to_string(), value.to_string_lossy().into_owned()))
+        })
+        .collect()
+}
+
+pub fn try_fast_noop(root: &Path, profile: &str, platform: &str) -> Result<Option<FastNoopHit>> {
+    fast_noop::check(root, profile, platform, &key_environment_snapshot(), true)
+}
+
+/// Validate a certificate using key-affecting environment captured by a
+/// client process. Arbitrary `pass_env` values are intentionally unavailable
+/// to the daemon; certificates that depend on them return a miss and take the
+/// normal child-build path.
+pub fn try_fast_noop_with_key_environment(
+    root: &Path,
+    profile: &str,
+    platform: &str,
+    key_env: &BTreeMap<String, String>,
+) -> Result<Option<FastNoopHit>> {
+    fast_noop::check(root, profile, platform, key_env, false)
+}
+
 pub fn install_signal_handler() -> Result<()> {
     if SIGNAL_HANDLER.get().is_some() {
         return Ok(());
@@ -76,12 +108,29 @@ pub fn request_cancellation() {
     CANCELLED.store(true, Ordering::SeqCst);
     if let Some(groups) = RUNNING_PROCESS_GROUPS.get() {
         for pid in groups.lock().unwrap().iter().copied() {
-            // SAFETY: kill is async-process-safe; negative pid addresses the process group.
-            unsafe {
-                libc::kill(-pid, libc::SIGTERM);
-            }
+            terminate_process_tree(pid);
         }
     }
+}
+
+#[cfg(unix)]
+fn terminate_process_tree(pid: u32) {
+    // SAFETY: kill is async-process-safe; negative pid addresses the process
+    // group created for this action immediately before it was spawned.
+    unsafe {
+        libc::kill(-(pid as i32), libc::SIGTERM);
+    }
+}
+
+#[cfg(windows)]
+fn terminate_process_tree(pid: u32) {
+    // taskkill is part of Windows and `/T` terminates descendants as well as
+    // the direct compiler/test process. This keeps cancellation semantics
+    // aligned with Unix process groups without requiring child handles to be
+    // held behind the scheduler's shared lock.
+    let _ = Command::new("taskkill")
+        .args(["/PID", &pid.to_string(), "/T", "/F"])
+        .status();
 }
 
 pub fn was_cancelled() -> bool {
@@ -98,6 +147,9 @@ pub struct BuildOptions {
     pub sandbox: bool,
     pub check_determinism: bool,
     pub cas_max_bytes: u64,
+    /// Persist a whole-closure certificate after the normal path proves that
+    /// a plain default-target build is entirely cached.
+    pub write_fast_noop: bool,
     pub scheduler: Scheduler,
     pub estimator: Estimator,
     /// Optional structured progress sink. The execution engine never renders
@@ -163,7 +215,8 @@ impl Default for BuildOptions {
             no_cache: false,
             sandbox: false,
             check_determinism: false,
-            cas_max_bytes: 10 * 1024 * 1024 * 1024,
+            cas_max_bytes: DEFAULT_CAS_MAX_BYTES,
+            write_fast_noop: false,
             scheduler: Scheduler::CriticalPath,
             estimator: Estimator::Journal,
             progress: None,
@@ -279,6 +332,11 @@ struct Shared {
     outcomes: Vec<Option<Outcome>>,
     pending: usize,
     abort: bool,
+}
+
+struct CommandBatch {
+    captured: String,
+    failure: Option<(Vec<String>, String)>,
 }
 
 pub struct Engine<'a> {
@@ -531,16 +589,19 @@ impl<'a> Engine<'a> {
         toolchain_hash: String,
         opts: BuildOptions,
     ) -> Self {
-        let journal = Journal::load(root);
+        // Neither store depends on the other. Loading them concurrently keeps
+        // the warm path bounded by the larger decode instead of their sum.
+        let (journal, cache) = std::thread::scope(|scope| {
+            let journal = scope.spawn(|| Journal::load(root));
+            let cache = HashCache::load(root);
+            (
+                journal.join().expect("journal loader should not panic"),
+                cache,
+            )
+        });
         let n = closure.len();
         let cas_max_bytes = opts.cas_max_bytes;
-        let key_env = ENV_IN_KEY
-            .iter()
-            .filter_map(|name| {
-                std::env::var_os(name)
-                    .map(|value| ((*name).to_string(), value.to_string_lossy().into_owned()))
-            })
-            .collect();
+        let key_env = key_environment_snapshot();
         let command_env = ENV_PASSTHROUGH
             .iter()
             .chain(ENV_IN_KEY)
@@ -561,7 +622,7 @@ impl<'a> Engine<'a> {
             key_env,
             command_env,
             opts,
-            cache: HashCache::load(root),
+            cache,
             previous: journal,
             journal: Mutex::new(Journal::default()),
             shared: Mutex::new(Shared {
@@ -820,14 +881,47 @@ impl<'a> Engine<'a> {
                 .filter_map(|(file, digest)| digest.map(|digest| (file.path.as_str(), digest))),
         );
         expected.extend(discovered_expected);
-        if !self.cache.matches_many(self.root, &expected)? {
-            return Ok(false);
+        let (files_match, keys_match) = rayon::join(
+            || self.cache.matches_many(self.root, &expected),
+            || {
+                self.closure.par_iter().all(|&action_id| {
+                    let action = &self.graph.actions[action_id];
+                    let previous = &self.previous.actions[&journal_id(self.graph, action)];
+                    self.action_key(action, &previous.inputs) == previous.key
+                })
+            },
+        );
+        let files_match = files_match?;
+        let cached = files_match && keys_match;
+        if cached && self.opts.write_fast_noop {
+            let dynamic_env = self
+                .closure
+                .iter()
+                .flat_map(|&action_id| self.graph.actions[action_id].pass_env.iter())
+                .map(|name| {
+                    (
+                        name.clone(),
+                        std::env::var_os(name).map(|value| value.to_string_lossy().into_owned()),
+                    )
+                })
+                .collect();
+            let _ = fast_noop::save(
+                fast_noop::CertificateInput {
+                    root: self.root,
+                    profile: &self.graph.profile,
+                    platform: &self.graph.platform,
+                    closure_actions: self.closure.len(),
+                    graph_actions: self.graph.actions.len(),
+                    toolchain: &self.graph.toolchain,
+                    toolchain_hash: &self.toolchain_hash,
+                    key_env: &self.key_env,
+                    dynamic_env: &dynamic_env,
+                    paths: &expected,
+                },
+                || self.cache.matches_many(self.root, &expected),
+            );
         }
-        Ok(self.closure.par_iter().all(|&action_id| {
-            let action = &self.graph.actions[action_id];
-            let previous = &self.previous.actions[&journal_id(self.graph, action)];
-            self.action_key(action, &previous.inputs) == previous.key
-        }))
+        Ok(cached)
     }
 
     fn worker(&self, slot: usize) {
@@ -1052,6 +1146,16 @@ impl<'a> Engine<'a> {
         if self.opts.dry_run {
             return Outcome::WouldRun { reason };
         }
+        // Raw terminal mode turns Ctrl-C into an input event instead of a
+        // signal. That event can arrive after scheduling but before this
+        // action has spawned; do not delete outputs or start new work once
+        // cancellation has already been requested.
+        if was_cancelled() {
+            return Outcome::Failed {
+                reason: "build cancelled".into(),
+                detail: "cancelled before action start".into(),
+            };
+        }
         if let Some(progress) = &self.opts.progress {
             progress.emit(ProgressEvent::ActionRunning {
                 id: action.id.clone(),
@@ -1061,68 +1165,49 @@ impl<'a> Engine<'a> {
         for &out in &action.outputs {
             let path = &self.graph.files[out].path;
             self.cache.invalidate(path);
-            let _ = std::fs::remove_file(self.root.join(path));
+            if !action.preserve_outputs {
+                let _ = std::fs::remove_file(self.root.join(path));
+            }
+        }
+        if let Err(err) = self.reset_clean_dirs(action) {
+            return Outcome::Failed {
+                reason,
+                detail: format!("failed to reset command intermediates: {err:#}"),
+            };
         }
 
         let started = Instant::now();
-        let mut cmd = match self.command_for(action, &inputs) {
-            Ok(command) => command,
+        let batch = match self.run_action_commands(action, &inputs) {
+            Ok(batch) => batch,
             Err(err) => {
                 return Outcome::Failed {
                     reason,
-                    detail: format!("{err:#}"),
+                    detail: err,
                 }
             }
         };
-        #[cfg(unix)]
-        {
-            use std::os::unix::process::CommandExt;
-            cmd.process_group(0);
-        }
-        let child = match cmd.spawn() {
-            Ok(child) => child,
-            Err(err) => {
-                let detail = format!("failed to spawn {:?}: {err}", action.argv[0]);
-                return Outcome::Failed { reason, detail };
-            }
-        };
-        let pid = child.id() as i32;
-        RUNNING_PROCESS_GROUPS
-            .get_or_init(|| Mutex::new(BTreeSet::new()))
-            .lock()
-            .unwrap()
-            .insert(pid);
-        let output = child.wait_with_output();
-        RUNNING_PROCESS_GROUPS
-            .get()
-            .unwrap()
-            .lock()
-            .unwrap()
-            .remove(&pid);
-        let output = match output {
-            Ok(output) => output,
-            Err(err) => {
-                return Outcome::Failed {
-                    reason,
-                    detail: format!("failed waiting for {}: {err}", action.id),
-                }
-            }
-        };
-        let duration_ms = started.elapsed().as_millis() as u64;
 
-        let captured = String::from_utf8_lossy(&output.stdout).to_string()
-            + &String::from_utf8_lossy(&output.stderr);
-
-        if !output.status.success() {
+        if let Some((argv, exit)) = batch.failure {
             self.remove_partial_outputs(action);
             let detail = format!(
                 "command: {}\nexit: {}\n{}",
-                shell_join(&action.argv),
-                describe_exit(&output.status),
-                captured.trim_end()
+                shell_join(&argv),
+                exit,
+                batch.captured.trim_end()
             );
             return Outcome::Failed { reason, detail };
         }
+        if action.kind == ActionKind::Test {
+            if let Err(err) = self.write_test_success_outputs(action) {
+                self.remove_partial_outputs(action);
+                return Outcome::Failed {
+                    reason,
+                    detail: format!("failed to record test success: {err:#}"),
+                };
+            }
+        }
+        let duration_ms = started.elapsed().as_millis() as u64;
+        let captured = batch.captured;
 
         // Ingest the depfile: replace previous discovered deps with fresh
         // ones and fold their digests into the recorded key.
@@ -1181,13 +1266,23 @@ impl<'a> Engine<'a> {
             return Outcome::Failed { reason, detail };
         }
 
-        for (path, digest) in &outputs {
-            if let Err(err) = self.cas.put(&self.root.join(path), digest) {
-                return Outcome::Failed {
-                    reason,
-                    detail: format!("failed to store output in CAS: {err:#}"),
-                };
-            }
+        // A compiler/code generator may publish hundreds of small outputs.
+        // CAS objects are independent, so serial copy+rename publication makes
+        // post-processing dominate the action itself. Deduplicate by digest
+        // first (parallel writers for identical bytes would share a temp name),
+        // then publish distinct immutable objects concurrently.
+        let unique_outputs: BTreeMap<&str, &str> = outputs
+            .iter()
+            .map(|(path, digest)| (digest.as_str(), path.as_str()))
+            .collect();
+        if let Err(err) = unique_outputs
+            .par_iter()
+            .try_for_each(|(digest, path)| self.cas.put(&self.root.join(path), digest))
+        {
+            return Outcome::Failed {
+                reason,
+                detail: format!("failed to store output in CAS: {err:#}"),
+            };
         }
 
         if self.opts.check_determinism {
@@ -1207,28 +1302,40 @@ impl<'a> Engine<'a> {
                 };
             }
             let first = outputs.clone();
-            let mut second = match self.command_for(action, &inputs) {
-                Ok(command) => command,
-                Err(err) => {
-                    return Outcome::Failed {
-                        reason,
-                        detail: format!("{err:#}"),
-                    }
-                }
-            };
-            match second.output() {
-                Ok(out) if out.status.success() => {}
-                Ok(out) => {
-                    return Outcome::Failed {
-                        reason,
-                        detail: format!("determinism rerun failed: {}", describe_exit(&out.status)),
-                    }
-                }
+            if let Err(err) = self.reset_clean_dirs(action) {
+                return Outcome::Failed {
+                    reason,
+                    detail: format!("determinism rerun setup failed: {err:#}"),
+                };
+            }
+            if action.kind == ActionKind::Test {
+                self.remove_partial_outputs(action);
+            }
+            let second = match self.run_action_commands(action, &inputs) {
+                Ok(batch) => batch,
                 Err(err) => {
                     return Outcome::Failed {
                         reason,
                         detail: format!("determinism rerun failed: {err}"),
                     }
+                }
+            };
+            if let Some((argv, exit)) = second.failure {
+                return Outcome::Failed {
+                    reason,
+                    detail: format!(
+                        "determinism rerun failed: {} ({exit})\n{}",
+                        shell_join(&argv),
+                        second.captured.trim_end()
+                    ),
+                };
+            }
+            if action.kind == ActionKind::Test {
+                if let Err(err) = self.write_test_success_outputs(action) {
+                    return Outcome::Failed {
+                        reason,
+                        detail: format!("determinism rerun success record failed: {err:#}"),
+                    };
                 }
             }
             for path in &output_paths {
@@ -1301,13 +1408,28 @@ impl<'a> Engine<'a> {
         action: &frostbuild_core::graph::ActionNode,
         inputs: &BTreeMap<String, String>,
     ) -> String {
+        let mut action_environment = None;
+        if !action.env.is_empty() || !action.pass_env.is_empty() {
+            let mut environment = self.key_env.clone();
+            environment.extend(action.env.clone());
+            for name in &action.pass_env {
+                if let Some(value) = std::env::var_os(name) {
+                    environment.insert(name.clone(), value.to_string_lossy().into_owned());
+                } else {
+                    environment.remove(name);
+                }
+            }
+            action_environment = Some(environment);
+        }
+        let environment = action_environment.as_ref().unwrap_or(&self.key_env);
+        let argv = action_key_argv(action);
         streamed_action_key(
             "frost-engine-v1",
             &action.id,
-            &action.argv,
+            argv.as_ref(),
             ".",
             &self.toolchain_hash,
-            &self.key_env,
+            environment,
             inputs,
         )
     }
@@ -1368,21 +1490,115 @@ impl<'a> Engine<'a> {
         }
     }
 
-    fn command_for(
+    /// Test outputs are Frost-owned success stamps, not files the test
+    /// process is expected to manufacture. Keeping this outside the command
+    /// removes a POSIX-shell dependency and guarantees a stamp exists only
+    /// after every command in the test action has succeeded.
+    fn write_test_success_outputs(
+        &self,
+        action: &frostbuild_core::graph::ActionNode,
+    ) -> Result<()> {
+        for &output in &action.outputs {
+            let relative = &self.graph.files[output].path;
+            let path = self.root.join(relative);
+            if let Some(parent) = path.parent() {
+                std::fs::create_dir_all(parent)
+                    .with_context(|| format!("failed to create {}", parent.display()))?;
+            }
+            std::fs::write(&path, b"")
+                .with_context(|| format!("failed to write {}", path.display()))?;
+            self.cache.invalidate(relative);
+        }
+        Ok(())
+    }
+
+    fn reset_clean_dirs(&self, action: &frostbuild_core::graph::ActionNode) -> Result<()> {
+        for directory in &action.clean_dirs {
+            let path = self.root.join(directory);
+            if path.exists() {
+                std::fs::remove_dir_all(&path)
+                    .with_context(|| format!("failed to remove {}", path.display()))?;
+            }
+            std::fs::create_dir_all(&path)
+                .with_context(|| format!("failed to create {}", path.display()))?;
+        }
+        Ok(())
+    }
+
+    fn run_action_commands(
         &self,
         action: &frostbuild_core::graph::ActionNode,
         inputs: &BTreeMap<String, String>,
+    ) -> std::result::Result<CommandBatch, String> {
+        let mut captured = String::new();
+        for argv in std::iter::once(&action.argv).chain(&action.followup_argv) {
+            let mut command = self
+                .command_for_argv(action, inputs, argv)
+                .map_err(|error| format!("{error:#}"))?;
+            #[cfg(unix)]
+            {
+                use std::os::unix::process::CommandExt;
+                command.process_group(0);
+            }
+            let child = command
+                .spawn()
+                .map_err(|error| format!("failed to spawn {:?}: {error}", argv[0]))?;
+            let pid = child.id();
+            {
+                let mut groups = RUNNING_PROCESS_GROUPS
+                    .get_or_init(|| Mutex::new(BTreeSet::new()))
+                    .lock()
+                    .unwrap();
+                groups.insert(pid);
+                // Close the spawn/registration race: request_cancellation may
+                // have run after `spawn` but before this process group became
+                // visible. It sets the flag before taking the same mutex, so
+                // either that call kills us or this check does.
+                if was_cancelled() {
+                    terminate_process_tree(pid);
+                }
+            }
+            let output = child.wait_with_output();
+            RUNNING_PROCESS_GROUPS
+                .get()
+                .unwrap()
+                .lock()
+                .unwrap()
+                .remove(&pid);
+            let output =
+                output.map_err(|error| format!("failed waiting for {}: {error}", action.id))?;
+            captured.push_str(&String::from_utf8_lossy(&output.stdout));
+            captured.push_str(&String::from_utf8_lossy(&output.stderr));
+            if !output.status.success() {
+                return Ok(CommandBatch {
+                    captured,
+                    failure: Some((argv.clone(), describe_exit(&output.status))),
+                });
+            }
+        }
+        Ok(CommandBatch {
+            captured,
+            failure: None,
+        })
+    }
+
+    fn command_for_argv(
+        &self,
+        action: &frostbuild_core::graph::ActionNode,
+        inputs: &BTreeMap<String, String>,
+        argv: &[String],
     ) -> Result<Command> {
         let mut command = if self.opts.sandbox && action.sandbox {
-            sandbox_command(self.root, self.graph, action, inputs)?
+            sandbox_command(self.root, self.graph, action, inputs, argv)?
         } else {
-            let mut command = Command::new(&action.argv[0]);
-            command.args(&action.argv[1..]).current_dir(self.root);
+            let mut command = Command::new(&argv[0]);
+            command.args(&argv[1..]).current_dir(self.root);
             command
         };
         command
             .env_clear()
             .envs(self.command_env.iter().map(|(key, value)| (key, value)))
+            .envs(&action.env)
             .env("LC_ALL", "C")
             .env("LANG", "C")
             // Actions never read from the terminal. Inheriting stdin lets a
@@ -1392,6 +1608,11 @@ impl<'a> Engine<'a> {
             .stdin(std::process::Stdio::null())
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped());
+        for name in &action.pass_env {
+            if let Some(value) = std::env::var_os(name) {
+                command.env(name, value);
+            }
+        }
         Ok(command)
     }
 
@@ -1419,6 +1640,7 @@ fn default_duration(kind: ActionKind) -> u64 {
         ActionKind::Genrule => 10,
         ActionKind::Test => 50,
         ActionKind::KofunCompile => 30,
+        ActionKind::Command => 40,
     }
 }
 
@@ -1496,6 +1718,7 @@ fn kind_code(kind: ActionKind) -> u8 {
         ActionKind::Genrule => 3,
         ActionKind::Test => 4,
         ActionKind::KofunCompile => 5,
+        ActionKind::Command => 6,
     }
 }
 
@@ -1504,6 +1727,7 @@ fn sandbox_command(
     graph: &BuildGraph,
     action: &frostbuild_core::graph::ActionNode,
     inputs: &BTreeMap<String, String>,
+    argv: &[String],
 ) -> Result<Command> {
     let bwrap = std::env::var_os("PATH")
         .and_then(|path| {
@@ -1534,22 +1758,24 @@ fn sandbox_command(
             }
         }
     }
-    let mut args = action.argv.iter().peekable();
-    while let Some(arg) = args.next() {
-        let include = if arg == "-I" {
-            args.next().map(String::as_str)
-        } else {
-            arg.strip_prefix("-I").filter(|value| !value.is_empty())
-        };
-        if let Some(include) = include {
-            let path = Path::new(include);
-            let path = if path.is_absolute() {
-                path.to_path_buf()
+    for argv in std::iter::once(&action.argv).chain(&action.followup_argv) {
+        let mut args = argv.iter().peekable();
+        while let Some(arg) = args.next() {
+            let include = if arg == "-I" {
+                args.next().map(String::as_str)
             } else {
-                root.join(path)
+                arg.strip_prefix("-I").filter(|value| !value.is_empty())
             };
-            if path.starts_with(root) && path.is_dir() {
-                readonly_dirs.insert(path);
+            if let Some(include) = include {
+                let path = Path::new(include);
+                let path = if path.is_absolute() {
+                    path.to_path_buf()
+                } else {
+                    root.join(path)
+                };
+                if path.starts_with(root) && path.is_dir() {
+                    readonly_dirs.insert(path);
+                }
             }
         }
     }
@@ -1587,16 +1813,15 @@ fn sandbox_command(
             writable.insert(parent.to_path_buf());
         }
     }
+    for directory in &action.clean_dirs {
+        writable.insert(root.join(directory));
+    }
     for directory in writable {
         std::fs::create_dir_all(&directory)?;
         add_sandbox_dirs(&mut command, root, directory.parent(), &mut made_dirs);
         command.arg("--bind").arg(&directory).arg(&directory);
     }
-    command
-        .arg("--chdir")
-        .arg(root)
-        .arg("--")
-        .args(&action.argv);
+    command.arg("--chdir").arg(root).arg("--").args(argv);
     Ok(command)
 }
 
@@ -1696,6 +1921,27 @@ fn streamed_action_key(
     hasher.finalize().to_hex().to_string()
 }
 
+fn action_key_argv(action: &frostbuild_core::graph::ActionNode) -> Cow<'_, [String]> {
+    if action.followup_argv.is_empty() && action.clean_dirs.is_empty() && !action.preserve_outputs {
+        return Cow::Borrowed(&action.argv);
+    }
+    let mut argv = action.argv.clone();
+    if action.preserve_outputs {
+        argv.push("\0frost-preserve-outputs".into());
+    }
+    for directory in &action.clean_dirs {
+        // NUL cannot occur in an OS argument, making these internal boundary
+        // tags unambiguous in the canonical key payload.
+        argv.push("\0frost-clean-dir".into());
+        argv.push(directory.clone());
+    }
+    for command in &action.followup_argv {
+        argv.push("\0frost-next-command".into());
+        argv.extend(command.iter().cloned());
+    }
+    Cow::Owned(argv)
+}
+
 fn update_key_field(hasher: &mut blake3::Hasher, key: &str, value: &str) {
     hasher.update(key.as_bytes());
     hasher.update(b"\0");
@@ -1768,6 +2014,7 @@ pub fn toolchain_closure_fingerprint_cached(
     if let Some(kofunc) = &toolchain.kofunc {
         all.push(kofunc);
     }
+    all.extend(toolchain.tools.values());
     all.push(&shell);
     let mut tools = Vec::with_capacity(all.len());
     let mut resolved_paths = Vec::with_capacity(all.len());
@@ -1908,6 +2155,68 @@ mod tests {
     }
 
     #[test]
+    fn multi_step_commands_and_clean_dirs_are_unambiguous_key_material() {
+        fn action(
+            followup_argv: Vec<Vec<String>>,
+            clean_dirs: Vec<String>,
+            preserve_outputs: bool,
+        ) -> frostbuild_core::graph::ActionNode {
+            frostbuild_core::graph::ActionNode {
+                id: "command:java".into(),
+                desc: "RUN java [javac]".into(),
+                kind: ActionKind::Command,
+                target: "java".into(),
+                sandbox: false,
+                argv: vec!["javac".into(), "Hello.java".into()],
+                followup_argv,
+                clean_dirs,
+                preserve_outputs,
+                env: BTreeMap::new(),
+                pass_env: Vec::new(),
+                inputs: Vec::new(),
+                order_only_inputs: Vec::new(),
+                outputs: Vec::new(),
+                depfile: None,
+            }
+        }
+        let digest = |action: &frostbuild_core::graph::ActionNode| {
+            streamed_action_key(
+                "frost-engine-v1",
+                &action.id,
+                action_key_argv(action).as_ref(),
+                ".",
+                "toolchain",
+                &BTreeMap::new(),
+                &BTreeMap::new(),
+            )
+        };
+
+        let primary_only = action(Vec::new(), Vec::new(), false);
+        assert!(matches!(action_key_argv(&primary_only), Cow::Borrowed(_)));
+        let jar = action(
+            vec![vec!["jar".into(), "classes".into()]],
+            vec![".frost/tmp/debug/java".into()],
+            false,
+        );
+        let differently_segmented = action(
+            vec![vec!["jar".into()], vec!["classes".into()]],
+            vec![".frost/tmp/debug/java".into()],
+            false,
+        );
+        let different_clean_dir = action(
+            vec![vec!["jar".into(), "classes".into()]],
+            vec![".frost/tmp/debug/java-v2".into()],
+            false,
+        );
+        let preserving = action(Vec::new(), Vec::new(), true);
+
+        assert_ne!(digest(&primary_only), digest(&jar));
+        assert_ne!(digest(&jar), digest(&differently_segmented));
+        assert_ne!(digest(&jar), digest(&different_clean_dir));
+        assert_ne!(digest(&primary_only), digest(&preserving));
+    }
+
+    #[test]
     fn the_fingerprint_covers_the_shell_frost_chooses() {
         // Every genrule and shell test runs through this interpreter, and the
         // manifest has no way to name it, so leaving it out would make it the
@@ -1916,11 +2225,15 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(dir.join("tools")).unwrap();
         std::fs::write(dir.join("tools/kofun"), b"kofun compiler v1\n").unwrap();
+        std::fs::write(dir.join("tools/language"), b"language adapter v1\n").unwrap();
+        let mut named_tools = BTreeMap::new();
+        named_tools.insert("language".into(), "tools/language".into());
         let toolchain = frostbuild_core::manifest::Toolchain {
-            cc: "cc".into(),
-            cxx: "c++".into(),
-            ar: "ar".into(),
+            cc: frostbuild_core::graph::SHELL.into(),
+            cxx: frostbuild_core::graph::SHELL.into(),
+            ar: frostbuild_core::graph::SHELL.into(),
             kofunc: Some("tools/kofun".into()),
+            tools: named_tools,
             arflags: vec!["rcsD".into()],
             cflags: Vec::new(),
             cxxflags: Vec::new(),
@@ -1946,6 +2259,14 @@ mod tests {
             stamp
                 .tools
                 .iter()
+                .any(|(path, ..)| path.ends_with("tools/language")),
+            "named command tools must be hashed: {:?}",
+            stamp.tools
+        );
+        assert!(
+            stamp
+                .tools
+                .iter()
                 .any(|(path, ..)| path.ends_with("tools/kofun")),
             "the configured Kofun compiler must be hashed: {:?}",
             stamp.tools
@@ -1961,8 +2282,8 @@ mod tests {
 
     #[test]
     fn toolchain_fingerprint_is_stable_and_errors_on_missing() {
-        let a = toolchain_fingerprint("sh").unwrap();
-        let b = toolchain_fingerprint("sh").unwrap();
+        let a = toolchain_fingerprint(frostbuild_core::graph::SHELL).unwrap();
+        let b = toolchain_fingerprint(frostbuild_core::graph::SHELL).unwrap();
         assert_eq!(a, b);
         assert!(toolchain_fingerprint("definitely-not-a-compiler-xyz").is_err());
     }

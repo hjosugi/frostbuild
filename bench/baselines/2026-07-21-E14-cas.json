@@ -1,0 +1,170 @@
+{
+  "schema": "frost-cas-benchmark-v3",
+  "frostbuild_version": "0.2.0",
+  "generated_at_unix_s": 1784668953,
+  "environment": {
+    "os": "linux",
+    "arch": "x86_64",
+    "cpu_count": 8,
+    "rayon_num_threads_env": null,
+    "load_average": [
+      11.13,
+      16.35,
+      20.54
+    ],
+    "cpu_governor": "powersave",
+    "turbo_disabled": null,
+    "temp_root": "/tmp"
+  },
+  "size_bytes": 67108864,
+  "iterations": 7,
+  "generator_seed": 5573589319906701683,
+  "chunking_threshold_bytes": 2097152,
+  "initial_hash": {
+    "median_ms": 15.145431,
+    "throughput_mib_s": 4225.696845471086,
+    "samples_ms": [
+      37.462528,
+      18.765118,
+      16.386404,
+      15.145431,
+      13.440218999999999,
+      13.630167,
+      13.476127
+    ]
+  },
+  "serial_cold_put": {
+    "median_ms": 136.919566,
+    "throughput_mib_s": 467.4277159189944,
+    "samples_ms": [
+      140.709444,
+      136.793147,
+      136.358566,
+      136.410313,
+      136.919566,
+      137.073266,
+      138.134281
+    ]
+  },
+  "cold_put": {
+    "median_ms": 96.996019,
+    "throughput_mib_s": 659.820894298765,
+    "samples_ms": [
+      96.69048199999999,
+      99.34147,
+      96.178284,
+      95.373784,
+      97.667137,
+      97.173394,
+      96.996019
+    ]
+  },
+  "cold_put_parallel_speedup": 1.4115998513299808,
+  "exact_materialize": {
+    "median_ms": 39.536696000000006,
+    "throughput_mib_s": 1618.7493259426633,
+    "samples_ms": [
+      40.196162,
+      39.536696000000006,
+      39.545421999999995,
+      39.9887,
+      38.956159,
+      39.07550500000001,
+      39.075015
+    ]
+  },
+  "serial_chunk_materialize": {
+    "median_ms": 73.910319,
+    "throughput_mib_s": 865.9142710505687,
+    "samples_ms": [
+      75.59285799999999,
+      73.910319,
+      75.18516699999999,
+      73.65840399999999,
+      70.738427,
+      73.113714,
+      76.37582599999999
+    ]
+  },
+  "chunk_materialize": {
+    "median_ms": 39.209539,
+    "throughput_mib_s": 1632.255865084259,
+    "samples_ms": [
+      39.209539,
+      40.837042,
+      40.578955,
+      37.655533,
+      37.757665,
+      38.946631000000004,
+      46.500321
+    ]
+  },
+  "chunk_materialize_parallel_speedup": 1.8850086199687275,
+  "update_hash": {
+    "median_ms": 14.300835,
+    "throughput_mib_s": 4475.263157710721,
+    "samples_ms": [
+      16.67024,
+      14.300835,
+      13.55747,
+      16.141011,
+      14.905477000000001,
+      14.055111,
+      13.598387
+    ]
+  },
+  "delta_put": {
+    "median_ms": 126.104926,
+    "throughput_mib_s": 507.51387776874,
+    "samples_ms": [
+      128.43025899999998,
+      124.891133,
+      126.36647,
+      128.262342,
+      124.491719,
+      122.866118,
+      126.104926
+    ]
+  },
+  "serial_delta_materialize": {
+    "median_ms": 75.646929,
+    "throughput_mib_s": 846.0356665635428,
+    "samples_ms": [
+      73.927511,
+      74.47603799999999,
+      75.646929,
+      79.812759,
+      73.528497,
+      77.164396,
+      76.36103800000001
+    ]
+  },
+  "delta_materialize": {
+    "median_ms": 40.195661,
+    "throughput_mib_s": 1592.211656875104,
+    "samples_ms": [
+      38.609013,
+      40.410186,
+      40.195661,
+      40.559609,
+      39.88837,
+      39.434714,
+      43.542874000000005
+    ]
+  },
+  "delta_materialize_parallel_speedup": 1.8819675337594273,
+  "stats": {
+    "object_count": 0,
+    "object_bytes": 0,
+    "chunk_count": 118,
+    "chunk_bytes": 71141956,
+    "delta_count": 7,
+    "delta_bytes": 518,
+    "manifest_count": 8,
+    "logical_chunk_count": 888,
+    "logical_chunk_bytes": 536870912,
+    "reused_chunk_count": 770,
+    "reused_chunk_bytes": 465728956,
+    "chunk_reuse_ratio": 0.8674877807497978
+  }
+}

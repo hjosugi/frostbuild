@@ -18,6 +18,10 @@ a stated argument; rows marked **gap** are known holes with no defence.
 | Discovered input contents | yes | Depfile paths join the key after the first run. |
 | **Input file mode** | yes | Mixed into the content digest. `chmod -x` on a script changes no bytes; without this frost reported "up to date" where a clean build failed. |
 | Compiler identity | yes | The toolchain fingerprint hashes the resolved `cc`, `cxx` and `ar` binaries, so a PATH switch or a package upgrade invalidates. |
+| Named command-tool identity | yes | Every configured `[toolchain.tools]` executable is resolved and hashed. A workspace-relative wrapper is also a declared input of the command action. |
+| Command-target static `env` | yes | Merged into the canonical action environment after Frost's baseline. |
+| Command-target `pass_env` | yes | The value or absence of every opted-in name joins both the action key and whole-build no-op certificate. Other host variables remain cleared. |
+| Command follow-up steps, reset directories and output-preservation mode | yes | Ordered direct argv, configuration-isolated `clean_dirs`, and `preserve_outputs` are tagged into the canonical action payload; every step's named tool is part of the toolchain fingerprint. |
 | `CPATH`, `C_INCLUDE_PATH`, `CPLUS_INCLUDE_PATH`, `LIBRARY_PATH`, `SDKROOT`, `MACOSX_DEPLOYMENT_TARGET`, `SystemRoot` | yes | These choose which headers and libraries a compiler finds with an identical command line. |
 | Working directory | yes | Recorded relative to the workspace root. |
 | Locale | n/a | Forced to `LC_ALL=C` and `LANG=C` for every action, so it cannot vary. |
@@ -26,7 +30,7 @@ a stated argument; rows marked **gap** are known holes with no defence.
 | `HOME`, `TMPDIR`, `TMP`, `TEMP` | **out** | Scratch locations. An action whose output depends on where its scratch space lives is not hermetic, which is what `--sandbox` and `--check-determinism` exist to surface. |
 | Order-only inputs | **out** | By construction: generated headers must exist before a compile, but only the ones actually included should invalidate it, and the depfile names those. |
 | `--sandbox` | **out** | A checking mode, not a build input. It can only remove access to files an action never declared, so a build that differs under it was already unsound. |
-| The shell frost runs genrules through (`/bin/sh`) | yes | frost picks it, so it sits in the toolchain fingerprint beside the C drivers. The manifest has no way to name it, which is exactly why leaving it out would make it the one tool frost chooses and does not account for. |
+| The host shell frost runs genrules through (`/bin/sh` or `cmd.exe`) | yes | frost picks it, so it sits in the toolchain fingerprint beside the C drivers. The manifest has no way to name it, which is exactly why leaving it out would make it the one tool frost chooses and does not account for. |
 | **Other tools a genrule invokes** (`python3`, a script on PATH) | **gap** | frost cannot know which tools a shell command reaches. Declaring the script is not declaring what the script runs. Same class as any undeclared input; `--sandbox` narrows it, nothing closes it. |
 | **umask** | **gap** | Affects the permissions of created outputs. Only the executable bit is captured, via the output digest. |
 | **Filesystems with coarse mtime** | **gap** | The stat check is (mtime_ns, size ^ mode, inode). Where a filesystem reports whole seconds, a same-size rewrite inside one second can be missed. Not observed on ext4; no cheap defence beyond hashing everything. |

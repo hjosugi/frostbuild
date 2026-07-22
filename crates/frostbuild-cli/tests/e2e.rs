@@ -3,6 +3,8 @@
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
+#[cfg(unix)]
+use std::process::Stdio;
 
 fn frost_bin() -> &'static str {
     env!("CARGO_BIN_EXE_frost")
@@ -103,6 +105,60 @@ impl Workspace {
         assert!(out.status.success(), "built app should run");
         String::from_utf8_lossy(&out.stdout).to_string()
     }
+}
+
+#[test]
+fn host_portable_command_target_builds_and_caches() {
+    let ws = Workspace::empty("host-command");
+    #[cfg(unix)]
+    let (shell, shell_arg, command) = ("/bin/sh", "-c", "printf host-ok > ${config}/host.txt");
+    #[cfg(windows)]
+    let (shell, shell_arg, command) = ("cmd.exe", "/C", "echo host-ok>${config}/host.txt");
+    ws.write(
+        "frost.toml",
+        &format!(
+            r#"[workspace]
+default_targets = ["smoke"]
+
+[toolchain]
+cc = "{shell}"
+cxx = "{shell}"
+ar = "{shell}"
+
+[toolchain.tools]
+host = "{shell}"
+
+[target.smoke]
+kind = "command"
+tool = "host"
+args = ["{shell_arg}", "{command}"]
+outputs = ["${{config}}/host.txt"]
+"#
+        ),
+    );
+
+    let (ok, out) = ws.frost(&["build"]);
+    assert!(
+        ok && out.contains("1 built"),
+        "portable build failed:\n{out}"
+    );
+    assert_eq!(
+        std::fs::read_to_string(ws.dir.join("debug/host.txt"))
+            .unwrap()
+            .trim(),
+        "host-ok"
+    );
+
+    let (ok, out) = ws.frost(&["build"]);
+    assert!(
+        ok && (out.contains("1 cached") || out.contains("up to date")),
+        "portable no-op failed:\n{out}"
+    );
+    let (ok, out) = ws.frost(&["cache", "stats", "--json"]);
+    assert!(ok, "cache stats failed:\n{out}");
+    let stats: serde_json::Value = serde_json::from_str(&out).unwrap();
+    assert_eq!(stats["object_count"], 1);
+    assert!(stats["chunk_reuse_ratio"].is_number());
 }
 
 #[cfg(unix)]
@@ -481,6 +537,424 @@ fn platforms_isolate_outputs_and_caches() {
     assert!(ok && out.contains("up to date"), "{out}");
     let (ok, out) = ws.build_explain();
     assert!(ok && out.contains("up to date"), "{out}");
+
+    let (ok, out) = ws.frost(&["build", "--all-platforms", "--explain"]);
+    assert!(ok, "multi-platform build failed:\n{out}");
+    assert!(out.contains("multi-platform build (2 platforms"), "{out}");
+    assert!(
+        out.contains("|-- host") && out.contains("`-- devsim"),
+        "{out}"
+    );
+    assert!(out.contains("platform summary"), "{out}");
+}
+
+#[test]
+#[cfg(unix)]
+fn command_adapter_is_platform_aware_keyed_and_language_agnostic() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let ws = Workspace::empty("command-adapter");
+    std::fs::create_dir_all(ws.dir.join("tools")).unwrap();
+    ws.write("source.txt", "payload\n");
+    for (name, identity) in [("adapter", "host"), ("device-adapter", "device")] {
+        let path = ws.dir.join("tools").join(name);
+        std::fs::write(
+            &path,
+            format!(
+                "#!/bin/sh\nIFS= read -r content < \"$1\"\n\
+                 printf '{}|%s|%s|%s|%s/%s\\n' \"$content\" \"$STATIC_VALUE\" \
+                 \"${{LANGUAGE_FLAG-unset}}\" \"$3\" \"$4\" > \"$2\"\n",
+                identity
+            ),
+        )
+        .unwrap();
+        std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o755)).unwrap();
+    }
+    ws.write(
+        "frost.toml",
+        r#"[workspace]
+default_targets = ["artifact"]
+
+[toolchain.tools]
+adapter = "tools/adapter"
+
+[platform.device.tools]
+adapter = "tools/device-adapter"
+
+[target.artifact]
+kind = "command"
+tool = "adapter"
+args = ["${in}", "${out}", "${profile}", "${platform}"]
+inputs = ["source.txt"]
+outputs = [".frost/out/${config}/artifact.txt"]
+env = { STATIC_VALUE = "manifest" }
+pass_env = ["LANGUAGE_FLAG"]
+sandbox = false
+"#,
+    );
+
+    let build = |flag: &str, args: &[&str]| {
+        let (ok, out) = ws.frost_env(args, &[("LANGUAGE_FLAG", flag)]);
+        assert!(ok, "command adapter build failed:\n{out}");
+        out
+    };
+    build("one", &["build"]);
+    let warm = build("one", &["build"]);
+    assert!(warm.contains("up to date"), "{warm}");
+    assert!(ws.dir.join(".frost/noop-debug.bin").is_file());
+
+    let changed = build("two", &["build"]);
+    assert!(
+        !changed.contains("up to date"),
+        "pass_env must invalidate the action and fast no-op certificate:\n{changed}"
+    );
+    assert_eq!(
+        std::fs::read_to_string(ws.dir.join(".frost/out/debug/artifact.txt")).unwrap(),
+        "host|payload|manifest|two|debug/host\n"
+    );
+
+    let all = build("two", &["build", "--all-platforms"]);
+    assert!(all.contains("platform summary"), "{all}");
+    assert_eq!(
+        std::fs::read_to_string(ws.dir.join(".frost/out/device/debug/artifact.txt")).unwrap(),
+        "device|payload|manifest|two|debug/device\n"
+    );
+
+    let host_tool = ws.dir.join("tools/adapter");
+    let mut updated = std::fs::read_to_string(&host_tool)
+        .unwrap()
+        .replace("host|%s", "host-v2|%s");
+    updated.push('\n');
+    std::fs::write(&host_tool, updated).unwrap();
+    std::fs::set_permissions(&host_tool, std::fs::Permissions::from_mode(0o755)).unwrap();
+    let changed = build("two", &["build"]);
+    assert!(!changed.contains("up to date"), "{changed}");
+    assert!(
+        std::fs::read_to_string(ws.dir.join(".frost/out/debug/artifact.txt"))
+            .unwrap()
+            .starts_with("host-v2|"),
+        "changing a named tool must invalidate its command action"
+    );
+
+    let (ok, out) = ws.frost(&["clean"]);
+    assert!(ok, "multi-configuration clean failed:\n{out}");
+    assert!(!ws.dir.join(".frost/out/debug/artifact.txt").exists());
+    assert!(!ws.dir.join(".frost/out/device/debug/artifact.txt").exists());
+}
+
+#[test]
+#[cfg(unix)]
+fn command_adapter_can_preserve_outputs_for_incremental_compilers() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let ws = Workspace::empty("preserve-command-outputs");
+    std::fs::create_dir_all(ws.dir.join("tools")).unwrap();
+    ws.write("source.txt", "one\n");
+    ws.write(
+        "tools/incremental",
+        r#"#!/bin/sh
+set -eu
+state=$1
+stable=$2
+changed=$3
+input=$4
+IFS= read -r value < "$input"
+if [ "$value" = one ]; then
+  printf 'state\n' > "$state"
+  printf 'stable\n' > "$stable"
+else
+  [ -f "$state" ] && [ -f "$stable" ] || exit 42
+fi
+printf '%s\n' "$value" > "$changed"
+"#,
+    );
+    std::fs::set_permissions(
+        ws.dir.join("tools/incremental"),
+        std::fs::Permissions::from_mode(0o755),
+    )
+    .unwrap();
+    ws.write(
+        "frost.toml",
+        r#"[workspace]
+default_targets = ["incremental"]
+
+[toolchain.tools]
+incremental = "tools/incremental"
+
+[target.incremental]
+kind = "command"
+tool = "incremental"
+args = ["${outs}", "${in}"]
+inputs = ["source.txt"]
+outputs = [
+  ".frost/out/${config}/state.txt",
+  ".frost/out/${config}/stable.txt",
+  ".frost/out/${config}/changed.txt",
+]
+preserve_outputs = true
+sandbox = false
+"#,
+    );
+
+    let (ok, out) = ws.frost(&["build"]);
+    assert!(ok, "initial incremental build failed:\n{out}");
+    ws.write("source.txt", "two\n");
+    let (ok, out) = ws.frost(&["build", "--explain"]);
+    assert!(ok, "incremental rerun lost its prior outputs:\n{out}");
+    assert!(out.contains("ran command:incremental"), "{out}");
+    assert_eq!(
+        std::fs::read_to_string(ws.dir.join(".frost/out/debug/stable.txt")).unwrap(),
+        "stable\n"
+    );
+    assert_eq!(
+        std::fs::read_to_string(ws.dir.join(".frost/out/debug/changed.txt")).unwrap(),
+        "two\n"
+    );
+}
+
+#[test]
+fn command_adapter_builds_real_rust_go_java_python_and_typescript_tools() {
+    let ws = Workspace::empty("language-tools");
+    std::fs::create_dir_all(ws.dir.join("src")).unwrap();
+    std::fs::create_dir_all(ws.dir.join("tools")).unwrap();
+
+    let available = |tool: &str| Command::new(tool).arg("--version").output().is_ok();
+    let mut tools = Vec::new();
+    let mut targets = Vec::new();
+    let mut defaults = Vec::new();
+
+    if available("rustc") {
+        ws.write("src/main.rs", "fn main() { println!(\"rust-ok\"); }\n");
+        tools.push("rustc = \"rustc\"".to_string());
+        targets.push(
+            r#"[target.rust]
+kind = "command"
+tool = "rustc"
+args = ["${in}", "-o", "${out}"]
+inputs = ["src/main.rs"]
+outputs = [".frost/out/${config}/rust-app"]
+sandbox = false
+"#
+            .to_string(),
+        );
+        defaults.push("rust");
+    }
+    if available("go") {
+        ws.write(
+            "src/main.go",
+            "package main\nimport \"fmt\"\nfunc main() { fmt.Println(\"go-ok\") }\n",
+        );
+        tools.push("go = \"go\"".to_string());
+        targets.push(
+            r#"[target.go]
+kind = "command"
+tool = "go"
+args = ["build", "-o", "${out}", "${in}"]
+inputs = ["src/main.go"]
+outputs = [".frost/out/${config}/go-app"]
+sandbox = false
+"#
+            .to_string(),
+        );
+        defaults.push("go");
+    }
+    if available("javac") {
+        ws.write(
+            "src/Hello.java",
+            "public final class Hello { static final class Nested {} \
+             public static void main(String[] a) { System.out.println(\"java-ok\"); } }\n",
+        );
+        tools.push("javac = \"javac\"".to_string());
+        tools.push(format!(
+            "pack_jar = {}",
+            serde_json::to_string(frost_bin()).unwrap()
+        ));
+        targets.push(
+            r#"[target.java]
+kind = "command"
+tool = "javac"
+args = ["-d", "${clean_dir}", "${in}"]
+inputs = ["src/Hello.java"]
+outputs = [".frost/out/${config}/java.jar"]
+clean_dirs = [".frost/tmp/${config}/java"]
+steps = [{ tool = "pack_jar", args = ["pack-jar", "--input", "${clean_dir}",
+                                       "--output", "${out}",
+                                       "--main-class", "Hello"] }]
+sandbox = false
+"#
+            .to_string(),
+        );
+        defaults.push("java");
+    }
+    if available("python3") {
+        std::fs::create_dir_all(ws.dir.join("src/frost_language_demo")).unwrap();
+        ws.write(
+            "src/frost_language_demo/__init__.py",
+            "def message():\n    return 'python-ok'\n",
+        );
+        tools.push(format!(
+            "pack_wheel = {}",
+            serde_json::to_string(frost_bin()).unwrap()
+        ));
+        targets.push(
+            r#"[target.python]
+kind = "command"
+tool = "pack_wheel"
+args = ["pack-wheel", "--input", "src", "--distribution", "frost-language-demo",
+        "--version", "1.0.0", "--output", "${out}"]
+inputs = ["src/frost_language_demo/__init__.py"]
+outputs = [".frost/out/${config}/frost_language_demo-1.0.0-py3-none-any.whl"]
+sandbox = false
+"#
+            .to_string(),
+        );
+        defaults.push("python");
+    }
+
+    // Modern Node runs erasable TypeScript syntax directly. Probe first so
+    // older CI images simply exercise the other real adapters.
+    if available("node") {
+        ws.write(
+            "src/write.ts",
+            "import { writeFileSync } from 'node:fs';\n\
+             const message: string = 'typescript-ok\\n';\n\
+             writeFileSync(process.argv[2], message);\n",
+        );
+        let probe = Command::new("node")
+            .arg(ws.dir.join("src/write.ts"))
+            .arg(ws.dir.join("typescript-probe.txt"))
+            .output();
+        if probe.is_ok_and(|output| output.status.success()) {
+            tools.push("node = \"node\"".to_string());
+            targets.push(
+                r#"[target.typescript]
+kind = "command"
+tool = "node"
+args = ["src/write.ts", "${out}"]
+inputs = ["src/write.ts"]
+outputs = [".frost/out/${config}/typescript.txt"]
+sandbox = false
+"#
+                .to_string(),
+            );
+            defaults.push("typescript");
+        }
+    }
+
+    assert!(
+        !defaults.is_empty(),
+        "the test host has no supported language tool"
+    );
+    ws.write(
+        "frost.toml",
+        &format!(
+            "[workspace]\ndefault_targets = [{}]\n\n[toolchain.tools]\n{}\n\n{}",
+            defaults
+                .iter()
+                .map(|name| format!("\"{name}\""))
+                .collect::<Vec<_>>()
+                .join(", "),
+            tools.join("\n"),
+            targets.join("\n")
+        ),
+    );
+
+    let (ok, out) = ws.frost(&["build"]);
+    assert!(ok, "real language adapter build failed:\n{out}");
+    let (ok, out) = ws.frost(&["build"]);
+    assert!(ok && out.contains("up to date"), "{out}");
+    if defaults.contains(&"rust") {
+        assert!(ws.dir.join(".frost/out/debug/rust-app").is_file());
+    }
+    if defaults.contains(&"go") {
+        assert!(ws.dir.join(".frost/out/debug/go-app").is_file());
+    }
+    if defaults.contains(&"java") {
+        let archive = ws.dir.join(".frost/out/debug/java.jar");
+        assert!(archive.is_file());
+        let listing = || {
+            let file = std::fs::File::open(&archive).unwrap();
+            let mut jar = zip::ZipArchive::new(file).unwrap();
+            (0..jar.len())
+                .map(|index| jar.by_index(index).unwrap().name().to_string())
+                .collect::<Vec<_>>()
+        };
+        let entries = listing();
+        assert!(
+            entries.iter().any(|name| name == "Hello.class"),
+            "{entries:?}"
+        );
+        assert!(
+            entries.iter().any(|name| name == "Hello$Nested.class"),
+            "{entries:?}"
+        );
+        if available("java") {
+            let output = Command::new("java")
+                .arg("-jar")
+                .arg(&archive)
+                .output()
+                .expect("run Frost-packed Java archive");
+            assert!(output.status.success(), "{output:?}");
+            assert_eq!(String::from_utf8_lossy(&output.stdout), "java-ok\n");
+        }
+        #[cfg(unix)]
+        {
+            let (ok, out) = ws.frost(&[
+                "debug",
+                "java",
+                "--debugger",
+                "/bin/echo",
+                "--print",
+                "--",
+                "argument",
+            ]);
+            assert!(ok, "Java debug argv generation failed:\n{out}");
+            assert!(out.contains("Java/jdb"), "{out}");
+            assert!(out.contains("-classpath"), "{out}");
+            assert!(out.contains("Hello"), "{out}");
+        }
+
+        // The intermediate tree is reset before the next multi-step action.
+        // Removing a nested class must not leave stale bytecode in the jar.
+        ws.write(
+            "src/Hello.java",
+            "public final class Hello { public static void main(String[] a) { \
+             System.out.println(\"java-ok-v2\"); } }\n",
+        );
+        let (ok, out) = ws.frost(&["build"]);
+        assert!(ok, "Java multi-step rebuild failed:\n{out}");
+        let entries = listing();
+        assert!(
+            entries.iter().any(|name| name == "Hello.class"),
+            "{entries:?}"
+        );
+        assert!(
+            entries.iter().all(|name| name != "Hello$Nested.class"),
+            "{entries:?}"
+        );
+    }
+    if defaults.contains(&"python") {
+        let wheel = ws
+            .dir
+            .join(".frost/out/debug/frost_language_demo-1.0.0-py3-none-any.whl");
+        let output = Command::new("python3")
+            .args([
+                "-c",
+                "import sys; sys.path.insert(0, sys.argv[1]); \
+                 import frost_language_demo; print(frost_language_demo.message())",
+            ])
+            .arg(&wheel)
+            .output()
+            .expect("run Frost-packed Python wheel");
+        assert!(output.status.success(), "{output:?}");
+        assert_eq!(String::from_utf8_lossy(&output.stdout), "python-ok\n");
+    }
+    if defaults.contains(&"typescript") {
+        assert_eq!(
+            std::fs::read_to_string(ws.dir.join(".frost/out/debug/typescript.txt")).unwrap(),
+            "typescript-ok\n"
+        );
+    }
 }
 
 #[test]
@@ -557,6 +1031,95 @@ fn query_deps_rdeps_somepath() {
 }
 
 #[test]
+fn completion_scripts_and_fzf_selection_are_available() {
+    #[cfg(unix)]
+    use std::os::unix::fs::PermissionsExt;
+
+    let ws = Workspace::new("completion");
+    for (shell, marker) in [
+        ("bash", "_frost"),
+        ("zsh", "#compdef frost"),
+        ("fish", "__fish_frost"),
+        ("powershell", "Register-ArgumentCompleter"),
+        ("elvish", "arg-completer[frost]"),
+        ("nushell", "export extern frost"),
+    ] {
+        let (ok, out) = ws.frost(&["completions", shell]);
+        assert!(ok && out.contains(marker), "{shell} completion:\n{out}");
+        assert!(
+            out.contains("pack-jar"),
+            "{shell} completion omitted pack-jar:\n{out}"
+        );
+        assert!(
+            out.contains("pack-wheel"),
+            "{shell} completion omitted pack-wheel:\n{out}"
+        );
+        assert!(
+            out.contains("bazel-dev"),
+            "{shell} completion omitted bazel-dev:\n{out}"
+        );
+        for command in ["dev", "debug", "ide", "doctor", "cache", "init", "language"] {
+            assert!(
+                out.contains(command),
+                "{shell} completion omitted {command}:\n{out}"
+            );
+        }
+    }
+
+    let dynamic = |words: &[&str], index: usize| {
+        let out = Command::new(frost_bin())
+            .arg("--")
+            .args(words)
+            .env("COMPLETE", "bash")
+            .env("_CLAP_IFS", "\u{b}")
+            .env("_CLAP_COMPLETE_INDEX", index.to_string())
+            .env("_CLAP_COMPLETE_COMP_TYPE", "9")
+            .env("_CLAP_COMPLETE_SPACE", "true")
+            .output()
+            .expect("query dynamic completion");
+        assert!(out.status.success(), "dynamic completion failed: {out:?}");
+        String::from_utf8(out.stdout)
+            .unwrap()
+            .split('\u{b}')
+            .map(str::to_string)
+            .collect::<Vec<_>>()
+    };
+    let root = ws.dir.to_str().unwrap();
+    let targets = dynamic(&["frost", "-C", root, "build", ""], 4);
+    for target in ["app", "gen_config", "util"] {
+        assert!(targets.contains(&target.to_string()), "{targets:?}");
+    }
+    assert_eq!(
+        dynamic(&["frost", "-C", root, "build", "--profile", ""], 5),
+        ["debug"]
+    );
+    assert_eq!(
+        dynamic(&["frost", "-C", root, "build", "--platform", ""], 5),
+        ["host"]
+    );
+    assert_eq!(
+        dynamic(&["frost", "init", "--language", ""], 3),
+        ["native", "java"]
+    );
+
+    #[cfg(unix)]
+    {
+        let tools = ws.dir.join("completion-tools");
+        std::fs::create_dir_all(&tools).unwrap();
+        let fzf = tools.join("fzf");
+        std::fs::write(
+            &fzf,
+            "#!/bin/sh\nIFS= read -r selected\nprintf '%s\\n' \"$selected\"\n",
+        )
+        .unwrap();
+        std::fs::set_permissions(&fzf, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let (ok, out) = ws.frost_env(&["pick", "--print"], &[("PATH", tools.to_str().unwrap())]);
+        assert!(ok, "fzf-backed selection failed:\n{out}");
+        assert_eq!(out.trim(), "app");
+    }
+}
+
+#[test]
 fn clean_build_then_noop_is_fully_cached() {
     let ws = Workspace::new("noop");
 
@@ -574,6 +1137,94 @@ fn clean_build_then_noop_is_fully_cached() {
     assert!(
         !out.contains("  ran "),
         "no actions should have run:\n{out}"
+    );
+}
+
+#[test]
+fn plain_default_build_uses_and_invalidates_the_fast_noop_certificate() {
+    let ws = Workspace::new("fast-noop");
+
+    let (ok, out) = ws.frost(&["build"]);
+    assert!(ok, "clean build failed:\n{out}");
+    let (ok, out) = ws.frost(&["build"]);
+    assert!(ok && out.contains("up to date"), "{out}");
+    assert!(
+        ws.dir.join(".frost/noop-debug.bin").is_file(),
+        "the fully checked no-op did not persist its certificate"
+    );
+
+    // A fast hit does not need to reconstruct the per-action journal.
+    std::fs::write(ws.dir.join(".frost/journal.bin"), b"corrupt journal").unwrap();
+    let (ok, out) = ws.frost(&["build"]);
+    assert!(ok && out.contains("up to date"), "{out}");
+
+    // Corrupting the shortcut itself is a cache miss, never a build failure
+    // and never evidence that stale outputs are current.
+    let certificate = ws.dir.join(".frost/noop-debug.bin");
+    let mut corrupt = std::fs::read(&certificate).unwrap();
+    let last = corrupt.len() - 1;
+    corrupt[last] ^= 0x80;
+    std::fs::write(&certificate, corrupt).unwrap();
+    let (ok, out) = ws.frost(&["build"]);
+    assert!(ok, "corrupt certificate did not fall back safely:\n{out}");
+
+    // The certificate is only a shortcut: any input mismatch falls back to
+    // the normal path. With the journal deliberately unusable, that path
+    // rebuilds the closure rather than accepting the stale certificate.
+    ws.write(
+        "src/util_internal.h",
+        "#ifndef FROST_SAMPLE_UTIL_INTERNAL_H\n\
+         #define FROST_SAMPLE_UTIL_INTERNAL_H\n\
+         #define FROST_INTERNAL_BIAS 1\n\
+         #endif\n",
+    );
+    let (ok, out) = ws.frost(&["build"]);
+    assert!(ok, "fallback build failed:\n{out}");
+    assert!(!out.contains("up to date"), "{out}");
+    assert_eq!(ws.run_app(), "frost: 43\n");
+}
+
+#[test]
+fn fast_noop_certificate_is_bound_to_the_default_target_graph() {
+    let ws = Workspace::new("fast-noop-graph");
+    let (ok, out) = ws.frost(&["build"]);
+    assert!(ok, "{out}");
+    let (ok, out) = ws.frost(&["build"]);
+    assert!(ok && out.contains("up to date"), "{out}");
+    let certificate = ws.dir.join(".frost/noop-debug.bin");
+    let old_certificate = std::fs::read(&certificate).unwrap();
+
+    let manifest = std::fs::read_to_string(ws.dir.join("frost.toml")).unwrap();
+    ws.write(
+        "frost.toml",
+        &format!(
+            "{}\n\
+             [target.extra]\n\
+             kind = \"genrule\"\n\
+             cmd = \"printf extra > ${{out}}\"\n\
+             outputs = [\".frost/extra/result.txt\"]\n",
+            manifest.replace(
+                "default_targets = [\"app\"]",
+                "default_targets = [\"app\", \"extra\"]"
+            )
+        ),
+    );
+    let extra = ws.dir.join(".frost/extra/result.txt");
+    let (ok, out) = ws.frost(&["build"]);
+    assert!(ok, "new default target failed:\n{out}");
+    assert!(extra.is_file(), "{out}");
+    assert_eq!(
+        std::fs::read(&certificate).unwrap(),
+        old_certificate,
+        "a build that executed work should leave the prior certificate in place"
+    );
+
+    std::fs::remove_file(&extra).unwrap();
+    let (ok, out) = ws.frost(&["build"]);
+    assert!(ok, "stale graph certificate blocked fallback:\n{out}");
+    assert!(
+        extra.is_file(),
+        "the old default-target certificate skipped the new target:\n{out}"
     );
 }
 
@@ -782,6 +1433,58 @@ fn cxx_glob_test_and_compdb_are_usable() {
 }
 
 #[test]
+fn direct_argv_language_test_is_cached_and_cleans_a_failed_stamp() {
+    if Command::new("python3").arg("--version").output().is_err() {
+        eprintln!("skipping direct_argv_language_test: python3 not in PATH");
+        return;
+    }
+    let ws = Workspace::new("direct-test");
+    std::fs::create_dir_all(ws.dir.join("tests")).unwrap();
+    ws.write("tests/value.txt", "pass\n");
+    ws.write(
+        "tests/check.py",
+        concat!(
+            "import os, pathlib, sys\n",
+            "actual = pathlib.Path(sys.argv[1]).read_text().strip()\n",
+            "expected = os.environ['EXPECTED']\n",
+            "if actual != expected:\n",
+            "    raise SystemExit(f'expected {expected!r}, got {actual!r}')\n",
+        ),
+    );
+    ws.append(
+        "frost.toml",
+        r#"
+[toolchain.tools]
+python = "python3"
+
+[target.python_test]
+kind = "test"
+tool = "python"
+args = ["tests/check.py", "tests/value.txt"]
+inputs = ["tests/check.py", "tests/value.txt"]
+env = { EXPECTED = "pass" }
+sandbox = false
+"#,
+    );
+
+    let (ok, out) = ws.frost(&["test", "python_test", "--explain"]);
+    assert!(ok && out.contains("tests: 1 passed"), "{out}");
+    let stamp = ws.dir.join(".frost/test/debug/python_test/passed");
+    assert!(stamp.is_file());
+    let (ok, out) = ws.frost(&["test", "python_test"]);
+    assert!(ok && out.contains("1 cached"), "{out}");
+
+    ws.write("tests/value.txt", "fail\n");
+    let (ok, out) = ws.frost(&["test", "python_test", "--explain"]);
+    assert!(!ok, "changed failing test must run and fail");
+    assert!(out.contains("expected 'pass', got 'fail'"), "{out}");
+    assert!(
+        !stamp.exists(),
+        "a failed test must not retain its success stamp"
+    );
+}
+
+#[test]
 fn test_all_selects_every_test_target() {
     let ws = Workspace::new("test-all");
     ws.append(
@@ -875,6 +1578,26 @@ fn daemon_build_status_and_stop() {
     let (ok, out) = ws.frost(&["build", "--daemon"]);
     assert!(ok && out.contains("up to date"), "{out}");
 
+    // A valid certificate must be answered inside frostd. The deliberately
+    // nonexistent fallback program proves that no second frost process was
+    // needed for this hit.
+    let in_process = frostbuild_daemon::request(
+        &ws.dir,
+        &frostbuild_daemon::Request::Run {
+            version: frostbuild_daemon::PROTOCOL_VERSION,
+            program: ws.dir.join("definitely-missing-frost"),
+            args: Vec::new(),
+            fast_noop: Some(frostbuild_daemon::FastNoopRequest {
+                profile: "debug".into(),
+                platform: frostbuild_core::manifest::HOST_PLATFORM.into(),
+                key_env: frostbuild_exec::key_environment_snapshot(),
+            }),
+        },
+    )
+    .unwrap();
+    assert_eq!(in_process.code, 0, "{in_process:?}");
+    assert!(in_process.stdout.contains("up to date"), "{in_process:?}");
+
     // The daemon must not trust only watcher state: build outputs live under
     // .frost (which the watcher intentionally ignores). The engine still has
     // to validate outputs and restore a manually deleted artifact from CAS.
@@ -884,6 +1607,21 @@ fn daemon_build_status_and_stop() {
     assert_eq!(ws.run_app(), "frost: 42\n");
 
     ws.append("src/util.c", "\n/* daemon watcher change */\n");
+    let miss = frostbuild_daemon::request(
+        &ws.dir,
+        &frostbuild_daemon::Request::Run {
+            version: frostbuild_daemon::PROTOCOL_VERSION,
+            program: ws.dir.join("definitely-missing-frost"),
+            args: Vec::new(),
+            fast_noop: Some(frostbuild_daemon::FastNoopRequest {
+                profile: "debug".into(),
+                platform: frostbuild_core::manifest::HOST_PLATFORM.into(),
+                key_env: frostbuild_exec::key_environment_snapshot(),
+            }),
+        },
+    )
+    .unwrap();
+    assert_ne!(miss.code, 0, "a changed input must reject the certificate");
     std::thread::sleep(std::time::Duration::from_millis(100));
     let (ok, out) = ws.frost(&["build", "--daemon"]);
     assert!(
@@ -894,6 +1632,285 @@ fn daemon_build_status_and_stop() {
     assert!(ok && out.contains("running"), "{out}");
     let (ok, out) = ws.frost(&["daemon", "stop"]);
     assert!(ok && out.contains("stopped"), "{out}");
+}
+
+#[test]
+#[cfg(unix)]
+fn dev_infers_the_artifact_rebuilds_and_restarts_its_process() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let ws = Workspace::new("watch-restart");
+    ws.write(
+        "tools/dev-probe",
+        "#!/bin/sh\nset -eu\n\"$1\" >> .frost/dev-runs.txt\n",
+    );
+    std::fs::set_permissions(
+        ws.dir.join("tools/dev-probe"),
+        std::fs::Permissions::from_mode(0o755),
+    )
+    .unwrap();
+
+    let mut watch = Command::new(frost_bin())
+        .arg("-C")
+        .arg(&ws.dir)
+        .args([
+            "dev",
+            "app",
+            "--debounce-ms",
+            "20",
+            "--runner",
+            "tools/dev-probe",
+        ])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .unwrap();
+    let runs = ws.dir.join(".frost/dev-runs.txt");
+    let wait_for_runs = |minimum: usize| {
+        for _ in 0..250 {
+            let count = std::fs::read_to_string(&runs)
+                .unwrap_or_default()
+                .lines()
+                .count();
+            if count >= minimum {
+                return true;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
+        false
+    };
+
+    let initial = wait_for_runs(1);
+    ws.append("src/util.c", "\n/* trigger watch rebuild */\n");
+    let restarted = wait_for_runs(2);
+    let _ = watch.kill();
+    let _ = watch.wait();
+
+    assert!(initial, "dev did not infer and run the initial artifact");
+    assert!(restarted, "dev did not restart after a source change");
+    let observed = std::fs::read_to_string(runs).unwrap();
+    assert!(
+        observed.lines().all(|line| line == "frost: 42"),
+        "unexpected dev process output: {observed:?}"
+    );
+}
+
+#[test]
+#[cfg(unix)]
+fn bazel_query_import_creates_buildable_package_manifests_without_overwrite() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let ws = Workspace::empty("import-bazel");
+    std::fs::create_dir_all(ws.dir.join("tools")).unwrap();
+    std::fs::create_dir_all(ws.dir.join("lib")).unwrap();
+    std::fs::create_dir_all(ws.dir.join("app")).unwrap();
+    ws.write("lib/math.cc", "int add(int a, int b) { return a + b; }\n");
+    ws.write(
+        "app/main.cc",
+        "int add(int, int); int main() { return add(20, 22) == 42 ? 0 : 1; }\n",
+    );
+    ws.write(
+        "tools/bazel",
+        r#"#!/bin/sh
+set -eu
+case "$*" in
+  *--version*) printf 'bazel 9.1.0\n' ;;
+  *--output=build*) printf '# expanded BUILD without configurable attributes\n' ;;
+  *--output=xml*)
+    /bin/cat <<'XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<query version="2">
+  <rule class="cc_library rule" name="//lib:math">
+    <list name="srcs"><label value="//lib:math.cc"/></list>
+  </rule>
+  <rule class="cc_binary rule" name="//app:runner">
+    <list name="srcs"><label value="//app:main.cc"/></list>
+    <list name="deps"><label value="//lib:math"/></list>
+  </rule>
+</query>
+XML
+    ;;
+  *) exit 2 ;;
+esac
+"#,
+    );
+    std::fs::set_permissions(
+        ws.dir.join("tools/bazel"),
+        std::fs::Permissions::from_mode(0o755),
+    )
+    .unwrap();
+
+    let (ok, out) = ws.frost(&["import-bazel", "--bazel", "tools/bazel"]);
+    assert!(ok, "Bazel import failed:\n{out}");
+    assert!(out.contains("2 rules"), "{out}");
+    assert!(ws.dir.join("frost.toml").is_file());
+    assert!(ws.dir.join("lib/frost.toml").is_file());
+    assert!(ws.dir.join("app/frost.toml").is_file());
+
+    let (ok, out) = ws.frost(&["build"]);
+    assert!(ok, "imported manifests did not build:\n{out}");
+
+    let (ok, out) = ws.frost(&["import-bazel", "--bazel", "tools/bazel"]);
+    assert!(!ok, "a second import overwrote manifests:\n{out}");
+    assert!(out.contains("refusing to overwrite"), "{out}");
+}
+
+#[test]
+#[cfg(unix)]
+fn bazel_dev_rebuilds_and_restarts_only_after_success() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let ws = Workspace::empty("bazel-dev");
+    std::fs::create_dir_all(ws.dir.join("tools")).unwrap();
+    ws.write("app.txt", "healthy one\n");
+    ws.write(
+        "tools/bazel",
+        r#"#!/bin/sh
+set -eu
+mkdir -p .frost
+case "$1" in
+  build)
+    printf '%s\n' "$*" >> .frost/bazel-builds.txt
+    if grep -q broken app.txt; then
+      exit 7
+    fi
+    ;;
+  run)
+    printf '%s\n' "$*" >> .frost/bazel-runs.txt
+    trap 'exit 0' INT TERM
+    while :; do
+      printf tick >> .frost/bazel-heartbeat.txt
+      sleep 0.02
+    done
+    ;;
+  *) exit 2 ;;
+esac
+"#,
+    );
+    std::fs::set_permissions(
+        ws.dir.join("tools/bazel"),
+        std::fs::Permissions::from_mode(0o755),
+    )
+    .unwrap();
+
+    let mut dev = Command::new(frost_bin())
+        .arg("-C")
+        .arg(&ws.dir)
+        .args([
+            "bazel-dev",
+            "//app:server",
+            "--bazel",
+            "tools/bazel",
+            "--debounce-ms",
+            "20",
+            "--bazel-arg=--config=dev",
+            "--",
+            "--port",
+            "3000",
+        ])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .unwrap();
+    let builds = ws.dir.join(".frost/bazel-builds.txt");
+    let runs = ws.dir.join(".frost/bazel-runs.txt");
+    let heartbeats = ws.dir.join(".frost/bazel-heartbeat.txt");
+    let wait_for_lines = |path: &Path, minimum: usize| {
+        for _ in 0..250 {
+            if std::fs::read_to_string(path)
+                .unwrap_or_default()
+                .lines()
+                .count()
+                >= minimum
+            {
+                return true;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
+        false
+    };
+    let wait_for_stable_counts = |minimum_runs: usize| {
+        let mut previous = (0, 0);
+        let mut stable_checks = 0;
+        for _ in 0..500 {
+            let current = (
+                std::fs::read_to_string(&builds)
+                    .unwrap_or_default()
+                    .lines()
+                    .count(),
+                std::fs::read_to_string(&runs)
+                    .unwrap_or_default()
+                    .lines()
+                    .count(),
+            );
+            if current.1 >= minimum_runs && current == previous {
+                stable_checks += 1;
+                if stable_checks >= 25 {
+                    return Some(current);
+                }
+            } else {
+                stable_checks = 0;
+            }
+            previous = current;
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
+        None
+    };
+
+    assert!(
+        wait_for_lines(&runs, 1),
+        "initial Bazel target did not start"
+    );
+    ws.write("app.txt", "healthy two\n");
+    assert!(
+        wait_for_lines(&runs, 2),
+        "successful rebuild did not restart"
+    );
+    // Native watchers may deliver a second event for the same editor write
+    // after the first debounce window, especially on a heavily loaded host.
+    // Establish the healthy baseline only after all such successful restarts
+    // settle; the assertion below is specifically about the later failed
+    // build, not about the backend's event coalescing behavior.
+    let settled = wait_for_stable_counts(2);
+    assert!(
+        settled.is_some(),
+        "successful Bazel rebuild/restart stream did not settle: {} builds / {} runs",
+        std::fs::read_to_string(&builds)
+            .unwrap_or_default()
+            .lines()
+            .count(),
+        std::fs::read_to_string(&runs)
+            .unwrap_or_default()
+            .lines()
+            .count()
+    );
+    let (healthy_builds, healthy_runs) = settled.unwrap();
+
+    ws.write("app.txt", "broken\n");
+    assert!(
+        wait_for_lines(&builds, healthy_builds + 1),
+        "broken change was not rebuilt"
+    );
+    let before = std::fs::metadata(&heartbeats).unwrap().len();
+    std::thread::sleep(std::time::Duration::from_millis(150));
+    let after = std::fs::metadata(&heartbeats).unwrap().len();
+    assert!(
+        after > before,
+        "failed build stopped the last healthy process"
+    );
+    assert_eq!(
+        std::fs::read_to_string(&runs).unwrap().lines().count(),
+        healthy_runs,
+        "failed build launched a replacement process"
+    );
+
+    unsafe {
+        libc::kill(dev.id() as i32, libc::SIGINT);
+    }
+    let status = dev.wait().unwrap();
+    assert_eq!(status.code(), Some(130));
+    let run_log = std::fs::read_to_string(runs).unwrap();
+    assert!(run_log.contains("--config=dev //app:server -- --port 3000"));
 }
 
 #[test]
@@ -1157,6 +2174,13 @@ fn include_path_environment_selects_a_different_header_and_is_keyed() {
 
     let (_, first) = run_with(&one);
     assert_eq!(first, "frost: 43\n");
+    let (out, first_warm) = run_with(&one);
+    assert_eq!(first_warm, "frost: 43\n");
+    assert!(out.contains("up to date"), "{out}");
+    assert!(
+        ws.dir.join(".frost/noop-debug.bin").is_file(),
+        "the environment regression must exercise the fast no-op path"
+    );
 
     let (out, second) = run_with(&two);
     assert_eq!(
@@ -1254,6 +2278,12 @@ fn init_writes_a_manifest_that_actually_builds() {
         out.contains("src/main.c"),
         "the summary names the entry point:\n{out}"
     );
+    let manifest = std::fs::read_to_string(dir.join("frost.toml")).unwrap();
+    assert!(manifest.contains("[profile.debug]"), "{manifest}");
+    assert!(
+        manifest.contains("cflags = [\"-O0\", \"-g\"]"),
+        "{manifest}"
+    );
 
     let (ok, out) = frost(&["build"]);
     assert!(ok, "the scaffold must build as written:\n{out}");
@@ -1262,6 +2292,68 @@ fn init_writes_a_manifest_that_actually_builds() {
         .expect("run built binary");
     assert_eq!(String::from_utf8_lossy(&run.stdout), "42\n");
 
+    let target = dir.file_name().unwrap().to_str().unwrap();
+    let (ok, out) = frost(&["run", target]);
+    assert!(ok, "run must build and execute the target:\n{out}");
+    assert!(out.contains("frost: run"), "{out}");
+    assert!(out.ends_with("42\n"), "{out}");
+
+    std::fs::create_dir_all(dir.join("tools")).unwrap();
+    std::fs::write(
+        dir.join("tools/fake-gdb"),
+        "#!/bin/sh\nprintf '%s\\n' \"$@\" > debug-argv.txt\n",
+    )
+    .unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(
+            dir.join("tools/fake-gdb"),
+            std::fs::Permissions::from_mode(0o755),
+        )
+        .unwrap();
+        let (ok, out) = frost(&[
+            "debug",
+            target,
+            "--debugger",
+            "tools/fake-gdb",
+            "--",
+            "hello",
+        ]);
+        assert!(ok, "debug launch failed:\n{out}");
+        assert!(out.contains("frost: debug"), "{out}");
+        let argv = std::fs::read_to_string(dir.join("debug-argv.txt")).unwrap();
+        assert!(argv.lines().next() == Some("--args"), "{argv}");
+        assert!(argv.contains(".frost/bin/debug"), "{argv}");
+        assert!(argv.lines().last() == Some("hello"), "{argv}");
+    }
+
+    let (ok, out) = frost(&["ide", target, "--dry-run"]);
+    assert!(ok, "IDE preview failed:\n{out}");
+    assert!(out.contains("\"type\": \"cppdbg\""), "{out}");
+    assert!(out.contains(&format!("frost: build {target}")), "{out}");
+    let (ok, out) = frost(&["ide", target]);
+    assert!(ok, "IDE generation failed:\n{out}");
+    let launch: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(dir.join(".vscode/launch.json")).unwrap()).unwrap();
+    let tasks: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(dir.join(".vscode/tasks.json")).unwrap()).unwrap();
+    assert_eq!(launch["configurations"][0]["type"], "cppdbg");
+    assert_eq!(
+        launch["configurations"][0]["preLaunchTask"],
+        format!("frost: build {target}")
+    );
+    assert_eq!(tasks["tasks"][0]["command"], "frost");
+    let (ok, out) = frost(&["ide", target]);
+    assert!(!ok, "IDE generation must not overwrite user files");
+    assert!(out.contains("--dry-run"), "{out}");
+
+    let (ok, out) = frost(&["doctor", "--json"]);
+    assert!(ok, "doctor rejected a buildable scaffold:\n{out}");
+    let diagnosis: serde_json::Value = serde_json::from_str(&out).unwrap();
+    assert_eq!(diagnosis["status"], "ready");
+    assert!(diagnosis["required_tools"].as_array().unwrap().len() >= 4);
+
     // init refuses to clobber an existing manifest, and says how to look
     // without writing.
     let (ok, out) = frost(&["init"]);
@@ -1269,6 +2361,165 @@ fn init_writes_a_manifest_that_actually_builds() {
     assert!(out.contains("--dry-run"), "{out}");
 
     let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn init_java_writes_a_runnable_deterministic_jar_manifest() {
+    if Command::new("javac").arg("-version").output().is_err()
+        || Command::new("java").arg("-version").output().is_err()
+    {
+        eprintln!("skipping Java init E2E: javac and java are required");
+        return;
+    }
+
+    let ws = Workspace::empty("init-java");
+    std::fs::create_dir_all(ws.dir.join("src/main/java/com/example")).unwrap();
+    ws.write(
+        "src/main/java/com/example/App.java",
+        "package com.example;\n\
+         public final class App {\n\
+           public static void main(String[] args) {\n\
+             System.out.println(\"java-init-ok\");\n\
+           }\n\
+         }\n",
+    );
+
+    // The generated manifest intentionally names `frost`, just as a user's
+    // installed manifest will. Cargo exposes the test binary by absolute path,
+    // so put its directory on PATH to exercise that installed-command shape.
+    let current_path = std::env::var_os("PATH").unwrap_or_default();
+    let frost_parent = Path::new(frost_bin()).parent().unwrap().to_path_buf();
+    let path = std::env::join_paths(
+        std::iter::once(frost_parent).chain(std::env::split_paths(&current_path)),
+    )
+    .unwrap();
+    let frost = |args: &[&str]| {
+        let output = Command::new(frost_bin())
+            .arg("-C")
+            .arg(&ws.dir)
+            .args(args)
+            .env("PATH", &path)
+            .output()
+            .expect("spawn frost");
+        (
+            output.status.success(),
+            String::from_utf8_lossy(&output.stdout).to_string()
+                + &String::from_utf8_lossy(&output.stderr),
+        )
+    };
+
+    let (ok, out) = frost(&["init"]);
+    assert!(ok, "Java auto-detection failed:\n{out}");
+    assert!(out.contains("1 Java source file(s)"), "{out}");
+    assert!(out.contains("entry point: com.example.App"), "{out}");
+
+    let manifest_text = std::fs::read_to_string(ws.dir.join("frost.toml")).unwrap();
+    let manifest = frostbuild_core::manifest::Manifest::parse_str(&manifest_text).unwrap();
+    let target = ws.dir.file_name().unwrap().to_str().unwrap();
+    let spec = &manifest.targets[target];
+    assert_eq!(spec.tool.as_deref(), Some("javac"));
+    assert_eq!(spec.steps.len(), 1);
+    assert_eq!(spec.steps[0].tool, "frost");
+    assert!(
+        spec.steps[0]
+            .args
+            .windows(2)
+            .any(|args| args == ["--main-class", "com.example.App"]),
+        "{:?}",
+        spec.steps[0].args
+    );
+
+    let (ok, out) = frost(&["build"]);
+    assert!(ok, "generated Java manifest did not build:\n{out}");
+    let jar = ws
+        .dir
+        .join(".frost/out/debug")
+        .join(format!("{target}.jar"));
+    let direct = Command::new("java")
+        .arg("-jar")
+        .arg(&jar)
+        .output()
+        .expect("run generated Java JAR");
+    assert!(direct.status.success(), "{direct:?}");
+    assert_eq!(String::from_utf8_lossy(&direct.stdout), "java-init-ok\n");
+
+    let (ok, out) = frost(&["run", target]);
+    assert!(ok, "frost run rejected generated Java target:\n{out}");
+    assert!(out.contains("`-- runtime   Java"), "{out}");
+    assert!(out.ends_with("java-init-ok\n"), "{out}");
+
+    let (ok, out) = frost(&[
+        "debug",
+        target,
+        "--debugger",
+        frost_bin(),
+        "--print",
+        "--",
+        "argument",
+    ]);
+    assert!(ok, "Java debug preview rejected generated JAR:\n{out}");
+    assert!(out.contains("Java/jdb"), "{out}");
+    assert!(out.contains("-classpath"), "{out}");
+    assert!(out.contains("com.example.App"), "{out}");
+
+    let _ = std::fs::remove_dir_all(&ws.dir);
+}
+
+#[test]
+fn init_mixed_workspace_requires_an_explicit_language() {
+    let ws = Workspace::empty("init-mixed");
+    std::fs::create_dir_all(ws.dir.join("src")).unwrap();
+    ws.write("src/main.c", "int main(void) { return 0; }\n");
+    ws.write(
+        "src/App.java",
+        "public final class App { public static void main(String[] args) {} }\n",
+    );
+
+    let (ok, out) = ws.frost(&["init"]);
+    assert!(!ok, "mixed source families must not be guessed:\n{out}");
+    assert!(out.contains("--language native"), "{out}");
+    assert!(out.contains("--language java"), "{out}");
+    assert!(!ws.dir.join("frost.toml").exists());
+
+    let (ok, out) = ws.frost(&["init", "--language", "java", "--dry-run"]);
+    assert!(ok, "explicit Java preview failed:\n{out}");
+    assert!(out.contains("inputs = [\"src/App.java\"]"), "{out}");
+    assert!(!out.contains("src/main.c"), "{out}");
+    assert!(!ws.dir.join("frost.toml").exists());
+}
+
+#[test]
+fn doctor_separates_missing_required_tools_from_optional_integrations() {
+    let ws = Workspace::empty("doctor-missing");
+    ws.write("input.txt", "input\n");
+    ws.write(
+        "frost.toml",
+        r#"[workspace]
+default_targets = ["artifact"]
+
+[toolchain.tools]
+missing = "definitely-not-a-real-frost-tool"
+
+[target.artifact]
+kind = "command"
+tool = "missing"
+args = ["${in}", "${out}"]
+inputs = ["input.txt"]
+outputs = [".frost/out/${config}/artifact.txt"]
+sandbox = false
+"#,
+    );
+    let (ok, out) = ws.frost(&["doctor", "--json"]);
+    assert!(!ok, "missing required tool must make doctor nonzero");
+    let diagnosis: serde_json::Value = serde_json::from_str(&out).unwrap();
+    assert_eq!(diagnosis["status"], "blocked");
+    let tools = diagnosis["required_tools"].as_array().unwrap();
+    assert!(tools.iter().any(|tool| {
+        tool["configured"] == "definitely-not-a-real-frost-tool"
+            && tool["available"] == false
+            && tool["required"] == true
+    }));
+    assert!(diagnosis["optional_integrations"].is_array());
 }
 
 #[test]
@@ -1286,10 +2537,15 @@ fn init_refuses_a_directory_it_cannot_describe() {
         .expect("spawn frost");
     assert!(
         !out.status.success(),
-        "frost builds C and C++, not TypeScript"
+        "init only auto-detects artifact-safe source families"
     );
     let text = String::from_utf8_lossy(&out.stderr);
-    assert!(text.contains("no C or C++ sources"), "{text}");
+    assert!(
+        text.contains("no safely scaffoldable C/C++ or Java sources"),
+        "{text}"
+    );
+    assert!(text.contains("kind = \"command\""), "{text}");
+    assert!(text.contains("TypeScript"), "{text}");
 
     let _ = std::fs::remove_dir_all(&dir);
 }

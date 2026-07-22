@@ -10,7 +10,7 @@ use crate::graph::BuildGraph;
 use crate::manifest::{Manifest, HOST_PLATFORM};
 
 const MAGIC: &[u8; 8] = b"FRSTGR01";
-const VERSION: u32 = 3;
+const VERSION: u32 = 5;
 
 /// Evidence that the manifest inputs which produced a cached graph are
 /// unchanged, checkable without parsing any manifest: exact bytes of every
@@ -63,6 +63,24 @@ impl GraphStore {
     pub fn load_cached(root: &Path, profile: &str, platform: &str) -> Option<BuildGraph> {
         let path = store_path(root, profile, platform);
         load_graph(&path, None, Some(root)).ok()
+    }
+
+    /// Validate the manifest/package-discovery evidence in a cached graph
+    /// without deserializing the graph payload itself.
+    ///
+    /// A whole-workspace no-op certificate already describes the files that
+    /// must remain unchanged. It still needs to prove that the graph
+    /// definition is current, but decoding thousands of actions merely to
+    /// learn that no action will run defeats that fast path.
+    pub fn cached_sources_current(root: &Path, profile: &str, platform: &str) -> bool {
+        Self::cached_fingerprint(root, profile, platform).is_some()
+    }
+
+    /// Fingerprint of the manifest/profile/platform tuple embedded in a
+    /// source-current graph store, without deserializing its graph payload.
+    pub fn cached_fingerprint(root: &Path, profile: &str, platform: &str) -> Option<[u8; 32]> {
+        let path = store_path(root, profile, platform);
+        validate_cached_sources(&path, root).ok()
     }
 
     pub fn validate_bytes(bytes: &[u8]) -> Result<()> {
@@ -194,19 +212,35 @@ fn load_graph(
         anyhow::ensure!(parsed.fingerprint == fingerprint, "stale graph store");
     }
     if let Some(root) = stamp_root {
-        // Ignore-file entries are re-added by sources_stamp (and may be
-        // ABSENT); only real manifests are required to exist.
-        let manifest_paths: Vec<String> = parsed
-            .stamp
-            .manifests
-            .iter()
-            .map(|(p, _)| p.clone())
-            .filter(|p| p != ".gitignore" && p != ".frostignore")
-            .collect();
-        let current = sources_stamp(root, &manifest_paths)?;
-        anyhow::ensure!(current == parsed.stamp, "workspace sources changed");
+        ensure_sources_current(root, &parsed.stamp)?;
     }
     postcard::from_bytes(parsed.payload).context("corrupt graph store")
+}
+
+fn validate_cached_sources(path: &Path, root: &Path) -> Result<[u8; 32]> {
+    let file = File::open(path)?;
+    // SAFETY: the mapping is read-only and `file` remains alive until mapping creation.
+    let mmap = unsafe { Mmap::map(&file)? };
+    let parsed = parse_header(&mmap)?;
+    ensure_sources_current(root, &parsed.stamp)?;
+    Ok(parsed
+        .fingerprint
+        .try_into()
+        .expect("graph header fingerprint is always 32 bytes"))
+}
+
+fn ensure_sources_current(root: &Path, stamp: &SourcesStamp) -> Result<()> {
+    // Ignore-file entries are re-added by sources_stamp (and may be ABSENT);
+    // only real manifests are required to exist.
+    let manifest_paths: Vec<String> = stamp
+        .manifests
+        .iter()
+        .map(|(p, _)| p.clone())
+        .filter(|p| p != ".gitignore" && p != ".frostignore")
+        .collect();
+    let current = sources_stamp(root, &manifest_paths)?;
+    anyhow::ensure!(current == *stamp, "workspace sources changed");
+    Ok(())
 }
 
 fn save_graph(
@@ -284,6 +318,11 @@ mod tests {
         let manifest = Manifest::load(&root).unwrap();
         GraphStore::load_or_compile(&root, &manifest, "debug").unwrap();
 
+        assert!(GraphStore::cached_sources_current(
+            &root,
+            "debug",
+            HOST_PLATFORM
+        ));
         let cached =
             GraphStore::load_cached(&root, "debug", HOST_PLATFORM).expect("warm hit after save");
         assert_eq!(cached.actions.len(), 2);
@@ -295,6 +334,11 @@ mod tests {
             "[target.a]\nkind='cc_binary'\nsrcs=['a.c']\ncflags=['-O2']\n",
         )
         .unwrap();
+        assert!(!GraphStore::cached_sources_current(
+            &root,
+            "debug",
+            HOST_PLATFORM
+        ));
         assert!(GraphStore::load_cached(&root, "debug", HOST_PLATFORM).is_none());
         std::fs::remove_dir_all(root).ok();
     }

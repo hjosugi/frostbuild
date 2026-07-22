@@ -14,7 +14,7 @@ and [02](02_two_x_strategy.md).
 | Bazel capability | Decision | FrostBuild form |
 |---|---|---|
 | Platforms, toolchains, cross-compilation (`--platforms`, `cc_toolchain`, exec/target configs) | **Adopt — shipped** | `[platform.<name>]` toolchain overlays + `--platform`; per-platform output trees, graph caches and journal namespaces; sysroot expansion; real device builds verified by an aarch64 E2E test. The full feature-configuration DSL (features/action_configs templating) is rejected: the whole resolved toolchain hashes into every action key instead. |
-| Query languages (`query`/`cquery`/`aquery`: `deps`, `rdeps`, `somepath`) | **Adopt** | One graph, one query surface: planned `frost query` over the mmap store with `deps`/`rdeps`/`somepath` and JSON output. `aquery`'s role is largely covered today by `compdb`, `plan` and the Chrome trace. Affected-test selection is already an `rdeps` special case. |
+| Query languages (`query`/`cquery`/`aquery`: `deps`, `rdeps`, `somepath`) | **Adopt — shipped** | `frost query deps/rdeps/somepath` reads the stored graph and has JSON output. `compdb`, `plan`, `explain` and the Chrome trace cover the common action-query uses. Affected-test selection is an `rdeps` special case. |
 | Remote cache / remote execution (REAPI), Build without the Bytes | **Adopt in v2** (unchanged decision, [07](07_remote_cache_study.md)/[11](11_remote_execution_study.md)) | BLAKE3 digests and relative-path action keys are REAPI-translatable now. BwoB's multi-year "output not found" bug tail is the cautionary tale for keeping v1 fully materialized. |
 | Execution-requirement tags (`no-cache`, `no-sandbox`, `local`, …) | **Adopt, but typed** | Bazel's stringly tags are a documented mess (bazel#25399, bazel#6038, bazel#10205). FrostBuild uses typed manifest fields (`sandbox = false` exists today; `cache`/`network` follow the same pattern). |
 | Build stamping (`--workspace_status_command`, volatile/stable split) | **Adopt** | The volatile/stable file trick is the industry's best answer to "embed the git SHA without breaking incrementality" and is small to implement. |
@@ -27,6 +27,21 @@ and [02](02_two_x_strategy.md).
 | bzlmod / external dependency management | **Reject full system; adopt pinned-fetch subset later** | Registry+MVS+extensions took Bazel three major versions and still churns (bazel#23023). A `[fetch]` table with URL+hash+vendor dir covers C/C++ third-party needs without a resolver. |
 | Persistent workers, dynamic execution | **Defer** | Pays off for JVM-ish toolchains; clang/gcc startup is cheap. Revisit with v2 remote racing. |
 | Starlark rules/macros platform | **Reject** | The core complexity bet FrostBuild inverts: declarative TOML with a fixed, well-chosen rule vocabulary. Escape hatches are genrules and commands, not an embedded language. |
+
+## Migration surface
+
+`frost import-bazel` asks Bazel to expand macros/globs and imports its documented
+query XML for a conservative `cc_library`/`cc_binary`/`cc_test` subset. It
+generates package manifests, rewrites labels, supports dry-run and refuses to
+overwrite. It rejects `select()`, external repositories and every known native
+attribute whose semantics Frost cannot yet preserve. This is a migration
+scaffold, not Starlark compatibility or configured-toolchain extraction; the
+full contract and stop list are in [23](23_bazel_migration.md). Once imported,
+native targets use the same `run`, `dev` (successful-build process restart),
+debugger and IDE paths as handwritten Frost targets. Before import,
+`frost bazel-dev` keeps Bazel's graph/server/cache authoritative and layers the
+same success-only process-tree restart policy over `bazel build`/`bazel run`.
+This is restart hot reload, not a BEP module-patch protocol.
 
 ## Pain points already solved by design
 

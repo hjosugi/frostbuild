@@ -57,6 +57,7 @@ pub enum TargetKind {
     Genrule,
     Test,
     KofunBinary,
+    Command,
 }
 
 impl TargetKind {
@@ -68,6 +69,7 @@ impl TargetKind {
             TargetKind::Genrule => "genrule",
             TargetKind::Test => "test",
             TargetKind::KofunBinary => "kofun_binary",
+            TargetKind::Command => "command",
         }
     }
 }
@@ -88,6 +90,9 @@ struct RawToolchain {
     cxx: Option<String>,
     ar: Option<String>,
     kofunc: Option<String>,
+    /// Named language/build tools used by `kind = "command"` targets.
+    #[serde(default)]
+    tools: BTreeMap<String, String>,
     #[serde(default)]
     arflags: Option<Vec<String>>,
     #[serde(default)]
@@ -108,6 +113,9 @@ struct RawPlatform {
     cxx: Option<String>,
     ar: Option<String>,
     kofunc: Option<String>,
+    /// Per-platform overrides/additions for `[toolchain.tools]`.
+    #[serde(default)]
+    tools: BTreeMap<String, String>,
     #[serde(default)]
     arflags: Option<Vec<String>>,
     sysroot: Option<String>,
@@ -145,12 +153,39 @@ struct RawTarget {
     #[serde(default)]
     ldflags: Vec<String>,
     cmd: Option<String>,
+    /// Named `[toolchain.tools]` entry used by a command target.
+    tool: Option<String>,
+    #[serde(default)]
+    args: Vec<String>,
+    #[serde(default)]
+    env: BTreeMap<String, String>,
+    #[serde(default)]
+    pass_env: Vec<String>,
+    /// Additional direct-argv commands run after the primary command.
+    #[serde(default)]
+    steps: Vec<RawCommandStep>,
+    /// Configuration-isolated intermediate directories reset before execution.
+    #[serde(default)]
+    clean_dirs: Vec<String>,
+    /// Keep declared outputs in place while rerunning an incremental compiler.
+    #[serde(default)]
+    preserve_outputs: bool,
+    /// Optional Makefile-format dynamic dependency file.
+    depfile: Option<String>,
     #[serde(default)]
     inputs: Vec<String>,
     #[serde(default)]
     outputs: Vec<String>,
     /// Tests may opt out of sandboxing when they intentionally inspect the host.
     sandbox: Option<bool>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RawCommandStep {
+    tool: String,
+    #[serde(default)]
+    args: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -176,6 +211,7 @@ pub struct Toolchain {
     /// Kofun compiler driver. It is optional so C-only workspaces do not need
     /// Kofun installed merely to fingerprint their configured toolchain.
     pub kofunc: Option<String>,
+    pub tools: BTreeMap<String, String>,
     pub arflags: Vec<String>,
     pub cflags: Vec<String>,
     pub cxxflags: Vec<String>,
@@ -189,6 +225,7 @@ pub struct Platform {
     pub cxx: Option<String>,
     pub ar: Option<String>,
     pub kofunc: Option<String>,
+    pub tools: BTreeMap<String, String>,
     pub arflags: Option<Vec<String>>,
     pub sysroot: Option<String>,
     pub cflags: Vec<String>,
@@ -215,11 +252,26 @@ pub struct Target {
     pub ldflags: Vec<String>,
     /// Genrule only: shell command with `${in}` / `${out}` / `${outs}`.
     pub cmd: Option<String>,
+    /// Command target only: named tool plus direct argv (no shell).
+    pub tool: Option<String>,
+    pub args: Vec<String>,
+    pub env: BTreeMap<String, String>,
+    pub pass_env: Vec<String>,
+    pub steps: Vec<CommandStep>,
+    pub clean_dirs: Vec<String>,
+    pub preserve_outputs: bool,
+    pub depfile: Option<String>,
     pub inputs: Vec<String>,
     pub outputs: Vec<String>,
     pub sandbox: bool,
     /// Package directory relative to the workspace root (empty for root).
     pub package: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CommandStep {
+    pub tool: String,
+    pub args: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -341,11 +393,13 @@ impl Manifest {
             cxx: spec.cxx.clone().unwrap_or_else(|| base.cxx.clone()),
             ar: spec.ar.clone().unwrap_or_else(|| base.ar.clone()),
             kofunc: spec.kofunc.clone().or_else(|| base.kofunc.clone()),
+            tools: base.tools.clone(),
             arflags: spec.arflags.clone().unwrap_or_else(|| base.arflags.clone()),
             cflags: base.cflags.clone(),
             cxxflags: base.cxxflags.clone(),
             ldflags: base.ldflags.clone(),
         };
+        resolved.tools.extend(spec.tools.clone());
         if let Some(sysroot) = &spec.sysroot {
             let flag = format!("--sysroot={sysroot}");
             resolved.cflags.push(flag.clone());
@@ -405,6 +459,7 @@ impl Manifest {
                     cxx: spec.cxx,
                     ar: spec.ar,
                     kofunc: spec.kofunc,
+                    tools: spec.tools,
                     arflags: spec.arflags,
                     sysroot: spec.sysroot,
                     cflags: spec.cflags,
@@ -421,6 +476,7 @@ impl Manifest {
                 cxx: raw.toolchain.cxx.unwrap_or_else(|| "c++".to_string()),
                 ar: raw.toolchain.ar.unwrap_or_else(|| "ar".to_string()),
                 kofunc: raw.toolchain.kofunc,
+                tools: raw.toolchain.tools,
                 arflags: raw
                     .toolchain
                     .arflags
@@ -457,6 +513,14 @@ fn valid_target_name(name: &str) -> bool {
             .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
 }
 
+fn valid_env_name(name: &str) -> bool {
+    let mut chars = name.chars();
+    chars
+        .next()
+        .is_some_and(|first| first == '_' || first.is_ascii_alphabetic())
+        && chars.all(|c| c == '_' || c.is_ascii_alphanumeric())
+}
+
 fn build_target(name: &str, spec: RawTarget) -> Result<Target> {
     if !valid_target_name(name) {
         bail!("target name must match [A-Za-z0-9_-]+");
@@ -466,6 +530,21 @@ fn build_target(name: &str, spec: RawTarget) -> Result<Target> {
     let includes = validate_paths(&spec.includes).context("includes")?;
     let inputs = validate_paths(&spec.inputs).context("inputs")?;
     let outputs = validate_paths(&spec.outputs).context("outputs")?;
+    let clean_dirs = validate_paths(&spec.clean_dirs).context("clean_dirs")?;
+    let depfile = spec
+        .depfile
+        .as_deref()
+        .map(validate_rel_path)
+        .transpose()
+        .context("depfile")?;
+    let has_command_fields = spec.tool.is_some()
+        || !spec.args.is_empty()
+        || !spec.env.is_empty()
+        || !spec.pass_env.is_empty()
+        || !spec.steps.is_empty()
+        || !clean_dirs.is_empty()
+        || spec.preserve_outputs
+        || depfile.is_some();
 
     match spec.kind {
         TargetKind::CcBinary | TargetKind::CcLibrary | TargetKind::CcTest => {
@@ -478,6 +557,9 @@ fn build_target(name: &str, spec: RawTarget) -> Result<Target> {
                     spec.kind.as_str()
                 );
             }
+            if has_command_fields {
+                bail!("{} must not set command adapter fields", spec.kind.as_str());
+            }
         }
         TargetKind::KofunBinary => {
             validate_kofun_binary_sources(&srcs)?;
@@ -487,12 +569,15 @@ fn build_target(name: &str, spec: RawTarget) -> Result<Target> {
             if spec.cmd.is_some() || !inputs.is_empty() || !outputs.is_empty() {
                 bail!("kofun_binary must not set genrule fields (cmd/inputs/outputs)");
             }
+            if has_command_fields {
+                bail!("kofun_binary must not set command adapter fields");
+            }
         }
-        TargetKind::Genrule | TargetKind::Test => {
+        TargetKind::Genrule => {
             if spec.cmd.as_deref().map(str::trim).unwrap_or("").is_empty() {
                 bail!("genrule requires a non-empty cmd");
             }
-            if spec.kind == TargetKind::Genrule && outputs.is_empty() {
+            if outputs.is_empty() {
                 bail!("genrule requires non-empty outputs");
             }
             if !srcs.is_empty() {
@@ -500,6 +585,111 @@ fn build_target(name: &str, spec: RawTarget) -> Result<Target> {
             }
             if !spec.cflags.is_empty() || !spec.ldflags.is_empty() {
                 bail!("genrule must not set cflags/ldflags");
+            }
+            if has_command_fields {
+                bail!("genrule must not set command adapter fields");
+            }
+        }
+        TargetKind::Test => {
+            let has_shell = spec
+                .cmd
+                .as_deref()
+                .is_some_and(|cmd| !cmd.trim().is_empty());
+            let has_direct = spec.tool.is_some();
+            if has_shell == has_direct {
+                bail!("test requires exactly one of cmd or tool");
+            }
+            if !outputs.is_empty() {
+                bail!("test success output is managed by Frost; outputs must be empty");
+            }
+            if !srcs.is_empty() {
+                bail!("test uses inputs, not srcs");
+            }
+            if !spec.cflags.is_empty() || !spec.ldflags.is_empty() {
+                bail!("test must not set cflags/ldflags");
+            }
+            if has_shell && has_command_fields {
+                bail!("shell test must not set command adapter fields");
+            }
+            if has_direct {
+                let tool = spec.tool.as_deref().map(str::trim).unwrap_or("");
+                if !valid_target_name(tool) {
+                    bail!("direct test requires tool = \"NAME\" matching [A-Za-z0-9_-]+");
+                }
+                if !spec.steps.is_empty()
+                    || !clean_dirs.is_empty()
+                    || spec.preserve_outputs
+                    || depfile.is_some()
+                {
+                    bail!(
+                        "direct test does not support steps, clean_dirs, preserve_outputs or depfile"
+                    );
+                }
+                for name in spec.env.keys().chain(&spec.pass_env) {
+                    if !valid_env_name(name) {
+                        bail!("invalid environment variable name {name:?}");
+                    }
+                }
+                let mut pass_env = spec.pass_env.clone();
+                pass_env.sort();
+                if pass_env.windows(2).any(|pair| pair[0] == pair[1]) {
+                    bail!("test pass_env contains a duplicate name");
+                }
+                if pass_env.iter().any(|name| spec.env.contains_key(name)) {
+                    bail!("test env and pass_env must not contain the same name");
+                }
+            }
+        }
+        TargetKind::Command => {
+            let tool = spec.tool.as_deref().map(str::trim).unwrap_or("");
+            if !valid_target_name(tool) {
+                bail!("command requires tool = \"NAME\" matching [A-Za-z0-9_-]+");
+            }
+            if outputs.is_empty() {
+                bail!("command requires non-empty outputs");
+            }
+            if outputs.iter().any(|output| !output.contains("${config}")) {
+                bail!(
+                    "command outputs must contain ${{config}} so profile/platform builds stay isolated"
+                );
+            }
+            if depfile
+                .as_ref()
+                .is_some_and(|path| !path.contains("${config}"))
+            {
+                bail!("command depfile must contain ${{config}}");
+            }
+            if clean_dirs.iter().any(|path| !path.contains("${config}")) {
+                bail!("command clean_dirs must contain ${{config}}");
+            }
+            if spec.cmd.is_some()
+                || !srcs.is_empty()
+                || !includes.is_empty()
+                || !spec.cflags.is_empty()
+                || !spec.ldflags.is_empty()
+            {
+                bail!("command uses tool/args/inputs/outputs, not C or genrule fields");
+            }
+            for name in spec.env.keys().chain(&spec.pass_env) {
+                if !valid_env_name(name) {
+                    bail!("invalid environment variable name {name:?}");
+                }
+            }
+            let mut pass_env = spec.pass_env.clone();
+            pass_env.sort();
+            if pass_env.windows(2).any(|pair| pair[0] == pair[1]) {
+                bail!("command pass_env contains a duplicate name");
+            }
+            if pass_env.iter().any(|name| spec.env.contains_key(name)) {
+                bail!("command env and pass_env must not contain the same name");
+            }
+            for step in &spec.steps {
+                if !valid_target_name(&step.tool) {
+                    bail!(
+                        "command step tool {:?} must match [A-Za-z0-9_-]+",
+                        step.tool
+                    );
+                }
             }
         }
     }
@@ -513,6 +703,21 @@ fn build_target(name: &str, spec: RawTarget) -> Result<Target> {
         cflags: spec.cflags,
         ldflags: spec.ldflags,
         cmd: spec.cmd,
+        tool: spec.tool,
+        args: spec.args,
+        env: spec.env,
+        pass_env: spec.pass_env,
+        steps: spec
+            .steps
+            .into_iter()
+            .map(|step| CommandStep {
+                tool: step.tool,
+                args: step.args,
+            })
+            .collect(),
+        clean_dirs,
+        preserve_outputs: spec.preserve_outputs,
+        depfile,
         inputs,
         outputs,
         sandbox: spec.sandbox.unwrap_or(true),
@@ -638,6 +843,15 @@ fn expand_manifest_paths(manifest: &mut Manifest, root: &Path, package: &str) ->
             .iter()
             .map(|p| prefix_path(package, p))
             .collect();
+        target.clean_dirs = target
+            .clean_dirs
+            .iter()
+            .map(|p| prefix_path(package, p))
+            .collect();
+        target.depfile = target
+            .depfile
+            .as_ref()
+            .map(|path| prefix_path(package, path));
     }
     Ok(())
 }
@@ -683,13 +897,22 @@ fn validate_paths(raw: &[String]) -> Result<Vec<String>> {
     Ok(out)
 }
 
-/// A starter manifest for a directory that has C or C++ sources but no
+/// Language families whose build artifact can be scaffolded without guessing
+/// package-manager or dynamic-output semantics.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ScaffoldLanguage {
+    Native,
+    Java,
+}
+
+/// A starter manifest for a directory that has supported sources but no
 /// `frost.toml` yet.
 ///
 /// Deliberately shallow: it reports what it found and writes the smallest
 /// manifest that builds it, rather than inferring a target layout the author
 /// did not ask for. Anything beyond one binary and one library is a decision
 /// the author should make in the file, where it is visible.
+#[derive(Debug)]
 pub struct Scaffold {
     pub manifest: String,
     /// What the scan saw, for the caller to print.
@@ -697,15 +920,70 @@ pub struct Scaffold {
 }
 
 const SOURCE_EXTENSIONS: [&str; 6] = ["c", "cc", "cpp", "cxx", "C", "c++"];
+const JAVA_EXTENSIONS: [&str; 1] = ["java"];
+const JAVA_PROJECT_MARKERS: [&str; 7] = [
+    "pom.xml",
+    "build.gradle",
+    "build.gradle.kts",
+    "settings.gradle",
+    "settings.gradle.kts",
+    "gradlew",
+    "mvnw",
+];
 
 pub fn scaffold(root: &Path) -> Result<Scaffold> {
+    let mut native = Vec::new();
+    collect_sources(root, root, &mut native, 0, &SOURCE_EXTENSIONS)?;
+    let mut java = Vec::new();
+    collect_sources(root, root, &mut java, 0, &JAVA_EXTENSIONS)?;
+    match (!native.is_empty(), !java.is_empty()) {
+        (true, false) => scaffold_for(root, ScaffoldLanguage::Native),
+        (false, true) => {
+            let mut project_markers = Vec::new();
+            collect_named_files(root, root, &mut project_markers, 0, &JAVA_PROJECT_MARKERS)?;
+            project_markers.sort();
+            if project_markers.is_empty() {
+                scaffold_for(root, ScaffoldLanguage::Java)
+            } else {
+                bail!(
+                    "Java sources and an existing Gradle/Maven project marker ({}) were found. \
+                     init will not bypass dependency, plugin or task semantics: declare that \
+                     build as a kind = \"command\" boundary, or use `frost init --language \
+                     java` only if a direct javac/JAR build is intentional",
+                    project_markers.join(", ")
+                )
+            }
+        }
+        (true, true) => bail!(
+            "both native C/C++ and Java sources were found under {}. choose \
+             `frost init --language native` or `--language java` so init does \
+             not silently omit half of a polyglot workspace",
+            root.display()
+        ),
+        (false, false) => bail!(
+            "no safely scaffoldable C/C++ or Java sources under {}. use a \
+             kind = \"command\" target with [toolchain.tools] for Rust, Go, \
+             TypeScript, Gradle, Maven, npm, Python backends, or another tool",
+            root.display()
+        ),
+    }
+}
+
+pub fn scaffold_for(root: &Path, language: ScaffoldLanguage) -> Result<Scaffold> {
+    match language {
+        ScaffoldLanguage::Native => scaffold_native(root),
+        ScaffoldLanguage::Java => scaffold_java(root),
+    }
+}
+
+fn scaffold_native(root: &Path) -> Result<Scaffold> {
     let mut sources: Vec<String> = Vec::new();
-    collect_sources(root, root, &mut sources, 0)?;
+    collect_sources(root, root, &mut sources, 0, &SOURCE_EXTENSIONS)?;
     sources.sort();
     if sources.is_empty() {
         bail!(
-            "no C or C++ sources under {}. frost builds C and C++; write \
-             {MANIFEST_FILE} by hand for anything else",
+            "no C or C++ sources under {}; choose another --language or add a \
+             direct command target",
             root.display()
         );
     }
@@ -752,7 +1030,11 @@ pub fn scaffold(root: &Path) -> Result<Scaffold> {
         name.clone()
     };
     manifest.push_str(&format!("default_targets = [\"{default_target}\"]\n\n"));
-    manifest.push_str("[toolchain]\ncc = \"cc\"\ncxx = \"c++\"\ncflags = [\"-Wall\"]\n\n");
+    manifest.push_str(
+        "[toolchain]\ncc = \"cc\"\ncxx = \"c++\"\ncflags = [\"-Wall\"]\n\n\
+         [profile.debug]\ncflags = [\"-O0\", \"-g\"]\n\n\
+         [profile.release]\ncflags = [\"-O3\", \"-DNDEBUG\"]\n\n",
+    );
 
     if binary_srcs.is_empty() {
         manifest.push_str(&format!("[target.{name}]\nkind = \"cc_library\"\n"));
@@ -781,7 +1063,73 @@ pub fn scaffold(root: &Path) -> Result<Scaffold> {
     Ok(Scaffold { manifest, summary })
 }
 
-fn collect_sources(root: &Path, dir: &Path, out: &mut Vec<String>, depth: usize) -> Result<()> {
+fn scaffold_java(root: &Path) -> Result<Scaffold> {
+    let mut sources = Vec::new();
+    collect_sources(root, root, &mut sources, 0, &JAVA_EXTENSIONS)?;
+    sources.sort();
+    if sources.is_empty() {
+        bail!(
+            "no Java sources under {}; choose another --language or add a \
+             direct command target",
+            root.display()
+        );
+    }
+    let name = root
+        .file_name()
+        .and_then(|value| value.to_str())
+        .map(sanitize_name)
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| "app".to_string());
+    let mut main_classes = sources
+        .iter()
+        .filter_map(|source| java_main_class(&root.join(source)))
+        .collect::<Vec<_>>();
+    main_classes.sort();
+    main_classes.dedup();
+
+    let mut summary = vec![format!("{} Java source file(s)", sources.len())];
+    match main_classes.as_slice() {
+        [] => summary.push("no public static void main found; generating a library JAR".into()),
+        [main] => summary.push(format!("entry point: {main}")),
+        [main, rest @ ..] => summary.push(format!(
+            "entry point: {main} (selected first of {}; review generated main class)",
+            rest.len() + 1
+        )),
+    }
+
+    let classes = format!(".frost/tmp/${{config}}/java/{name}");
+    let output = format!(".frost/out/${{config}}/{name}.jar");
+    let mut pack_args = vec![
+        "pack-jar".to_string(),
+        "--input".to_string(),
+        "${clean_dir}".to_string(),
+        "--output".to_string(),
+        "${out}".to_string(),
+    ];
+    if let Some(main) = main_classes.first() {
+        pack_args.extend(["--main-class".to_string(), main.clone()]);
+    }
+    let outputs = toml_array(std::slice::from_ref(&output));
+    let manifest = format!(
+        "[workspace]\ndefault_targets = [\"{name}\"]\n\n\
+         [toolchain.tools]\njavac = \"javac\"\nfrost = \"frost\"\n\n\
+         [target.{name}]\nkind = \"command\"\ntool = \"javac\"\n\
+         args = [\"-encoding\", \"UTF-8\", \"-g\", \"-d\", \"${{clean_dir}}\", \"${{in}}\"]\n\
+         inputs = {}\noutputs = {outputs}\nclean_dirs = [{classes:?}]\n\
+         steps = [{{ tool = \"frost\", args = {} }}]\nsandbox = false\n",
+        toml_array(&sources),
+        toml_array(&pack_args),
+    );
+    Ok(Scaffold { manifest, summary })
+}
+
+fn collect_sources(
+    root: &Path,
+    dir: &Path,
+    out: &mut Vec<String>,
+    depth: usize,
+    extensions: &[&str],
+) -> Result<()> {
     if depth > 8 {
         return Ok(());
     }
@@ -795,12 +1143,12 @@ fn collect_sources(root: &Path, dir: &Path, out: &mut Vec<String>, depth: usize)
         let ty = entry.file_type()?;
         let path = entry.path();
         if ty.is_dir() && !ty.is_symlink() {
-            collect_sources(root, &path, out, depth + 1)?;
+            collect_sources(root, &path, out, depth + 1, extensions)?;
         } else if ty.is_file()
             && path
                 .extension()
                 .and_then(|e| e.to_str())
-                .is_some_and(|e| SOURCE_EXTENSIONS.contains(&e))
+                .is_some_and(|extension| extensions.contains(&extension))
         {
             if let Ok(relative) = path.strip_prefix(root) {
                 out.push(relative.to_string_lossy().replace('\\', "/"));
@@ -808,6 +1156,60 @@ fn collect_sources(root: &Path, dir: &Path, out: &mut Vec<String>, depth: usize)
         }
     }
     Ok(())
+}
+
+fn collect_named_files(
+    root: &Path,
+    dir: &Path,
+    out: &mut Vec<String>,
+    depth: usize,
+    names: &[&str],
+) -> Result<()> {
+    if depth > 8 {
+        return Ok(());
+    }
+    for entry in std::fs::read_dir(dir)? {
+        let entry = entry?;
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        if name.starts_with('.') || matches!(name.as_ref(), "target" | "build" | "node_modules") {
+            continue;
+        }
+        let ty = entry.file_type()?;
+        let path = entry.path();
+        if ty.is_dir() && !ty.is_symlink() {
+            collect_named_files(root, &path, out, depth + 1, names)?;
+        } else if ty.is_file() && names.contains(&name.as_ref()) {
+            if let Ok(relative) = path.strip_prefix(root) {
+                out.push(relative.to_string_lossy().replace('\\', "/"));
+            }
+        }
+    }
+    Ok(())
+}
+
+fn java_main_class(path: &Path) -> Option<String> {
+    let text = std::fs::read_to_string(path).ok()?;
+    let has_main = text.lines().map(str::trim).any(|line| {
+        !line.starts_with("//")
+            && (line.contains("static void main(") || line.contains("static void main ("))
+    });
+    if !has_main {
+        return None;
+    }
+    let class = path.file_stem()?.to_str()?;
+    let package = text.lines().map(str::trim).find_map(|line| {
+        let package = line.strip_prefix("package ")?.strip_suffix(';')?.trim();
+        (!package.is_empty()
+            && package
+                .chars()
+                .all(|character| character.is_ascii_alphanumeric() || "._$".contains(character)))
+        .then_some(package)
+    });
+    Some(match package {
+        Some(package) => format!("{package}.{class}"),
+        None => class.to_string(),
+    })
 }
 
 /// Whether a file looks like it defines `main`. A scaffold is allowed to be
@@ -922,6 +1324,92 @@ mod tests {
             cmd = "true"
         "#;
         assert!(Manifest::parse_str(text).is_err());
+    }
+
+    #[test]
+    fn command_targets_require_config_isolation_and_named_tools() {
+        let valid = r#"
+            [toolchain.tools]
+            javac = "javac"
+
+            [platform.device.tools]
+            javac = "device-javac"
+
+            [target.java]
+            kind = "command"
+            tool = "javac"
+            args = ["-d", "${out_dir}", "${in}"]
+            inputs = ["src/Hello.java"]
+            outputs = [".frost/out/${config}/java/Hello.class"]
+            env = { RELEASE = "1" }
+            pass_env = ["JAVA_HOME"]
+            clean_dirs = [".frost/tmp/${config}/java"]
+            preserve_outputs = true
+            steps = [{ tool = "javac", args = ["--version"] }]
+            sandbox = false
+        "#;
+        let manifest = Manifest::parse_str(valid).unwrap();
+        let target = &manifest.targets["java"];
+        assert_eq!(target.kind, TargetKind::Command);
+        assert_eq!(target.tool.as_deref(), Some("javac"));
+        assert_eq!(target.pass_env, vec!["JAVA_HOME"]);
+        assert_eq!(target.steps[0].tool, "javac");
+        assert_eq!(target.clean_dirs, vec![".frost/tmp/${config}/java"]);
+        assert!(target.preserve_outputs);
+        assert_eq!(manifest.toolchain.tools["javac"], "javac");
+        assert_eq!(
+            manifest.toolchain_for("device").unwrap().tools["javac"],
+            "device-javac"
+        );
+
+        for invalid in [
+            valid.replace("${config}/", ""),
+            valid.replace("tool = \"javac\"", ""),
+            valid.replace("pass_env = [\"JAVA_HOME\"]", "pass_env = [\"BAD=NAME\"]"),
+            valid.replace(
+                "clean_dirs = [\".frost/tmp/${config}/java\"]",
+                "clean_dirs = [\".frost/tmp/java\"]",
+            ),
+        ] {
+            assert!(
+                Manifest::parse_str(&invalid).is_err(),
+                "invalid command target was accepted:\n{invalid}"
+            );
+        }
+    }
+
+    #[test]
+    fn tests_accept_exactly_one_shell_or_direct_argv_contract() {
+        let direct = Manifest::parse_str(
+            r#"
+            [toolchain.tools]
+            pytest = "python3"
+
+            [target.unit]
+            kind = "test"
+            tool = "pytest"
+            args = ["-m", "pytest", "tests/unit.py"]
+            inputs = ["src/**/*.py", "tests/unit.py"]
+            env = { PYTHONHASHSEED = "0" }
+            pass_env = ["PYTHONPATH"]
+            sandbox = false
+            "#,
+        )
+        .unwrap();
+        assert_eq!(direct.targets["unit"].tool.as_deref(), Some("pytest"));
+        assert_eq!(direct.targets["unit"].pass_env, ["PYTHONPATH"]);
+
+        for invalid in [
+            "[target.t]\nkind='test'\n",
+            "[target.t]\nkind='test'\ncmd='true'\ntool='runner'\n",
+            "[target.t]\nkind='test'\ntool='runner'\noutputs=['out']\n",
+            "[target.t]\nkind='test'\ntool='runner'\nsteps=[{tool='runner',args=[]}]\n",
+        ] {
+            assert!(
+                Manifest::parse_str(invalid).is_err(),
+                "invalid test target was accepted: {invalid}"
+            );
+        }
     }
 
     #[test]
@@ -1059,5 +1547,109 @@ mod tests {
         "#;
         let m = Manifest::parse_str(text).unwrap();
         assert_eq!(m.default_targets, vec!["tool"]);
+    }
+
+    #[test]
+    fn java_scaffold_is_a_parseable_deterministic_jar_pipeline() {
+        let root =
+            std::env::temp_dir().join(format!("frost-core-java-scaffold-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(root.join("src/main/java/com/example")).unwrap();
+        std::fs::write(
+            root.join("src/main/java/com/example/App.java"),
+            "package com.example;\n\
+             public final class App {\n\
+               public static void main(String[] args) {\n\
+                 System.out.println(\"java-init-ok\");\n\
+               }\n\
+             }\n",
+        )
+        .unwrap();
+
+        let scaffold = scaffold(&root).unwrap();
+        assert!(
+            scaffold
+                .summary
+                .iter()
+                .any(|line| line == "entry point: com.example.App"),
+            "{:?}",
+            scaffold.summary
+        );
+        let manifest = Manifest::parse_str(&scaffold.manifest).unwrap();
+        let target_name = root.file_name().unwrap().to_str().unwrap();
+        let target = &manifest.targets[target_name];
+        assert_eq!(target.kind, TargetKind::Command);
+        assert_eq!(target.tool.as_deref(), Some("javac"));
+        assert_eq!(
+            target.outputs,
+            [format!(".frost/out/${{config}}/{target_name}.jar")]
+        );
+        assert_eq!(target.steps.len(), 1);
+        assert_eq!(target.steps[0].tool, "frost");
+        assert_eq!(
+            target.steps[0].args,
+            [
+                "pack-jar",
+                "--input",
+                "${clean_dir}",
+                "--output",
+                "${out}",
+                "--main-class",
+                "com.example.App",
+            ]
+        );
+
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn mixed_native_and_java_scaffold_requires_an_explicit_language() {
+        let root =
+            std::env::temp_dir().join(format!("frost-core-mixed-scaffold-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(root.join("src")).unwrap();
+        std::fs::write(root.join("src/main.c"), "int main(void) { return 0; }\n").unwrap();
+        std::fs::write(
+            root.join("src/App.java"),
+            "public final class App { public static void main(String[] args) {} }\n",
+        )
+        .unwrap();
+
+        let error = scaffold(&root).unwrap_err().to_string();
+        assert!(error.contains("--language native"), "{error}");
+        assert!(error.contains("--language java"), "{error}");
+        let explicit = scaffold_for(&root, ScaffoldLanguage::Java).unwrap();
+        assert!(explicit.manifest.contains("inputs = [\"src/App.java\"]"));
+        assert!(!explicit.manifest.contains("src/main.c"));
+        Manifest::parse_str(&explicit.manifest).unwrap();
+
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn java_scaffold_does_not_silently_bypass_gradle_or_maven() {
+        for marker in ["pom.xml", "build.gradle.kts"] {
+            let root = std::env::temp_dir().join(format!(
+                "frost-core-java-project-scaffold-{}-{}",
+                marker.replace('.', "-"),
+                std::process::id()
+            ));
+            let _ = std::fs::remove_dir_all(&root);
+            std::fs::create_dir_all(root.join("src/main/java")).unwrap();
+            std::fs::write(
+                root.join("src/main/java/App.java"),
+                "public final class App { public static void main(String[] args) {} }\n",
+            )
+            .unwrap();
+            std::fs::write(root.join(marker), "project configuration\n").unwrap();
+
+            let error = scaffold(&root).unwrap_err().to_string();
+            assert!(error.contains(marker), "{error}");
+            assert!(error.contains("kind = \"command\""), "{error}");
+            let explicit = scaffold_for(&root, ScaffoldLanguage::Java).unwrap();
+            Manifest::parse_str(&explicit.manifest).unwrap();
+
+            let _ = std::fs::remove_dir_all(&root);
+        }
     }
 }

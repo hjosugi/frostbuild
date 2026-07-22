@@ -1,4 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::path::Path;
 use std::rc::Rc;
 
 use anyhow::{bail, Result};
@@ -19,7 +20,15 @@ pub const BIN_DIR: &str = ".frost/bin";
 /// way the compiler's is: the toolchain fingerprint hashes it alongside the
 /// C drivers. Tools the command itself reaches are a different matter — those
 /// are undeclared inputs, and no build system can name them for you.
+#[cfg(unix)]
 pub const SHELL: &str = "/bin/sh";
+#[cfg(unix)]
+pub const SHELL_ARG: &str = "-c";
+
+#[cfg(windows)]
+pub const SHELL: &str = "cmd.exe";
+#[cfg(windows)]
+pub const SHELL_ARG: &str = "/C";
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FileNode {
@@ -35,6 +44,7 @@ pub enum ActionKind {
     Genrule,
     Test,
     KofunCompile,
+    Command,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -48,6 +58,19 @@ pub struct ActionNode {
     pub target: String,
     pub sandbox: bool,
     pub argv: Vec<String>,
+    /// Additional direct-argv commands executed after `argv`.
+    pub followup_argv: Vec<Vec<String>>,
+    /// Intermediate workspace directories removed and recreated before each
+    /// execution (including determinism reruns).
+    pub clean_dirs: Vec<String>,
+    /// Retain prior declared outputs while an incremental command reruns.
+    #[serde(default)]
+    pub preserve_outputs: bool,
+    /// Manifest-declared environment values, applied after Frost's baseline.
+    pub env: BTreeMap<String, String>,
+    /// Host environment names explicitly requested by this action. Their
+    /// current values participate in its action key.
+    pub pass_env: Vec<String>,
     pub inputs: Vec<FileId>,
     /// Enforce producer completion without adding content to the action key.
     pub order_only_inputs: Vec<FileId>,
@@ -195,7 +218,12 @@ impl BuildGraph {
                         kind: ActionKind::Genrule,
                         target: name.clone(),
                         sandbox: target.sandbox,
-                        argv: vec![SHELL.into(), "-c".into(), expanded],
+                        argv: vec![SHELL.into(), SHELL_ARG.into(), expanded],
+                        followup_argv: Vec::new(),
+                        clean_dirs: Vec::new(),
+                        preserve_outputs: false,
+                        env: BTreeMap::new(),
+                        pass_env: Vec::new(),
                         inputs,
                         order_only_inputs: Vec::new(),
                         outputs: outputs.clone(),
@@ -221,19 +249,79 @@ impl BuildGraph {
                     }
                     let stamp = format!(".frost/test/{tree}/{}/passed", path_key(name));
                     let stamp_id = graph.file(&stamp);
-                    let command = format!(
-                        "{} && mkdir -p {} && : > {}",
-                        target.cmd.as_deref().unwrap(),
-                        shell_quote(&format!(".frost/test/{tree}/{}", path_key(name))),
-                        shell_quote(&stamp)
-                    );
+                    let (argv, followup_argv, env, pass_env) =
+                        if let Some(tool_name) = target.tool.as_deref() {
+                            let Some(driver) = toolchain.tools.get(tool_name) else {
+                                let configured = toolchain
+                                    .tools
+                                    .keys()
+                                    .map(String::as_str)
+                                    .collect::<Vec<_>>();
+                                bail!(
+                                "test {name:?} uses tool {tool_name:?}, but the active platform \
+                                     does not configure [toolchain.tools].{tool_name}{}",
+                                if configured.is_empty() {
+                                    String::new()
+                                } else {
+                                    format!(" (configured: {})", configured.join(", "))
+                                }
+                            );
+                            };
+                            if driver.contains('/') && !Path::new(driver).is_absolute() {
+                                let tool_input = graph.file(driver);
+                                if !inputs.contains(&tool_input) {
+                                    inputs.push(tool_input);
+                                }
+                            }
+                            let dependency_paths = target
+                                .deps
+                                .iter()
+                                .flat_map(|dep| dep_outputs(&graph, dep))
+                                .map(|file| graph.files[file].path.clone())
+                                .collect::<Vec<_>>();
+                            let argv = expand_test_args(
+                                driver,
+                                &target.args,
+                                &target.inputs,
+                                &dependency_paths,
+                                &tree,
+                                profile,
+                                platform,
+                            )?;
+                            (
+                                argv,
+                                Vec::new(),
+                                target.env.clone(),
+                                target.pass_env.clone(),
+                            )
+                        } else {
+                            (
+                                vec![
+                                    SHELL.into(),
+                                    SHELL_ARG.into(),
+                                    target
+                                        .cmd
+                                        .as_deref()
+                                        .expect("test validation requires cmd or tool")
+                                        .into(),
+                                ],
+                                Vec::new(),
+                                BTreeMap::new(),
+                                Vec::new(),
+                            )
+                        };
                     let action = graph.push_action(ActionNode {
                         id: format!("test:{name}"),
                         desc: format!("TEST {name}"),
                         kind: ActionKind::Test,
                         target: name.clone(),
                         sandbox: target.sandbox,
-                        argv: vec![SHELL.into(), "-c".into(), command],
+                        argv,
+                        followup_argv,
+                        clean_dirs: Vec::new(),
+                        preserve_outputs: false,
+                        env,
+                        pass_env,
                         inputs,
                         order_only_inputs: Vec::new(),
                         outputs: vec![stamp_id],
@@ -244,6 +332,135 @@ impl BuildGraph {
                     exported_libs.insert(name.clone(), SharedSet::join(Vec::new(), lib_parents));
                     exported_includes.insert(name.clone(), include_set);
                     genrule_outputs.insert(name.clone(), SharedSet::join(Vec::new(), gen_parents));
+                }
+                TargetKind::Command => {
+                    let tool_name = target
+                        .tool
+                        .as_deref()
+                        .expect("command target validation requires a tool");
+                    let Some(driver) = toolchain.tools.get(tool_name) else {
+                        let configured = toolchain
+                            .tools
+                            .keys()
+                            .map(String::as_str)
+                            .collect::<Vec<_>>();
+                        bail!(
+                            "target {name:?} uses tool {tool_name:?}, but the active platform \
+                             does not configure [toolchain.tools].{tool_name}{}",
+                            if configured.is_empty() {
+                                String::new()
+                            } else {
+                                format!(" (configured: {})", configured.join(", "))
+                            }
+                        );
+                    };
+                    let mut inputs = target
+                        .inputs
+                        .iter()
+                        .map(|path| graph.file(path))
+                        .collect::<Vec<_>>();
+                    if driver.contains('/') && !Path::new(driver).is_absolute() {
+                        let tool_input = graph.file(driver);
+                        if !inputs.contains(&tool_input) {
+                            inputs.push(tool_input);
+                        }
+                    }
+                    let mut dependency_inputs = Vec::new();
+                    for dep in &target.deps {
+                        for output in dep_outputs(&graph, dep) {
+                            if !inputs.contains(&output) {
+                                inputs.push(output);
+                            }
+                            dependency_inputs.push(output);
+                        }
+                    }
+                    let input_paths = target.inputs.clone();
+                    let dependency_paths = dependency_inputs
+                        .iter()
+                        .map(|&file| graph.files[file].path.clone())
+                        .collect::<Vec<_>>();
+                    let outputs = target
+                        .outputs
+                        .iter()
+                        .map(|path| expand_config_template(path, &tree, profile, platform))
+                        .collect::<Result<Vec<_>>>()?;
+                    let depfile = target
+                        .depfile
+                        .as_ref()
+                        .map(|path| expand_config_template(path, &tree, profile, platform))
+                        .transpose()?;
+                    let clean_dirs = target
+                        .clean_dirs
+                        .iter()
+                        .map(|path| expand_config_template(path, &tree, profile, platform))
+                        .collect::<Result<Vec<_>>>()?;
+                    let argv = expand_command_args(
+                        driver,
+                        &target.args,
+                        &input_paths,
+                        &dependency_paths,
+                        &outputs,
+                        &clean_dirs,
+                        depfile.as_deref(),
+                        &tree,
+                        profile,
+                        platform,
+                    )?;
+                    let mut followup_argv = Vec::with_capacity(target.steps.len());
+                    for step in &target.steps {
+                        let Some(step_driver) = toolchain.tools.get(&step.tool) else {
+                            bail!(
+                                "target {name:?} uses step tool {:?}, but the active platform \
+                                 does not configure [toolchain.tools].{}",
+                                step.tool,
+                                step.tool
+                            );
+                        };
+                        if step_driver.contains('/') && !Path::new(step_driver).is_absolute() {
+                            let tool_input = graph.file(step_driver);
+                            if !inputs.contains(&tool_input) {
+                                inputs.push(tool_input);
+                            }
+                        }
+                        followup_argv.push(expand_command_args(
+                            step_driver,
+                            &step.args,
+                            &input_paths,
+                            &dependency_paths,
+                            &outputs,
+                            &clean_dirs,
+                            depfile.as_deref(),
+                            &tree,
+                            profile,
+                            platform,
+                        )?);
+                    }
+                    let output_ids = outputs
+                        .iter()
+                        .map(|path| graph.file(path))
+                        .collect::<Vec<_>>();
+                    let action = graph.push_action(ActionNode {
+                        id: format!("command:{name}"),
+                        desc: format!("RUN {name} [{tool_name}]"),
+                        kind: ActionKind::Command,
+                        target: name.clone(),
+                        sandbox: target.sandbox,
+                        argv,
+                        followup_argv,
+                        clean_dirs,
+                        preserve_outputs: target.preserve_outputs,
+                        env: target.env.clone(),
+                        pass_env: target.pass_env.clone(),
+                        inputs,
+                        order_only_inputs: Vec::new(),
+                        outputs: output_ids.clone(),
+                        depfile,
+                    })?;
+                    target_node.actions.push(action);
+                    target_node.outputs = output_ids;
+                    exported_libs.insert(name.clone(), SharedSet::join(Vec::new(), lib_parents));
+                    exported_includes.insert(name.clone(), include_set);
+                    genrule_outputs.insert(name.clone(), SharedSet::join(outputs, gen_parents));
                 }
                 TargetKind::KofunBinary => {
                     let Some(driver) = toolchain.kofunc.as_ref() else {
@@ -288,6 +505,11 @@ impl BuildGraph {
                             "--emit-c".into(),
                             emitted_c,
                         ],
+                        followup_argv: Vec::new(),
+                        clean_dirs: Vec::new(),
+                        preserve_outputs: false,
+                        env: BTreeMap::new(),
+                        pass_env: Vec::new(),
                         inputs,
                         order_only_inputs: Vec::new(),
                         outputs: vec![bin_id, emitted_c_id],
@@ -350,6 +572,11 @@ impl BuildGraph {
                             target: name.clone(),
                             sandbox: target.sandbox,
                             argv,
+                            followup_argv: Vec::new(),
+                            clean_dirs: Vec::new(),
+                            preserve_outputs: false,
+                            env: BTreeMap::new(),
+                            pass_env: Vec::new(),
                             inputs,
                             order_only_inputs,
                             outputs: vec![obj_id],
@@ -375,6 +602,11 @@ impl BuildGraph {
                                 target: name.clone(),
                                 sandbox: target.sandbox,
                                 argv,
+                                followup_argv: Vec::new(),
+                                clean_dirs: Vec::new(),
+                                preserve_outputs: false,
+                                env: BTreeMap::new(),
+                                pass_env: Vec::new(),
                                 inputs: obj_ids.clone(),
                                 order_only_inputs: Vec::new(),
                                 outputs: vec![lib_id],
@@ -413,6 +645,11 @@ impl BuildGraph {
                                 target: name.clone(),
                                 sandbox: target.sandbox,
                                 argv,
+                                followup_argv: Vec::new(),
+                                clean_dirs: Vec::new(),
+                                preserve_outputs: false,
+                                env: BTreeMap::new(),
+                                pass_env: Vec::new(),
                                 inputs,
                                 order_only_inputs: Vec::new(),
                                 outputs: vec![bin_id],
@@ -427,19 +664,18 @@ impl BuildGraph {
                             if target.kind == TargetKind::CcTest {
                                 let stamp = format!(".frost/test/{tree}/{}/passed", path_key(name));
                                 let stamp_id = graph.file(&stamp);
-                                let command = format!(
-                                    "{} && mkdir -p {} && : > {}",
-                                    shell_quote(&bin),
-                                    shell_quote(&format!(".frost/test/{tree}/{}", path_key(name))),
-                                    shell_quote(&stamp)
-                                );
                                 let test = graph.push_action(ActionNode {
                                     id: format!("test:{name}"),
                                     desc: format!("TEST {name}"),
                                     kind: ActionKind::Test,
                                     target: name.clone(),
                                     sandbox: target.sandbox,
-                                    argv: vec![SHELL.into(), "-c".into(), command],
+                                    argv: vec![bin.clone()],
+                                    followup_argv: Vec::new(),
+                                    clean_dirs: Vec::new(),
+                                    preserve_outputs: false,
+                                    env: BTreeMap::new(),
+                                    pass_env: Vec::new(),
                                     inputs: vec![bin_id],
                                     order_only_inputs: Vec::new(),
                                     outputs: vec![stamp_id],
@@ -449,7 +685,10 @@ impl BuildGraph {
                                 target_node.outputs = vec![stamp_id];
                             }
                         }
-                        TargetKind::Genrule | TargetKind::Test | TargetKind::KofunBinary => {
+                        TargetKind::Genrule
+                        | TargetKind::Test
+                        | TargetKind::KofunBinary
+                        | TargetKind::Command => {
                             unreachable!()
                         }
                     }
@@ -462,6 +701,7 @@ impl BuildGraph {
             graph.targets.insert(name.clone(), target_node);
         }
 
+        graph.validate_clean_dirs()?;
         Ok(graph)
     }
 
@@ -493,6 +733,38 @@ impl BuildGraph {
         }
         self.actions.push(action);
         Ok(id)
+    }
+
+    fn validate_clean_dirs(&self) -> Result<()> {
+        let mut claimed: Vec<(&str, &str)> = Vec::new();
+        for action in &self.actions {
+            for directory in &action.clean_dirs {
+                let path = Path::new(directory);
+                for &(other_directory, other_action) in &claimed {
+                    let other_path = Path::new(other_directory);
+                    if path.starts_with(other_path) || other_path.starts_with(path) {
+                        bail!(
+                            "clean directory {directory:?} for action {:?} overlaps \
+                             {other_directory:?} owned by action {other_action:?}",
+                            action.id
+                        );
+                    }
+                }
+                for file in &self.files {
+                    if Path::new(&file.path).starts_with(path) {
+                        bail!(
+                            "clean directory {directory:?} for action {:?} contains declared \
+                             graph path {:?}; clean_dirs may contain only undeclared \
+                             intermediates",
+                            action.id,
+                            file.path
+                        );
+                    }
+                }
+                claimed.push((directory, &action.id));
+            }
+        }
+        Ok(())
     }
 
     /// All actions needed (transitively) to build the given targets, in a
@@ -611,6 +883,7 @@ impl BuildGraph {
                 TargetKind::Genrule => "diamond",
                 TargetKind::Test => "component",
                 TargetKind::KofunBinary => "box",
+                TargetKind::Command => "folder",
             };
             out.push_str(&format!("  \"{}\" [shape={shape}];\n", target.name));
             for dep in &target.deps {
@@ -638,10 +911,6 @@ impl PathExt {
     fn extension(path: &str) -> Option<&str> {
         path.rsplit_once('.').map(|(_, ext)| ext)
     }
-}
-
-fn shell_quote(value: &str) -> String {
-    format!("'{}'", value.replace('\'', "'\\''"))
 }
 
 fn dep_outputs(graph: &BuildGraph, dep: &str) -> Vec<FileId> {
@@ -756,6 +1025,115 @@ fn expand_genrule_cmd(cmd: &str, inputs: &[String], outputs: &[String]) -> Resul
     Ok(expanded)
 }
 
+fn expand_config_template(
+    value: &str,
+    config: &str,
+    profile: &str,
+    platform: &str,
+) -> Result<String> {
+    let expanded = value
+        .replace("${config}", config)
+        .replace("${profile}", profile)
+        .replace("${platform}", platform);
+    if expanded.contains("${") {
+        bail!(
+            "unknown configuration variable in {value:?} \
+             (supported: ${{config}}, ${{profile}}, ${{platform}})"
+        );
+    }
+    Ok(expanded)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn expand_command_args(
+    driver: &str,
+    args: &[String],
+    inputs: &[String],
+    dependency_inputs: &[String],
+    outputs: &[String],
+    clean_dirs: &[String],
+    depfile: Option<&str>,
+    config: &str,
+    profile: &str,
+    platform: &str,
+) -> Result<Vec<String>> {
+    let mut argv = vec![driver.to_string()];
+    for arg in args {
+        match arg.as_str() {
+            "${in}" => argv.extend(inputs.iter().cloned()),
+            "${deps}" => argv.extend(dependency_inputs.iter().cloned()),
+            "${outs}" => argv.extend(outputs.iter().cloned()),
+            "${clean_dirs}" => argv.extend(clean_dirs.iter().cloned()),
+            _ => {
+                if arg.contains("${in}")
+                    || arg.contains("${deps}")
+                    || arg.contains("${outs}")
+                    || arg.contains("${clean_dirs}")
+                {
+                    bail!(
+                        "multi-value command variables must occupy one complete argument: {arg:?}"
+                    );
+                }
+                let output_dir = outputs[0]
+                    .rsplit_once('/')
+                    .map_or(".", |(directory, _)| directory);
+                let mut expanded = arg
+                    .replace("${out_dir}", output_dir)
+                    .replace("${out}", &outputs[0]);
+                if expanded.contains("${depfile}") {
+                    let Some(depfile) = depfile else {
+                        bail!("command arg uses ${{depfile}} but no depfile is configured");
+                    };
+                    expanded = expanded.replace("${depfile}", depfile);
+                }
+                if expanded.contains("${clean_dir}") {
+                    let Some(clean_dir) = clean_dirs.first() else {
+                        bail!("command arg uses ${{clean_dir}} but no clean_dirs are configured");
+                    };
+                    expanded = expanded.replace("${clean_dir}", clean_dir);
+                }
+                expanded = expand_config_template(&expanded, config, profile, platform)?;
+                if expanded.contains("${") {
+                    bail!(
+                        "unknown command variable in {arg:?} (supported: ${{in}}, ${{deps}}, \
+                         ${{out}}, ${{out_dir}}, ${{outs}}, ${{clean_dir}}, \
+                         ${{clean_dirs}}, ${{depfile}}, ${{config}}, ${{profile}}, \
+                         ${{platform}})"
+                    );
+                }
+                argv.push(expanded);
+            }
+        }
+    }
+    Ok(argv)
+}
+
+fn expand_test_args(
+    driver: &str,
+    args: &[String],
+    inputs: &[String],
+    dependency_inputs: &[String],
+    config: &str,
+    profile: &str,
+    platform: &str,
+) -> Result<Vec<String>> {
+    let mut argv = vec![driver.to_string()];
+    for arg in args {
+        match arg.as_str() {
+            "${in}" => argv.extend(inputs.iter().cloned()),
+            "${deps}" => argv.extend(dependency_inputs.iter().cloned()),
+            _ => {
+                if arg.contains("${in}") || arg.contains("${deps}") {
+                    bail!("multi-value test variables must occupy one complete argument: {arg:?}");
+                }
+                let expanded = expand_config_template(arg, config, profile, platform)?;
+                argv.push(expanded);
+            }
+        }
+    }
+    Ok(argv)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -863,6 +1241,229 @@ mod tests {
             "{}",
             graph.to_dot()
         );
+    }
+
+    #[test]
+    fn command_target_expands_direct_argv_and_configuration_paths() {
+        let manifest = Manifest::parse_str(
+            r#"
+            [toolchain.tools]
+            runner = "tools/runner"
+            packer = "tools/packer"
+
+            [platform.device.tools]
+            runner = "tools/device-runner"
+            packer = "tools/device-packer"
+
+            [target.generate]
+            kind = "genrule"
+            cmd = "generate ${out}"
+            inputs = ["schema.txt"]
+            outputs = ["generated/data.txt"]
+
+            [target.app]
+            kind = "command"
+            tool = "runner"
+            args = ["--input", "${in}", "--deps", "${deps}", "--output", "${out}",
+                    "--output-dir", "${out_dir}", "--depfile", "${depfile}",
+                    "--temp", "${clean_dir}", "--platform", "${platform}"]
+            inputs = ["src/app.lang"]
+            outputs = [".frost/out/${config}/app.bin"]
+            depfile = ".frost/out/${config}/app.d"
+            clean_dirs = [".frost/tmp/${config}/app"]
+            preserve_outputs = true
+            steps = [{ tool = "packer", args = ["${out}", "${clean_dirs}", "${config}"] }]
+            deps = ["generate"]
+            env = { MODE = "release" }
+            pass_env = ["LANG_HOME"]
+            sandbox = false
+            "#,
+        )
+        .unwrap();
+        let graph = BuildGraph::from_manifest_configured(&manifest, "debug", "device").unwrap();
+        let action = graph
+            .actions
+            .iter()
+            .find(|action| action.id == "command:app")
+            .unwrap();
+        assert_eq!(action.kind, ActionKind::Command);
+        assert_eq!(
+            action.argv,
+            vec![
+                "tools/device-runner",
+                "--input",
+                "src/app.lang",
+                "--deps",
+                "generated/data.txt",
+                "--output",
+                ".frost/out/device/debug/app.bin",
+                "--output-dir",
+                ".frost/out/device/debug",
+                "--depfile",
+                ".frost/out/device/debug/app.d",
+                "--temp",
+                ".frost/tmp/device/debug/app",
+                "--platform",
+                "device",
+            ]
+        );
+        assert_eq!(action.env["MODE"], "release");
+        assert_eq!(action.pass_env, vec!["LANG_HOME"]);
+        assert!(action.preserve_outputs);
+        assert_eq!(
+            action.followup_argv,
+            vec![vec![
+                "tools/device-packer",
+                ".frost/out/device/debug/app.bin",
+                ".frost/tmp/device/debug/app",
+                "device/debug",
+            ]]
+        );
+        assert_eq!(action.clean_dirs, vec![".frost/tmp/device/debug/app"]);
+        assert_eq!(
+            action.depfile.as_deref(),
+            Some(".frost/out/device/debug/app.d")
+        );
+        let inputs = action
+            .inputs
+            .iter()
+            .map(|&id| graph.files[id].path.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(
+            inputs,
+            vec![
+                "src/app.lang",
+                "tools/device-runner",
+                "generated/data.txt",
+                "tools/device-packer"
+            ]
+        );
+    }
+
+    #[test]
+    fn direct_test_uses_named_tool_and_executor_owned_success_stamp() {
+        let manifest = Manifest::parse_str(
+            r#"
+            [toolchain.tools]
+            python = "tools/python"
+
+            [target.generated]
+            kind = "genrule"
+            cmd = "generate ${out}"
+            inputs = ["schema.txt"]
+            outputs = ["generated/value.py"]
+
+            [target.unit]
+            kind = "test"
+            tool = "python"
+            args = ["tests/unit.py", "${in}", "${deps}", "${profile}"]
+            inputs = ["tests/unit.py"]
+            deps = ["generated"]
+            env = { PYTHONHASHSEED = "0" }
+            pass_env = ["PYTHONPATH"]
+            sandbox = false
+            "#,
+        )
+        .unwrap();
+        let graph = BuildGraph::from_manifest(&manifest).unwrap();
+        let action = graph
+            .actions
+            .iter()
+            .find(|action| action.id == "test:unit")
+            .unwrap();
+        assert_eq!(action.kind, ActionKind::Test);
+        assert_eq!(
+            action.argv,
+            [
+                "tools/python",
+                "tests/unit.py",
+                "tests/unit.py",
+                "generated/value.py",
+                "debug"
+            ]
+        );
+        assert_eq!(action.env["PYTHONHASHSEED"], "0");
+        assert_eq!(action.pass_env, ["PYTHONPATH"]);
+        assert!(action.followup_argv.is_empty());
+        assert_eq!(
+            graph.files[action.outputs[0]].path,
+            ".frost/test/debug/unit/passed"
+        );
+    }
+
+    #[test]
+    fn command_clean_dirs_cannot_overlap_between_actions() {
+        let manifest = Manifest::parse_str(
+            r#"
+            [toolchain.tools]
+            runner = "runner"
+
+            [target.first]
+            kind = "command"
+            tool = "runner"
+            args = ["${out}"]
+            outputs = [".frost/out/${config}/first.bin"]
+            clean_dirs = [".frost/tmp/${config}/shared"]
+
+            [target.second]
+            kind = "command"
+            tool = "runner"
+            args = ["${out}"]
+            outputs = [".frost/out/${config}/second.bin"]
+            clean_dirs = [".frost/tmp/${config}/shared/nested"]
+            "#,
+        )
+        .unwrap();
+        let error = BuildGraph::from_manifest(&manifest)
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("overlaps"), "{error}");
+        assert!(error.contains("command:first"), "{error}");
+        assert!(error.contains("command:second"), "{error}");
+    }
+
+    #[test]
+    fn command_clean_dirs_cannot_contain_declared_graph_paths() {
+        let manifest = Manifest::parse_str(
+            r#"
+            [toolchain.tools]
+            runner = "runner"
+
+            [target.app]
+            kind = "command"
+            tool = "runner"
+            args = ["${out}"]
+            outputs = [".frost/tmp/${config}/app/final.bin"]
+            clean_dirs = [".frost/tmp/${config}/app"]
+            "#,
+        )
+        .unwrap();
+        let error = BuildGraph::from_manifest(&manifest)
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("contains declared graph path"), "{error}");
+        assert!(error.contains("undeclared intermediates"), "{error}");
+    }
+
+    #[test]
+    fn command_clean_dir_placeholder_requires_an_owned_directory() {
+        let manifest = Manifest::parse_str(
+            r#"
+            [toolchain.tools]
+            runner = "runner"
+
+            [target.app]
+            kind = "command"
+            tool = "runner"
+            args = ["--temp", "${clean_dir}", "${out}"]
+            outputs = [".frost/out/${config}/app.bin"]
+            "#,
+        )
+        .unwrap();
+        let error = BuildGraph::from_manifest(&manifest)
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("no clean_dirs are configured"), "{error}");
     }
 
     #[test]

@@ -1,0 +1,49 @@
+{
+  "schema": "frostbuild.performance-profile/v1",
+  "issue": 81,
+  "title": "10k-action standalone no-op versus Ninja",
+  "base_commit": "9bb33e9",
+  "benchmark_result": "../baselines/2026-07-20-issue-81-fast-noop.json",
+  "harness": {
+    "command": "FROST_BIN=<isolated-release-frost> python3 frost_bench.py run --suite standard --tools frost,ninja --sizes 10000 --scenarios noop --iterations 15 --jobs 8",
+    "graph": "10,000-action linear chain",
+    "iterations": 15,
+    "jobs": 8,
+    "comparison": "identical frost_bench.py generated graph and commands"
+  },
+  "baseline": {
+    "source": "2026-07-20-issue-17.json",
+    "frost_noop_median_ms": 70.413,
+    "ninja_noop_median_ms": 44.32,
+    "noop_ratio": 1.589
+  },
+  "final": {
+    "frost_noop_median_ms": 15.62,
+    "ninja_noop_median_ms": 42.419,
+    "noop_ratio": 0.368,
+    "frost_speedup_over_baseline": 4.508,
+    "frost_speedup_over_ninja": 2.716
+  },
+  "acceptance": {
+    "target": "Frost standalone no-op median is below Ninja on the same 10k graph",
+    "met": true
+  },
+  "limitations": [
+    "This result applies to the generated 10,000-action linear chain and is not a universal Frost-versus-Ninja claim.",
+    "Wide DAGs, independent targets, real repositories, cold page cache and syscall/CPU profiles remain to be measured.",
+    "A stronger comparison should alternate tool order to reduce thermal and background-load bias."
+  ],
+  "implemented_optimizations": [
+    "persist a checksum-protected whole-closure no-op certificate after a complete graph, journal, digest and action-key validation",
+    "validate graph sources, toolchain, output-affecting environment and every recorded input/output stat before taking the certificate fast path",
+    "load journal and hash cache concurrently on the normal path",
+    "run file-digest and action-key validation concurrently on the normal fully-cached path",
+    "allow the benchmark harness to select only the scenario under investigation"
+  ],
+  "correctness_guards": [
+    "any certificate mismatch falls back to the existing graph/journal/action-key path",
+    "certificate evidence is captured before a second digest validation to prevent a capture-time file race",
+    "input edits, executable-mode edits, manifest edits, toolchain changes and key-environment changes invalidate the shortcut",
+    "certificate corruption is detected by a BLAKE3 checksum"
+  ]
+}

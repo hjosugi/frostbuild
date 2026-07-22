@@ -334,14 +334,17 @@ fn stat_triple(meta: &std::fs::Metadata) -> (i128, u64, u64) {
 /// distinct objects, which is also what restoring them correctly requires.
 pub fn hash_file(path: &Path) -> Result<String> {
     let file = std::fs::File::open(path)?;
+    let metadata = file.metadata()?;
     let mut hasher = blake3::Hasher::new();
-    hasher.update(if is_executable(&file.metadata()?) {
-        b"x"
-    } else {
-        b"-"
-    });
+    hasher.update(if is_executable(&metadata) { b"x" } else { b"-" });
     let mut file = file;
-    let mut buf = vec![0u8; 4 * 1024 * 1024];
+    // A fixed 4 MiB allocation per file is reasonable for large compiler
+    // artifacts but pathological for thousands of tiny depfiles/classes:
+    // hashing 100 ~300-byte class files allocated 400 MiB cumulatively.
+    // Retain the large sequential-read buffer where it helps, while keeping
+    // small-file hashing within an allocator-friendly floor.
+    let buffer_len = hash_buffer_len(metadata.len());
+    let mut buf = vec![0u8; buffer_len];
     loop {
         let n = file.read(&mut buf)?;
         if n == 0 {
@@ -356,6 +359,12 @@ pub fn hash_file(path: &Path) -> Result<String> {
     Ok(hasher.finalize().to_hex().to_string())
 }
 
+fn hash_buffer_len(file_len: u64) -> usize {
+    usize::try_from(file_len)
+        .unwrap_or(4 * 1024 * 1024)
+        .clamp(8 * 1024, 4 * 1024 * 1024)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -366,6 +375,14 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         let cache = HashCache::default();
         assert_eq!(cache.digest(&dir, "no/such/file").unwrap(), MISSING);
+    }
+
+    #[test]
+    fn hashing_buffer_adapts_to_small_and_large_files() {
+        assert_eq!(hash_buffer_len(0), 8 * 1024);
+        assert_eq!(hash_buffer_len(300), 8 * 1024);
+        assert_eq!(hash_buffer_len(64 * 1024), 64 * 1024);
+        assert_eq!(hash_buffer_len(64 * 1024 * 1024), 4 * 1024 * 1024);
     }
 
     #[test]

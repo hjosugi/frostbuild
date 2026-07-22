@@ -31,9 +31,18 @@ digest before reuse.
 
 | Layer | Shipped | Notes |
 |---|---|---|
-| 1 — exact digest | Action keys (BLAKE3 over argv + toolchain closure + input digests), CAS, journal, early cutoff, determinism-check mode | The correctness gate is complete and hermetic (no autodetected toolchains, env-clean execution). |
+| 1 — exact digest | Action keys (BLAKE3 over argv + toolchain closure + input digests), blob CAS, Bazel-compatible FastCDC 2020 chunk CAS for blobs over 2 MiB, journal, early cutoff, determinism-check mode | Every chunk is SHA-256 verified and the reconstructed blob is BLAKE3+mode verified before final-path publication. `UnverifiedBytes` cannot enter the publish boundary. |
 | 2 — dimension hashes | Partial: depfile narrowing (used-headers only), order-only inputs (generated headers out of the key), platform/profile as explicit key axes | Missing: semantic dimensions *within* a file (API hash vs impl hash — the ijar/Rust-fingerprint analog for C/C++). |
-| 3 — distance / policy | `--estimator {heuristic,journal,static,learned}` for critical-path scheduling, `--predictive` test selection flag | Missing: similarity-seeded delta transfer (v2 remote cache), prefetch, learned eviction. |
+| 3 — distance / policy | `--estimator {heuristic,journal,static,learned}`, `--predictive`, plus positional previous-artifact zstd residual deltas for local missing chunks | Remote transfer/cost negotiation, prefetch and learned eviction remain open. A selector miss changes cost only; two digest gates still decide reuse. |
+
+Independent chunk digest/publication and verified positioned writes into the
+private restore file now use the bounded Rayon pool. The final path remains
+untouched until every chunk and the reconstructed BLAKE3+mode digest pass. A
+64 MiB, median-of-7, alternating-order A/B measured 1.41x faster cold
+publication, 1.89x faster exact-chunk restore and 1.88x faster delta restore;
+the raw samples and high starting host load are recorded in
+[`2026-07-21-E14-cas.json`](../bench/baselines/2026-07-21-E14-cas.json).
+The result establishes a local parallelism win, not remote-cache economics.
 
 ## Adoptable directions (priority order)
 
@@ -44,11 +53,14 @@ digest before reuse.
    the soundness argument follows the SAC/Adapton lineage. Open research:
    automatic dimension discovery that minimizes expected invalidation
    (learnable from commit history).
-2. **Similarity-seeded delta transfer (Layer 3, v2 remote cache).** On exact
-   miss, ANN-search a sketch index (SimHash/MinHash) for the nearest cached
-   artifact, transfer only a delta (bsdiff/zstd-dict), verify by exact
-   digest. Sound by construction; the win is bytes-on-wire, not correctness
-   risk. Git packfiles prove the mechanic at scale.
+2. **Positional residual-chunk delta transfer (Layer 3, v2 remote cache).**
+   FastCDC exact reuse, the local chunk-addressable store and verified local
+   zstd residual reconstruction are implemented.
+   On a residual miss, use the byte-range-overlapping chunk from the previous
+   version of the same graph artifact as a zstd dictionary, then verify the
+   chunk and final blob digests. The measured corpus showed this positional
+   selector beating the more complex sketch index; similarity never gates
+   correctness. Remote CPU/bandwidth calibration remains the shipping gate.
 3. **Algebraic root fingerprints (Layer 1 accelerator).** Homomorphic /
    lattice hashing (Bellare–Micciancio, LtHash) updates a workspace-root
    fingerprint in O(1) per file change — below even Merkle's O(log n) — a

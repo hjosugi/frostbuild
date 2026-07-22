@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
+description = "Stable persistence facade for FrostBuild"
 
 [dependencies]
 frostbuild-core.workspace = true

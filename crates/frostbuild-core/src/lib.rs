@@ -1,5 +1,6 @@
 pub mod cas;
 pub mod depfile;
+pub mod fastcdc;
 pub mod graph;
 pub mod graph_store;
 pub mod hashcache;
