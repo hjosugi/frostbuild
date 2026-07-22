@@ -370,7 +370,10 @@ class FrostBenchTestCase(unittest.TestCase):
         )
 
     def test_java_jar_manifest_is_one_concise_multi_step_artifact(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
+        missing_frost = frost_bench.ToolSpec(name="frost", argv=())
+        with tempfile.TemporaryDirectory() as tmp, mock.patch(
+            "frost_bench.tool_specs", return_value=[missing_frost]
+        ):
             root = pathlib.Path(tmp)
             frost_bench.generate_java_workspace(root, 4, "frost-jar")
             with (root / "frost.toml").open("rb") as file:
@@ -387,6 +390,7 @@ class FrostBenchTestCase(unittest.TestCase):
         )
         self.assertEqual(target["clean_dirs"], [".frost/tmp/${config}/java-classes"])
         self.assertEqual(target["steps"][0]["tool"], "pack_jar")
+        self.assertEqual(manifest["toolchain"]["tools"]["pack_jar"], "frost")
 
     def test_java_suite_records_missing_tools_instead_of_silently_omitting_them(self) -> None:
         with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(

@@ -392,8 +392,12 @@ def write_java_frost(root: pathlib.Path, size: int, *, unit_partitioned: bool) -
 
 def write_java_frost_jar(root: pathlib.Path) -> None:
     frost = tool_specs(["frost"])[0]
-    if not frost.argv:
-        raise RuntimeError("frost executable is required for the built-in JAR benchmark")
+    # Workspace generation is also used to inspect the benchmark contract in
+    # environments where the Rust binary has not been built yet (notably the
+    # independent Python CI job).  The measurement layer already records a
+    # missing executable as skipped; keep generation hermetic by emitting the
+    # normal PATH-resolved command in that case.
+    pack_jar = frost.argv[0] if frost.argv else "frost"
     (root / "frost.toml").write_text(
         "\n".join(
             [
@@ -402,7 +406,7 @@ def write_java_frost_jar(root: pathlib.Path) -> None:
                 "",
                 "[toolchain.tools]",
                 'javac = "javac"',
-                f"pack_jar = {json.dumps(frost.argv[0])}",
+                f"pack_jar = {json.dumps(pack_jar)}",
                 "",
                 "[target.archive]",
                 'kind = "command"',
