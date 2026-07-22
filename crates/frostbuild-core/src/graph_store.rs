@@ -1,3 +1,4 @@
+use std::ffi::OsStr;
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -10,7 +11,7 @@ use crate::graph::BuildGraph;
 use crate::manifest::{Manifest, HOST_PLATFORM};
 
 const MAGIC: &[u8; 8] = b"FRSTGR01";
-const VERSION: u32 = 5;
+const VERSION: u32 = 6;
 
 /// Evidence that the manifest inputs which produced a cached graph are
 /// unchanged, checkable without parsing any manifest: exact bytes of every
@@ -23,8 +24,18 @@ const VERSION: u32 = 5;
 struct SourcesStamp {
     /// (workspace-relative path, BLAKE3 of bytes) per contributing manifest.
     manifests: Vec<(String, String)>,
-    /// (workspace-relative dir path, mtime_ns) for every non-ignored dir.
-    dirs: Vec<(String, i128)>,
+    /// Identity of every non-ignored directory and its immediate entries.
+    dirs: Vec<DirStamp>,
+}
+
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+struct DirStamp {
+    path: String,
+    mtime_ns: i128,
+    /// BLAKE3 of sorted native entry names plus their filesystem kind.
+    /// This is required in addition to mtime: Windows can expose the same
+    /// directory timestamp immediately before and after an entry mutation.
+    entries_hash: [u8; 32],
 }
 
 pub struct GraphStore;
@@ -122,17 +133,17 @@ fn sources_stamp(root: &Path, manifest_paths: &[String]) -> Result<SourcesStamp>
         };
         manifests.push((ignore.to_string(), digest));
     }
-    // The workspace root itself: file adds/removes at the top level only
-    // show up in the root dir's own mtime.
-    let mut dirs = vec![(String::new(), mtime_ns(&std::fs::metadata(root)?))];
+    let mut dirs = Vec::new();
     walk_dirs(root, root, &mut dirs)?;
-    dirs.sort();
+    dirs.sort_by(|left, right| left.path.cmp(&right.path));
     Ok(SourcesStamp { manifests, dirs })
 }
 
 /// Mirrors `discover_package_manifests` skip rules so the stamp covers
 /// exactly the tree that package discovery and glob expansion can see.
-fn walk_dirs(root: &Path, dir: &Path, out: &mut Vec<(String, i128)>) -> Result<()> {
+fn walk_dirs(root: &Path, dir: &Path, out: &mut Vec<DirStamp>) -> Result<()> {
+    let mut entries = Vec::new();
+    let mut child_dirs = Vec::new();
     for entry in std::fs::read_dir(dir)? {
         let entry = entry?;
         if matches!(
@@ -142,19 +153,66 @@ fn walk_dirs(root: &Path, dir: &Path, out: &mut Vec<(String, i128)>) -> Result<(
             continue;
         }
         let ty = entry.file_type()?;
+        let kind = if ty.is_symlink() {
+            b'l'
+        } else if ty.is_dir() {
+            b'd'
+        } else if ty.is_file() {
+            b'f'
+        } else {
+            b'o'
+        };
+        entries.push((entry.file_name(), kind));
         if ty.is_dir() && !ty.is_symlink() {
-            let path = entry.path();
-            let meta = entry.metadata()?;
-            let rel = path
-                .strip_prefix(root)
-                .unwrap()
-                .to_string_lossy()
-                .replace('\\', "/");
-            out.push((rel, mtime_ns(&meta)));
-            walk_dirs(root, &path, out)?;
+            child_dirs.push(entry.path());
         }
     }
+    entries.sort_by(|left, right| left.0.cmp(&right.0).then(left.1.cmp(&right.1)));
+    let mut hasher = blake3::Hasher::new();
+    for (name, kind) in entries {
+        hash_os_str(&mut hasher, &name);
+        hasher.update(&[kind]);
+    }
+    let path = dir
+        .strip_prefix(root)
+        .unwrap()
+        .to_string_lossy()
+        .replace('\\', "/");
+    out.push(DirStamp {
+        path,
+        mtime_ns: mtime_ns(&std::fs::metadata(dir)?),
+        entries_hash: *hasher.finalize().as_bytes(),
+    });
+    child_dirs.sort();
+    for child in child_dirs {
+        walk_dirs(root, &child, out)?;
+    }
     Ok(())
+}
+
+#[cfg(unix)]
+fn hash_os_str(hasher: &mut blake3::Hasher, value: &OsStr) {
+    use std::os::unix::ffi::OsStrExt;
+    let bytes = value.as_bytes();
+    hasher.update(&(bytes.len() as u64).to_le_bytes());
+    hasher.update(bytes);
+}
+
+#[cfg(windows)]
+fn hash_os_str(hasher: &mut blake3::Hasher, value: &OsStr) {
+    use std::os::windows::ffi::OsStrExt;
+    let units: Vec<u16> = value.encode_wide().collect();
+    hasher.update(&(units.len() as u64).to_le_bytes());
+    for unit in units {
+        hasher.update(&unit.to_le_bytes());
+    }
+}
+
+#[cfg(not(any(unix, windows)))]
+fn hash_os_str(hasher: &mut blake3::Hasher, value: &OsStr) {
+    let value = value.to_string_lossy();
+    hasher.update(&(value.len() as u64).to_le_bytes());
+    hasher.update(value.as_bytes());
 }
 
 #[cfg(unix)]

@@ -152,6 +152,12 @@ All notable changes follow Keep a Changelog and Semantic Versioning. Before
 
 ### Fixed
 
+- The manifest-free graph warm path trusted directory mtimes to detect added,
+  removed or renamed source entries. NTFS can expose the same parent timestamp
+  immediately across an entry mutation, allowing a stale graph to remain
+  current. Graph-store v6 also fingerprints sorted native entry names and
+  filesystem kinds, so discovery correctness no longer depends on timestamp
+  resolution.
 - Filesystem access/open/close notifications were treated as source edits.
   Executing a workspace-local Bazel wrapper could therefore trigger an
   unbounded `bazel-dev` build/restart feedback loop. Generic watch, Bazel watch
