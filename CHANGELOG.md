@@ -15,8 +15,8 @@ All notable changes follow Keep a Changelog and Semantic Versioning. Before
 
 - A fully validated daemon certificate can remain resident behind a filesystem
   event barrier when every recorded path is normal and workspace-watched. The
-  checked 10k-target median fell to 2.396 ms end-to-end versus Ninja 62.693 ms;
-  the direct socket path measured 0.229 ms.
+  checked 10k-target median fell to 2.271 ms end-to-end versus Ninja 58.556 ms;
+  the direct socket path measured 0.203 ms.
 
 ### Fixed
 

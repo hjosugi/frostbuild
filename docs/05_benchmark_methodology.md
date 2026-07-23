@@ -476,16 +476,16 @@ complete certificate or child-build fallback instead.
 The checked report is
 [`2026-07-23-issue-25-daemon-10k.json`](../bench/baselines/2026-07-23-issue-25-daemon-10k.json).
 It used Ninja 1.13.2, 8 logical CPUs, the performance governor and a starting
-load average of 9.79 / 8.67 / 5.78:
+load average of 14.73 / 14.39 / 10.03:
 
 | 10k linear graph, median of 31 | Time | Ninja / Frost |
 |---|---:|---:|
-| Frost standalone no-op | 30.453 ms | 2.06x |
-| Frost daemon CLI no-op | **2.396 ms** | **26.17x** |
-| Frost direct socket no-op | 0.229 ms | 273.75x |
-| Ninja no-op | 62.693 ms | 1.00x |
-| Frost daemon leaf change | 390.660 ms | — |
-| Ninja leaf change | 63.764 ms | — |
+| Frost standalone no-op | 26.712 ms | 2.19x |
+| Frost daemon CLI no-op | **2.271 ms** | **25.78x** |
+| Frost direct socket no-op | 0.203 ms | 289.13x |
+| Ninja no-op | 58.556 ms | 1.00x |
+| Frost daemon leaf change | 411.679 ms | — |
+| Ninja leaf change | 63.338 ms | — |
 
 This passes #25's exact 10k daemon median below 5 ms and greater-than-2x Ninja
 gates on the recorded host. It is not evidence that Frost wins a changed leaf;
