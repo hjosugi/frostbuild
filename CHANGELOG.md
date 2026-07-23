@@ -5,6 +5,8 @@ All notable changes follow Keep a Changelog and Semantic Versioning. Before
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-07-23
+
 ### Added
 
 - `frost-bench-rs daemon-graph` generates equivalent large linear graphs for
