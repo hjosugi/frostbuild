@@ -1757,6 +1757,121 @@ esac
 
 #[test]
 #[cfg(unix)]
+fn npm_workspace_import_tracks_transitive_gate_inputs_without_overwrite() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let ws = Workspace::empty("import-npm");
+    std::fs::create_dir_all(ws.dir.join("tools")).unwrap();
+    std::fs::create_dir_all(ws.dir.join("packages/core/src")).unwrap();
+    std::fs::create_dir_all(ws.dir.join("apps/web/src")).unwrap();
+    ws.write(
+        "package.json",
+        r#"{"name":"demo","private":true,"workspaces":["packages/*","apps/*"]}"#,
+    );
+    ws.write("package-lock.json", "{}");
+    ws.write(
+        "packages/core/package.json",
+        r#"{"name":"@demo/core","scripts":{"typecheck":"tsc --noEmit"}}"#,
+    );
+    ws.write(
+        "packages/core/src/index.ts",
+        "export const answer: number = 42;\n",
+    );
+    ws.write(
+        "apps/web/package.json",
+        r#"{"name":"@demo/web","scripts":{"typecheck":"tsc --noEmit"},"dependencies":{"@demo/core":"*"}}"#,
+    );
+    ws.write(
+        "apps/web/src/main.ts",
+        "import { answer } from '@demo/core'; void answer;\n",
+    );
+    ws.write(
+        "tools/npm",
+        r#"#!/bin/sh
+set -eu
+mkdir -p .frost
+printf '%s\n' "$*" >> .frost/npm-runs.txt
+"#,
+    );
+    std::fs::set_permissions(
+        ws.dir.join("tools/npm"),
+        std::fs::Permissions::from_mode(0o755),
+    )
+    .unwrap();
+
+    let (ok, preview) = ws.frost(&[
+        "import-npm",
+        "--script",
+        "typecheck",
+        "--npm",
+        "tools/npm",
+        "--node",
+        "/bin/sh",
+        "--dry-run",
+    ]);
+    assert!(ok, "npm import preview failed:\n{preview}");
+    assert!(
+        preview.contains("[target.demo-core-typecheck]"),
+        "{preview}"
+    );
+    assert!(preview.contains("[target.demo-web-typecheck]"), "{preview}");
+    assert!(!ws.dir.join("frost.toml").exists());
+
+    let (ok, out) = ws.frost(&[
+        "import-npm",
+        "--script",
+        "typecheck",
+        "--npm",
+        "tools/npm",
+        "--node",
+        "/bin/sh",
+    ]);
+    assert!(ok && out.contains("2 test gates"), "{out}");
+    let (ok, out) = ws.frost(&["test", "--all", "--no-tui"]);
+    assert!(ok && out.contains("2 built"), "{out}");
+    let runs = ws.dir.join(".frost/npm-runs.txt");
+    assert_eq!(std::fs::read_to_string(&runs).unwrap().lines().count(), 2);
+
+    let (ok, out) = ws.frost(&["test", "--all", "--no-tui"]);
+    assert!(ok && out.contains("2 cached"), "{out}");
+    assert_eq!(std::fs::read_to_string(&runs).unwrap().lines().count(), 2);
+
+    ws.write(
+        "packages/core/src/index.ts",
+        "export const answer: number = 43;\n",
+    );
+    let (ok, out) = ws.frost(&["test", "--all", "--no-tui"]);
+    assert!(
+        ok && out.contains("2 built"),
+        "dependency source change did not rerun both gates:\n{out}"
+    );
+    let observed = std::fs::read_to_string(&runs).unwrap();
+    assert_eq!(observed.lines().count(), 4);
+    assert!(observed.contains("run typecheck --workspace @demo/core"));
+    assert!(observed.contains("run typecheck --workspace @demo/web"));
+
+    let (ok, out) = ws.frost(&[
+        "import-npm",
+        "--script",
+        "typecheck",
+        "--npm",
+        "tools/npm",
+        "--node",
+        "/bin/sh",
+    ]);
+    assert!(!ok && out.contains("already exists"), "{out}");
+    assert!(
+        std::fs::read_dir(&ws.dir).unwrap().all(|entry| !entry
+            .unwrap()
+            .file_name()
+            .to_string_lossy()
+            .starts_with(".frost.toml.import-")),
+        "failed import left a temporary manifest behind"
+    );
+}
+
+#[test]
+#[cfg(unix)]
 fn bazel_dev_rebuilds_and_restarts_only_after_success() {
     use std::os::unix::fs::PermissionsExt;
 

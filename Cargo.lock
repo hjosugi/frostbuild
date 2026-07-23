@@ -519,6 +519,7 @@ dependencies = [
  "frostbuild-core",
  "frostbuild-daemon",
  "frostbuild-exec",
+ "glob",
  "libc",
  "notify",
  "quick-xml",

@@ -19,6 +19,7 @@ use notify::{RecursiveMode, Watcher};
 
 mod bazel;
 mod jar;
+mod npm;
 mod progress;
 mod wheel;
 
@@ -440,6 +441,21 @@ enum Cmd {
         #[arg(long)]
         bazel: Option<PathBuf>,
         /// Print every generated manifest without writing
+        #[arg(long)]
+        dry_run: bool,
+    },
+    /// Import non-interactive npm workspace scripts as cached test gates
+    ImportNpm {
+        /// Package script to import; repeat or comma-separate
+        #[arg(long = "script", value_delimiter = ',')]
+        scripts: Vec<String>,
+        /// npm executable recorded as a fingerprinted named tool
+        #[arg(long, default_value = "npm")]
+        npm: PathBuf,
+        /// Node executable recorded with npm's toolchain closure
+        #[arg(long, default_value = "node")]
+        node: PathBuf,
+        /// Print the generated root manifest without writing it
         #[arg(long)]
         dry_run: bool,
     },
@@ -1335,6 +1351,12 @@ fn run(cli: Cli) -> Result<i32> {
             bazel,
             dry_run,
         } => bazel::run_import(&root, &query, bazel.as_deref(), dry_run),
+        Cmd::ImportNpm {
+            scripts,
+            npm,
+            node,
+            dry_run,
+        } => npm::run_import(&root, &scripts, &npm, &node, dry_run),
         Cmd::BazelDev {
             target,
             bazel,

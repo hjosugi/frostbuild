@@ -21,6 +21,7 @@ frostbuild-core.workspace = true
 frostbuild-exec.workspace = true
 frostbuild-bench.workspace = true
 frostbuild-daemon.workspace = true
+glob.workspace = true
 notify.workspace = true
 libc.workspace = true
 quick-xml.workspace = true
