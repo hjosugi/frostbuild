@@ -335,11 +335,11 @@ standalone graph remains 15.620 ms; these workloads are intentionally not
 conflated.
 
 The checked 10k-target daemon graph uses the same linear genrules, commands and
-declared inputs for Frost and Ninja. Its median-of-31 no-op result was 2.396 ms
-through `frost build --daemon`, 0.229 ms over the direct socket and 62.693 ms
-for Ninja: the end-to-end daemon path passed the 5-ms gate and was 26.17x
+declared inputs for Frost and Ninja. Its median-of-31 no-op result was 2.271 ms
+through `frost build --daemon`, 0.203 ms over the direct socket and 58.556 ms
+for Ninja: the end-to-end daemon path passed the 5-ms gate and was 25.78x
 faster than Ninja on this workload. A leaf-source change was not a win: Frost
-took 390.660 ms versus Ninja's 63.764 ms. The daemon shortcut is enabled only
+took 411.679 ms versus Ninja's 63.338 ms. The daemon shortcut is enabled only
 after a complete certificate validation proves that every file is a normal,
 existing path inside the watched workspace. Each hit drains a watcher barrier;
 workspace/output events, toolchain or environment changes, symlink/external or
