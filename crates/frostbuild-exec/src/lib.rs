@@ -30,7 +30,7 @@ use serde::{Deserialize, Serialize};
 
 mod fast_noop;
 mod progress;
-pub use fast_noop::FastNoopHit;
+pub use fast_noop::{FastNoopDaemonHit, FastNoopHit, FastNoopWatchProof};
 pub use progress::{progress_channel, ProgressEvent, ProgressSender, ProgressState};
 
 static CANCELLED: AtomicBool = AtomicBool::new(false);
@@ -91,6 +91,28 @@ pub fn try_fast_noop_with_key_environment(
     key_env: &BTreeMap<String, String>,
 ) -> Result<Option<FastNoopHit>> {
     fast_noop::check(root, profile, platform, key_env, false)
+}
+
+/// Fully validate a daemon certificate and return a watcher-cache proof only
+/// when every recorded file can be covered by the workspace event stream.
+pub fn try_fast_noop_for_daemon(
+    root: &Path,
+    profile: &str,
+    platform: &str,
+    key_env: &BTreeMap<String, String>,
+) -> Result<Option<FastNoopDaemonHit>> {
+    fast_noop::check_for_daemon(root, profile, platform, key_env, false)
+}
+
+/// Revalidate the non-workspace portion of a watcher-backed certificate.
+pub fn try_fast_noop_from_watch_proof(
+    root: &Path,
+    profile: &str,
+    platform: &str,
+    key_env: &BTreeMap<String, String>,
+    proof: &FastNoopWatchProof,
+) -> Result<Option<FastNoopHit>> {
+    fast_noop::check_watch_proof(root, profile, platform, key_env, proof)
 }
 
 pub fn install_signal_handler() -> Result<()> {

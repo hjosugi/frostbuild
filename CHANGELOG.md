@@ -5,6 +5,25 @@ All notable changes follow Keep a Changelog and Semantic Versioning. Before
 
 ## [Unreleased]
 
+### Added
+
+- `frost-bench-rs daemon-graph` generates equivalent large linear graphs for
+  Frost and Ninja, rotates standalone/daemon/socket/Ninja no-op samples and
+  records alternating one-file leaf rebuilds with raw host/load evidence.
+
+### Performance
+
+- A fully validated daemon certificate can remain resident behind a filesystem
+  event barrier when every recorded path is normal and workspace-watched. The
+  checked 10k-target median fell to 2.396 ms end-to-end versus Ninja 62.693 ms;
+  the direct socket path measured 0.229 ms.
+
+### Fixed
+
+- Watcher-backed no-op proofs include `.frost` output events and retain the
+  complete validation/fallback path for changed toolchains/environments,
+  external, missing or symlinked evidence, watcher errors and barrier timeouts.
+
 ## [0.3.1] - 2026-07-23
 
 ### Documentation

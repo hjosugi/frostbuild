@@ -5,7 +5,8 @@ use std::net::{TcpListener, TcpStream};
 #[cfg(unix)]
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Condvar, Mutex};
+use std::time::{Duration, Instant};
 
 use anyhow::{Context, Result};
 use notify::{RecursiveMode, Watcher};
@@ -13,9 +14,33 @@ use serde::{Deserialize, Serialize};
 
 pub const PROTOCOL_VERSION: u32 = 1;
 
-#[derive(Default)]
 struct DaemonState {
     dirty: BTreeSet<PathBuf>,
+    watcher_trusted: bool,
+    event_epoch: u64,
+    next_barrier: u64,
+    barrier_seen: u64,
+    cached_noop: Option<CachedNoop>,
+}
+
+struct CachedNoop {
+    profile: String,
+    platform: String,
+    key_env: BTreeMap<String, String>,
+    proof: frostbuild_exec::FastNoopWatchProof,
+}
+
+impl CachedNoop {
+    fn matches(&self, request: &FastNoopRequest) -> bool {
+        self.profile == request.profile
+            && self.platform == request.platform
+            && self.key_env == request.key_env
+    }
+}
+
+struct DaemonShared {
+    state: Mutex<DaemonState>,
+    events: Condvar,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -37,7 +62,7 @@ pub enum Request {
     },
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FastNoopRequest {
     pub profile: String,
     pub platform: String,
@@ -132,27 +157,51 @@ pub fn serve(root: &Path) -> Result<()> {
         (listener, endpoint)
     };
 
-    let state = Arc::new(Mutex::new(DaemonState::default()));
+    let state = Arc::new(DaemonShared {
+        state: Mutex::new(DaemonState {
+            dirty: BTreeSet::new(),
+            watcher_trusted: true,
+            event_epoch: 0,
+            next_barrier: 0,
+            barrier_seen: 0,
+            cached_noop: None,
+        }),
+        events: Condvar::new(),
+    });
     let event_state = Arc::clone(&state);
     let root_owned = root.to_path_buf();
     let mut watcher = notify::recommended_watcher(move |event: notify::Result<notify::Event>| {
-        if let Ok(event) = event {
-            if !matches!(
-                event.kind,
-                notify::EventKind::Any
-                    | notify::EventKind::Create(_)
-                    | notify::EventKind::Modify(_)
-                    | notify::EventKind::Remove(_)
-            ) {
-                return;
+        let Ok(event) = event else {
+            let mut state = event_state.state.lock().unwrap();
+            state.watcher_trusted = false;
+            state.cached_noop = None;
+            state.event_epoch = state.event_epoch.wrapping_add(1);
+            event_state.events.notify_all();
+            return;
+        };
+        if !matches!(
+            event.kind,
+            notify::EventKind::Any
+                | notify::EventKind::Create(_)
+                | notify::EventKind::Modify(_)
+                | notify::EventKind::Remove(_)
+        ) {
+            return;
+        }
+        let mut state = event_state.state.lock().unwrap();
+        for path in event.paths {
+            let relative = path.strip_prefix(&root_owned).unwrap_or(&path);
+            if let Some(barrier) = watcher_barrier_id(relative) {
+                state.barrier_seen = state.barrier_seen.max(barrier);
+                event_state.events.notify_all();
+                continue;
             }
-            let mut state = event_state.lock().unwrap();
-            for path in event.paths {
-                let relative = path.strip_prefix(&root_owned).unwrap_or(&path);
-                if !relative.starts_with(".frost") && !relative.starts_with(".git") {
-                    state.dirty.insert(relative.to_path_buf());
-                }
+            if relative.starts_with(".git") {
+                continue;
             }
+            state.dirty.insert(relative.to_path_buf());
+            state.cached_noop = None;
+            state.event_epoch = state.event_epoch.wrapping_add(1);
         }
     })?;
     watcher.watch(root, RecursiveMode::Recursive)?;
@@ -206,7 +255,166 @@ fn publish_windows_endpoint(path: &Path, address: &str) -> Result<()> {
     anyhow::bail!("another frostd instance is starting")
 }
 
-fn handle(root: &Path, request: Request, state: &Mutex<DaemonState>) -> (Response, bool) {
+const WATCHER_BARRIER_PREFIX: &str = ".frostd-barrier-";
+
+fn watcher_barrier_id(relative: &Path) -> Option<u64> {
+    if relative.parent() != Some(Path::new(".frost")) {
+        return None;
+    }
+    relative
+        .file_name()?
+        .to_str()?
+        .strip_prefix(WATCHER_BARRIER_PREFIX)?
+        .parse()
+        .ok()
+}
+
+/// Flush events queued before the marker through the watcher callback. A
+/// timeout or backend error permanently disables watcher-backed no-op hits;
+/// the ordinary certificate path remains available.
+fn watcher_barrier(root: &Path, shared: &DaemonShared) -> bool {
+    let id = {
+        let mut state = shared.state.lock().unwrap();
+        if !state.watcher_trusted {
+            return false;
+        }
+        state.next_barrier = state.next_barrier.wrapping_add(1).max(1);
+        state.next_barrier
+    };
+    let path = root
+        .join(".frost")
+        .join(format!("{WATCHER_BARRIER_PREFIX}{id}"));
+    if std::fs::write(&path, id.to_string()).is_err() {
+        let mut state = shared.state.lock().unwrap();
+        state.watcher_trusted = false;
+        state.cached_noop = None;
+        return false;
+    }
+
+    let deadline = Instant::now() + Duration::from_millis(500);
+    let mut state = shared.state.lock().unwrap();
+    while state.watcher_trusted && state.barrier_seen < id {
+        let Some(remaining) = deadline.checked_duration_since(Instant::now()) else {
+            break;
+        };
+        let (next, timeout) = shared.events.wait_timeout(state, remaining).unwrap();
+        state = next;
+        if timeout.timed_out() {
+            break;
+        }
+    }
+    let observed = state.watcher_trusted && state.barrier_seen >= id;
+    if !observed {
+        state.watcher_trusted = false;
+        state.cached_noop = None;
+    }
+    drop(state);
+    let _ = std::fs::remove_file(path);
+    observed
+}
+
+fn noop_response(version: u32, hit: frostbuild_exec::FastNoopHit, started: Instant) -> Response {
+    let scope = if hit.closure_actions < hit.graph_actions {
+        format!("{} of {} actions", hit.closure_actions, hit.graph_actions)
+    } else {
+        format!("{} actions", hit.closure_actions)
+    };
+    Response {
+        version,
+        code: 0,
+        stdout: format!(
+            "frost: up to date · {scope} · {} ms\n",
+            started.elapsed().as_millis()
+        ),
+        stderr: String::new(),
+    }
+}
+
+fn try_cached_noop(
+    root: &Path,
+    request: &FastNoopRequest,
+    shared: &DaemonShared,
+) -> Result<Option<frostbuild_exec::FastNoopHit>> {
+    let proof = {
+        let state = shared.state.lock().unwrap();
+        if !state.watcher_trusted || !state.dirty.is_empty() {
+            return Ok(None);
+        }
+        state
+            .cached_noop
+            .as_ref()
+            .filter(|cached| cached.matches(request))
+            .map(|cached| cached.proof.clone())
+    };
+    let Some(proof) = proof else {
+        return Ok(None);
+    };
+    let hit = frostbuild_exec::try_fast_noop_from_watch_proof(
+        root,
+        &request.profile,
+        &request.platform,
+        &request.key_env,
+        &proof,
+    )?;
+    let Some(hit) = hit else {
+        shared.state.lock().unwrap().cached_noop = None;
+        return Ok(None);
+    };
+    if !watcher_barrier(root, shared) {
+        return Ok(None);
+    }
+    let state = shared.state.lock().unwrap();
+    Ok(
+        (state.watcher_trusted && state.dirty.is_empty() && state.cached_noop.is_some())
+            .then_some(hit),
+    )
+}
+
+fn try_full_noop(
+    root: &Path,
+    request: &FastNoopRequest,
+    shared: &DaemonShared,
+) -> Result<Option<frostbuild_exec::FastNoopHit>> {
+    let barrier_ready = watcher_barrier(root, shared);
+    let baseline_epoch = {
+        let mut state = shared.state.lock().unwrap();
+        if barrier_ready && state.watcher_trusted {
+            state.dirty.clear();
+        }
+        state.event_epoch
+    };
+    let validated = frostbuild_exec::try_fast_noop_for_daemon(
+        root,
+        &request.profile,
+        &request.platform,
+        &request.key_env,
+    )?;
+    let Some(validated) = validated else {
+        return Ok(None);
+    };
+
+    let stable = barrier_ready && watcher_barrier(root, shared);
+    let mut state = shared.state.lock().unwrap();
+    let unchanged = stable && state.watcher_trusted && state.event_epoch == baseline_epoch;
+    if unchanged {
+        state.dirty.clear();
+        state.cached_noop = validated.watch_proof.map(|proof| CachedNoop {
+            profile: request.profile.clone(),
+            platform: request.platform.clone(),
+            key_env: request.key_env.clone(),
+            proof,
+        });
+    } else {
+        state.cached_noop = None;
+    }
+    // If a trusted watcher observed a change during validation, the identity
+    // scan may have passed that path before it changed. Reject this response
+    // and let the child build settle the workspace. When no watcher barrier
+    // was available at the start, preserve the ordinary certificate path.
+    Ok((!barrier_ready || unchanged).then_some(validated.hit))
+}
+
+fn handle(root: &Path, request: Request, shared: &DaemonShared) -> (Response, bool) {
     let version = match &request {
         Request::Status { version }
         | Request::Run { version, .. }
@@ -225,7 +433,7 @@ fn handle(root: &Path, request: Request, state: &Mutex<DaemonState>) -> (Respons
     }
     match request {
         Request::Status { .. } => {
-            let count = state.lock().unwrap().dirty.len();
+            let count = shared.state.lock().unwrap().dirty.len();
             (
                 Response {
                     version,
@@ -252,33 +460,12 @@ fn handle(root: &Path, request: Request, state: &Mutex<DaemonState>) -> (Respons
             ..
         } => {
             if let Some(fast_noop) = fast_noop {
-                let started = std::time::Instant::now();
-                match frostbuild_exec::try_fast_noop_with_key_environment(
-                    root,
-                    &fast_noop.profile,
-                    &fast_noop.platform,
-                    &fast_noop.key_env,
-                ) {
-                    Ok(Some(hit)) => {
-                        state.lock().unwrap().dirty.clear();
-                        let scope = if hit.closure_actions < hit.graph_actions {
-                            format!("{} of {} actions", hit.closure_actions, hit.graph_actions)
-                        } else {
-                            format!("{} actions", hit.closure_actions)
-                        };
-                        return (
-                            Response {
-                                version,
-                                code: 0,
-                                stdout: format!(
-                                    "frost: up to date · {scope} · {} ms\n",
-                                    started.elapsed().as_millis()
-                                ),
-                                stderr: String::new(),
-                            },
-                            false,
-                        );
-                    }
+                let started = Instant::now();
+                match try_cached_noop(root, &fast_noop, shared).and_then(|hit| match hit {
+                    Some(hit) => Ok(Some(hit)),
+                    None => try_full_noop(root, &fast_noop, shared),
+                }) {
+                    Ok(Some(hit)) => return (noop_response(version, hit, started), false),
                     Ok(None) => {}
                     Err(error) => {
                         return (
@@ -300,15 +487,14 @@ fn handle(root: &Path, request: Request, state: &Mutex<DaemonState>) -> (Respons
             {
                 Ok(output) => {
                     if output.status.success() {
-                        // The dirty set feeds `daemon status` only. It used to
-                        // be cleared after a fixed 20 ms sleep, meant to let
-                        // the watcher deliver events for the build's own
-                        // output writes first — a delay every build paid to
-                        // keep a reported count tidy. Clearing immediately can
-                        // leave frost's own writes counted until the next
-                        // build, which is cosmetic. Before this set may prune
-                        // real work it has to identify self-writes properly.
-                        state.lock().unwrap().dirty.clear();
+                        // Drain the child build's writes before clearing its
+                        // dirty paths. No proof is installed here: the next
+                        // request still performs one complete certificate
+                        // validation before watcher-backed hits are possible.
+                        let _ = watcher_barrier(root, shared);
+                        let mut state = shared.state.lock().unwrap();
+                        state.dirty.clear();
+                        state.cached_noop = None;
                     }
                     (
                         Response {
@@ -355,6 +541,19 @@ pub fn read_frame<T: for<'de> Deserialize<'de>>(stream: &mut impl Read) -> Resul
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn watcher_barriers_are_distinct_from_workspace_changes() {
+        assert_eq!(
+            watcher_barrier_id(Path::new(".frost/.frostd-barrier-42")),
+            Some(42)
+        );
+        assert_eq!(
+            watcher_barrier_id(Path::new("src/.frostd-barrier-42")),
+            None
+        );
+        assert_eq!(watcher_barrier_id(Path::new(".frost/output")), None);
+    }
 
     #[test]
     fn workspace_daemon_serves_status_and_shutdown() {

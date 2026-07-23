@@ -311,6 +311,11 @@ cargo run --release --locked -p frostbuild-bench --bin frost-bench-rs -- \
   daemon-noop --frost "$PWD/target/release/frost" --iterations 31
 
 cargo run --release --locked -p frostbuild-bench --bin frost-bench-rs -- \
+  daemon-graph --frost "$PWD/target/release/frost" \
+  --targets 10000 --iterations 31 \
+  --out bench/baselines/<date>-<host>-daemon-10k.json
+
+cargo run --release --locked -p frostbuild-bench --bin frost-bench-rs -- \
   cas --size-mib 64 --iterations 7
 ```
 
@@ -328,6 +333,18 @@ standalone CLI measured 2.043 ms, end-to-end daemon CLI 1.711 ms and the daemon
 socket roundtrip 0.238 ms. Both local 5-ms gates pass, while the separate 10k
 standalone graph remains 15.620 ms; these workloads are intentionally not
 conflated.
+
+The checked 10k-target daemon graph uses the same linear genrules, commands and
+declared inputs for Frost and Ninja. Its median-of-31 no-op result was 2.396 ms
+through `frost build --daemon`, 0.229 ms over the direct socket and 62.693 ms
+for Ninja: the end-to-end daemon path passed the 5-ms gate and was 26.17x
+faster than Ninja on this workload. A leaf-source change was not a win: Frost
+took 390.660 ms versus Ninja's 63.764 ms. The daemon shortcut is enabled only
+after a complete certificate validation proves that every file is a normal,
+existing path inside the watched workspace. Each hit drains a watcher barrier;
+workspace/output events, toolchain or environment changes, symlink/external or
+missing evidence, watcher errors and barrier timeouts all retain the complete
+validation/fallback path.
 
 The checked Java comparison uses byte-identical outputs from the same 100-source
 set and records clean/no-op/one-source-change timings for Frost source-unit and

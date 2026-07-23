@@ -1,4 +1,5 @@
 use std::collections::BTreeSet;
+use std::fmt::Write as FmtWrite;
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
@@ -32,6 +33,8 @@ enum Command {
     Cas(CasArgs),
     /// Compare standalone CLI, daemon CLI and daemon socket warm no-op latency.
     DaemonNoop(DaemonNoopArgs),
+    /// Compare a large Frost daemon graph with the equivalent Ninja graph.
+    DaemonGraph(DaemonGraphArgs),
 }
 
 #[derive(Debug, Args)]
@@ -60,6 +63,33 @@ struct DaemonNoopArgs {
     frost: PathBuf,
 
     /// Samples per path, rotated so no path always runs first.
+    #[arg(long, default_value_t = 31)]
+    iterations: usize,
+
+    /// Emit machine-readable JSON instead of the compact AA report.
+    #[arg(long)]
+    json: bool,
+
+    /// Also write the complete JSON report to this path.
+    #[arg(long)]
+    out: Option<PathBuf>,
+}
+
+#[derive(Debug, Args)]
+struct DaemonGraphArgs {
+    /// Release frost executable to measure.
+    #[arg(long, default_value = "frost")]
+    frost: PathBuf,
+
+    /// Ninja executable used for the equivalent graph.
+    #[arg(long, default_value = "ninja")]
+    ninja: PathBuf,
+
+    /// Number of genrule targets in the linear graph.
+    #[arg(long, default_value_t = 10_000)]
+    targets: usize,
+
+    /// Samples per path; path order rotates on every iteration.
     #[arg(long, default_value_t = 31)]
     iterations: usize,
 
@@ -170,6 +200,33 @@ struct DaemonNoopReport {
     daemon_socket_speedup: f64,
     daemon_server_sub_5ms: bool,
     end_to_end_sub_5ms: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct DaemonGraphReport {
+    schema: &'static str,
+    frostbuild_version: &'static str,
+    generated_at_unix_s: u64,
+    environment_before: Environment,
+    environment_after: Environment,
+    frost_executable: PathBuf,
+    frost_version: String,
+    ninja_executable: PathBuf,
+    ninja_version: String,
+    targets: usize,
+    iterations: usize,
+    workspace_contract: String,
+    standalone_noop: LatencyMeasurement,
+    daemon_cli_noop: LatencyMeasurement,
+    daemon_socket_noop: LatencyMeasurement,
+    ninja_noop: LatencyMeasurement,
+    daemon_cli_vs_ninja_noop: f64,
+    daemon_socket_vs_ninja_noop: f64,
+    daemon_server_sub_5ms: bool,
+    end_to_end_sub_5ms: bool,
+    greater_than_2x_ninja: bool,
+    daemon_cli_incremental_leaf: LatencyMeasurement,
+    ninja_incremental_leaf: LatencyMeasurement,
 }
 
 struct Scratch {
@@ -430,6 +487,209 @@ fn run_daemon_noop(args: DaemonNoopArgs) -> Result<DaemonNoopReport> {
         standalone_cli,
         daemon_cli,
         daemon_socket_roundtrip,
+    })
+}
+
+fn graph_target_name(index: usize) -> String {
+    format!("node{index:05}")
+}
+
+fn write_daemon_graph_workspace(root: &Path, targets: usize) -> Result<()> {
+    std::fs::create_dir_all(root.join("src"))?;
+    std::fs::create_dir_all(root.join("include"))?;
+    std::fs::create_dir_all(root.join("out"))?;
+    std::fs::write(root.join("include/hot.h"), "HOT=1\n")?;
+
+    let final_target = graph_target_name(targets - 1);
+    let mut frost = String::with_capacity(targets * 240);
+    writeln!(
+        frost,
+        "[workspace]\ndefault_targets = [\"{final_target}\"]\n"
+    )?;
+    let mut ninja = String::with_capacity(targets * 130);
+    ninja.push_str("rule stamp\n");
+    ninja.push_str(r#"  command = printf '%s\n' $out > $out"#);
+    ninja.push_str("\n  description = STAMP $out\n\n");
+
+    for index in 0..targets {
+        let name = graph_target_name(index);
+        std::fs::write(
+            root.join(format!("src/{name}.txt")),
+            format!("value={index}\n"),
+        )?;
+
+        writeln!(frost, "[target.{name}]")?;
+        frost.push_str("kind = \"genrule\"\n");
+        frost.push_str(r#"cmd = "printf '%s\\n' ${out} > ${out}""#);
+        frost.push('\n');
+        if index == 0 {
+            frost.push_str("deps = []\n");
+        } else {
+            writeln!(frost, "deps = [\"{}\"]", graph_target_name(index - 1))?;
+        }
+        writeln!(frost, "inputs = [\"src/{name}.txt\", \"include/hot.h\"]")?;
+        writeln!(frost, "outputs = [\".frost/out/{name}.out\"]\n")?;
+
+        write!(ninja, "build out/{name}.out: stamp src/{name}.txt ")?;
+        if index > 0 {
+            write!(ninja, "out/{}.out ", graph_target_name(index - 1))?;
+        }
+        ninja.push_str("include/hot.h\n");
+    }
+    writeln!(
+        ninja,
+        "\nbuild all: phony out/{final_target}.out\ndefault all"
+    )?;
+
+    std::fs::write(root.join("frost.toml"), frost)?;
+    std::fs::write(root.join("build.ninja"), ninja)?;
+    Ok(())
+}
+
+fn ninja_command(ninja: &Path, root: &Path) -> Result<std::process::Output> {
+    ProcessCommand::new(ninja)
+        .args(["-f", "build.ninja"])
+        .current_dir(root)
+        .output()
+        .with_context(|| format!("failed to start {}", ninja.display()))
+}
+
+fn measure_ninja(ninja: &Path, root: &Path, expect_noop: bool) -> Result<f64> {
+    let started = Instant::now();
+    let output = ninja_command(ninja, root)?;
+    let elapsed = elapsed_ms(started);
+    anyhow::ensure!(
+        output.status.success(),
+        "ninja failed:\n{}{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    if expect_noop {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        anyhow::ensure!(
+            stdout.contains("no work to do"),
+            "unexpected Ninja output: {stdout}"
+        );
+    }
+    Ok(elapsed)
+}
+
+fn measure_frost_build(frost: &Path, root: &Path, daemon: bool) -> Result<f64> {
+    let mut args = vec!["build"];
+    if daemon {
+        args.push("--daemon");
+    }
+    args.push("--no-tui");
+    let started = Instant::now();
+    checked_frost(frost, root, &args)?;
+    Ok(elapsed_ms(started))
+}
+
+fn run_daemon_graph(args: DaemonGraphArgs) -> Result<DaemonGraphReport> {
+    anyhow::ensure!(args.targets > 0, "--targets must be greater than zero");
+    anyhow::ensure!(
+        args.iterations > 0,
+        "--iterations must be greater than zero"
+    );
+    let frost = resolve_program(&args.frost)?;
+    let ninja = resolve_program(&args.ninja)?;
+    let frost_output = ProcessCommand::new(&frost)
+        .arg("--version")
+        .output()
+        .context("failed to read frost version")?;
+    anyhow::ensure!(frost_output.status.success(), "frost --version failed");
+    let ninja_output = ProcessCommand::new(&ninja)
+        .arg("--version")
+        .output()
+        .context("failed to read Ninja version")?;
+    anyhow::ensure!(ninja_output.status.success(), "ninja --version failed");
+
+    let frost_version = String::from_utf8_lossy(&frost_output.stdout)
+        .trim()
+        .to_string();
+    let ninja_version = String::from_utf8_lossy(&ninja_output.stdout)
+        .trim()
+        .to_string();
+    let environment_before = environment();
+    let scratch = Scratch::new()?;
+    let root = scratch.path.join("daemon-graph-workspace");
+    write_daemon_graph_workspace(&root, args.targets)?;
+
+    checked_frost(&frost, &root, &["build", "--no-tui"])?;
+    measure_ninja(&ninja, &root, false)?;
+    let _daemon = DaemonThread::start(&root)?;
+
+    // Warm process pages, graph/certificate data and each measurement path.
+    measure_frost(&frost, &root, false)?;
+    measure_frost(&frost, &root, true)?;
+    measure_daemon_socket(&root)?;
+    measure_ninja(&ninja, &root, true)?;
+
+    let mut standalone = Vec::with_capacity(args.iterations);
+    let mut daemon_cli = Vec::with_capacity(args.iterations);
+    let mut daemon_socket = Vec::with_capacity(args.iterations);
+    let mut ninja_noop = Vec::with_capacity(args.iterations);
+    for iteration in 0..args.iterations {
+        for offset in 0..4 {
+            match (iteration + offset) % 4 {
+                0 => standalone.push(measure_frost(&frost, &root, false)?),
+                1 => daemon_cli.push(measure_frost(&frost, &root, true)?),
+                2 => daemon_socket.push(measure_daemon_socket(&root)?),
+                _ => ninja_noop.push(measure_ninja(&ninja, &root, true)?),
+            }
+        }
+    }
+
+    let leaf = root.join(format!("src/{}.txt", graph_target_name(args.targets - 1)));
+    let mut frost_incremental = Vec::with_capacity(args.iterations);
+    let mut ninja_incremental = Vec::with_capacity(args.iterations);
+    for iteration in 0..args.iterations {
+        std::fs::write(&leaf, format!("changed={iteration}\n"))?;
+        if iteration % 2 == 0 {
+            frost_incremental.push(measure_frost_build(&frost, &root, true)?);
+            ninja_incremental.push(measure_ninja(&ninja, &root, false)?);
+        } else {
+            ninja_incremental.push(measure_ninja(&ninja, &root, false)?);
+            frost_incremental.push(measure_frost_build(&frost, &root, true)?);
+        }
+    }
+
+    let standalone_noop = LatencyMeasurement::new(standalone);
+    let daemon_cli_noop = LatencyMeasurement::new(daemon_cli);
+    let daemon_socket_noop = LatencyMeasurement::new(daemon_socket);
+    let ninja_noop = LatencyMeasurement::new(ninja_noop);
+    let daemon_cli_incremental_leaf = LatencyMeasurement::new(frost_incremental);
+    let ninja_incremental_leaf = LatencyMeasurement::new(ninja_incremental);
+    Ok(DaemonGraphReport {
+        schema: "frost-daemon-graph-v1",
+        frostbuild_version: env!("CARGO_PKG_VERSION"),
+        generated_at_unix_s: SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs(),
+        environment_before,
+        environment_after: environment(),
+        frost_executable: frost,
+        frost_version,
+        ninja_executable: ninja,
+        ninja_version,
+        targets: args.targets,
+        iterations: args.iterations,
+        workspace_contract: format!(
+            "{}-target linear genrule graph; equal commands and declared inputs",
+            args.targets
+        ),
+        daemon_cli_vs_ninja_noop: ninja_noop.median_ms / daemon_cli_noop.median_ms,
+        daemon_socket_vs_ninja_noop: ninja_noop.median_ms / daemon_socket_noop.median_ms,
+        daemon_server_sub_5ms: daemon_socket_noop.median_ms < 5.0,
+        end_to_end_sub_5ms: daemon_cli_noop.median_ms < 5.0,
+        greater_than_2x_ninja: ninja_noop.median_ms / daemon_cli_noop.median_ms > 2.0,
+        standalone_noop,
+        daemon_cli_noop,
+        daemon_socket_noop,
+        ninja_noop,
+        daemon_cli_incremental_leaf,
+        ninja_incremental_leaf,
     })
 }
 
@@ -746,6 +1006,51 @@ fn print_daemon_noop(report: &DaemonNoopReport) {
     );
 }
 
+fn print_daemon_graph(report: &DaemonGraphReport) {
+    println!(
+        "Frost daemon vs Ninja · {} targets · median of {}",
+        report.targets, report.iterations
+    );
+    println!("|");
+    println!(
+        "+-- standalone no-op ... {:>8.3} ms",
+        report.standalone_noop.median_ms
+    );
+    println!(
+        "+-- daemon CLI no-op ... {:>8.3} ms  {:>5.2}x vs Ninja",
+        report.daemon_cli_noop.median_ms, report.daemon_cli_vs_ninja_noop
+    );
+    println!(
+        "+-- daemon socket ...... {:>8.3} ms  {:>5.2}x vs Ninja",
+        report.daemon_socket_noop.median_ms, report.daemon_socket_vs_ninja_noop
+    );
+    println!(
+        "+-- Ninja no-op ........ {:>8.3} ms",
+        report.ninja_noop.median_ms
+    );
+    println!(
+        "+-- daemon leaf change . {:>8.3} ms",
+        report.daemon_cli_incremental_leaf.median_ms
+    );
+    println!(
+        "`-- Ninja leaf change .. {:>8.3} ms",
+        report.ninja_incremental_leaf.median_ms
+    );
+    println!(
+        "    daemon <5 ms {} · >2x Ninja {}",
+        if report.end_to_end_sub_5ms {
+            "PASS"
+        } else {
+            "FAIL"
+        },
+        if report.greater_than_2x_ninja {
+            "PASS"
+        } else {
+            "FAIL"
+        }
+    );
+}
+
 fn main() -> Result<()> {
     let cli = Cli::parse();
     match cli.command {
@@ -789,11 +1094,31 @@ fn main() -> Result<()> {
                 }
             }
         }
+        Some(Command::DaemonGraph(args)) => {
+            let json = args.json;
+            let out = args.out.clone();
+            let report = run_daemon_graph(args)?;
+            let encoded = serde_json::to_string_pretty(&report)?;
+            if let Some(path) = &out {
+                if let Some(parent) = path.parent() {
+                    std::fs::create_dir_all(parent)?;
+                }
+                std::fs::write(path, format!("{encoded}\n"))?;
+            }
+            if json {
+                println!("{encoded}");
+            } else {
+                print_daemon_graph(&report);
+                if let Some(path) = out {
+                    println!("    report {}", path.display());
+                }
+            }
+        }
         None => {
             println!("Use ./frost-bench for frontend comparisons, or run:");
             println!(
                 "  cargo run --release -p frostbuild-bench --bin frost-bench-rs -- \
-                 <cas|daemon-noop> --help"
+                 <cas|daemon-noop|daemon-graph> --help"
             );
         }
     }
@@ -819,5 +1144,25 @@ mod tests {
         assert_eq!(measurement.min_ms, 1.0);
         assert_eq!(measurement.max_ms, 3.0);
         assert_eq!(measurement.samples_ms, vec![3.0, 1.0, 2.0]);
+    }
+
+    #[test]
+    fn daemon_graph_generator_keeps_frost_and_ninja_shapes_equal() {
+        let scratch = Scratch::new().unwrap();
+        let root = scratch.path.join("graph-generator-test");
+        write_daemon_graph_workspace(&root, 3).unwrap();
+        let frost = std::fs::read_to_string(root.join("frost.toml")).unwrap();
+        let ninja = std::fs::read_to_string(root.join("build.ninja")).unwrap();
+        assert_eq!(frost.matches("kind = \"genrule\"").count(), 3);
+        assert_eq!(
+            ninja
+                .lines()
+                .filter(|line| line.starts_with("build out/"))
+                .count(),
+            3
+        );
+        assert!(frost.contains("deps = [\"node00001\"]"));
+        assert!(ninja.contains("out/node00001.out include/hot.h"));
+        assert!(root.join("src/node00002.txt").is_file());
     }
 }

@@ -1598,9 +1598,9 @@ fn daemon_build_status_and_stop() {
     assert_eq!(in_process.code, 0, "{in_process:?}");
     assert!(in_process.stdout.contains("up to date"), "{in_process:?}");
 
-    // The daemon must not trust only watcher state: build outputs live under
-    // .frost (which the watcher intentionally ignores). The engine still has
-    // to validate outputs and restore a manually deleted artifact from CAS.
+    // A watcher barrier must observe output changes under .frost before a
+    // cached proof can be accepted. Deleting an artifact immediately before
+    // the request must take the full path and restore it from CAS.
     std::fs::remove_file(ws.dir.join(".frost/bin/debug/app")).unwrap();
     let (ok, out) = ws.frost(&["build", "--daemon", "--explain"]);
     assert!(ok && out.contains("up to date"), "{out}");

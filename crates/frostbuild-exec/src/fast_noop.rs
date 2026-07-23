@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
+use std::io::Read;
+use std::path::{Component, Path, PathBuf};
 
 use anyhow::{Context, Result};
 use frostbuild_core::cas::LocalCas;
@@ -16,6 +17,23 @@ const MAGIC: &[u8; 8] = b"FRSTNO03";
 pub struct FastNoopHit {
     pub closure_actions: usize,
     pub graph_actions: usize,
+}
+
+#[derive(Debug, Clone)]
+pub struct FastNoopWatchProof {
+    certificate_digest: [u8; 32],
+    profile: String,
+    platform: String,
+    toolchain: Toolchain,
+    toolchain_hash: String,
+    key_env: BTreeMap<String, String>,
+    hit: FastNoopHit,
+}
+
+#[derive(Debug, Clone)]
+pub struct FastNoopDaemonHit {
+    pub hit: FastNoopHit,
+    pub watch_proof: Option<FastNoopWatchProof>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -126,6 +144,22 @@ pub fn check(
     key_env: &BTreeMap<String, String>,
     read_dynamic_environment: bool,
 ) -> Result<Option<FastNoopHit>> {
+    Ok(
+        check_for_daemon(root, profile, platform, key_env, read_dynamic_environment)?
+            .map(|validated| validated.hit),
+    )
+}
+
+/// Fully validate a certificate and, when every recorded file is a normal
+/// path below the watched workspace, return a compact proof the daemon may
+/// recheck after an event-stream barrier.
+pub fn check_for_daemon(
+    root: &Path,
+    profile: &str,
+    platform: &str,
+    key_env: &BTreeMap<String, String>,
+    read_dynamic_environment: bool,
+) -> Result<Option<FastNoopDaemonHit>> {
     if !safe_component(profile) || !safe_component(platform) {
         return Ok(None);
     }
@@ -137,7 +171,8 @@ pub fn check(
         return Ok(None);
     }
     let payload = &bytes[40..];
-    if blake3::hash(payload).as_bytes() != &bytes[8..40] {
+    let payload_digest = *blake3::hash(payload).as_bytes();
+    if payload_digest != bytes[8..40] {
         return Ok(None);
     }
     let Ok(certificate) = postcard::from_bytes::<Certificate>(payload) else {
@@ -181,10 +216,93 @@ pub fn check(
     // written immediately after that maintenance path, so ordinary fast hits
     // observe the recent GC stamp and do no directory traversal.
     let _ = LocalCas::new(root, DEFAULT_CAS_MAX_BYTES).gc()?;
-    Ok(Some(FastNoopHit {
+    let hit = FastNoopHit {
         closure_actions: certificate.closure_actions,
         graph_actions: certificate.graph_actions,
-    }))
+    };
+    let watchable = !read_dynamic_environment
+        && certificate.dynamic_env.is_empty()
+        && certificate
+            .files
+            .iter()
+            .all(|file| watchable_file(root, &file.path));
+    let watch_proof = if watchable {
+        Some(FastNoopWatchProof {
+            certificate_digest: payload_digest,
+            profile: certificate.profile,
+            platform: certificate.platform,
+            toolchain: certificate.toolchain,
+            toolchain_hash: certificate.toolchain_hash,
+            key_env: certificate.key_env,
+            hit,
+        })
+    } else {
+        None
+    };
+    Ok(Some(FastNoopDaemonHit { hit, watch_proof }))
+}
+
+/// Recheck the small portion of a watcher-backed proof that lives outside the
+/// workspace event stream. The daemon must place an event barrier after this
+/// call and reject the hit if any relevant workspace event was observed.
+pub fn check_watch_proof(
+    root: &Path,
+    profile: &str,
+    platform: &str,
+    key_env: &BTreeMap<String, String>,
+    proof: &FastNoopWatchProof,
+) -> Result<Option<FastNoopHit>> {
+    if proof.profile != profile || proof.platform != platform || proof.key_env != *key_env {
+        return Ok(None);
+    }
+    let path = certificate_path(root, profile, platform);
+    let Ok(mut file) = std::fs::File::open(path) else {
+        return Ok(None);
+    };
+    let mut header = [0u8; 40];
+    if file.read_exact(&mut header).is_err()
+        || &header[..8] != MAGIC
+        || header[8..40] != proof.certificate_digest
+    {
+        return Ok(None);
+    }
+    let current_toolchain = toolchain_closure_fingerprint_cached(root, &proof.toolchain)?;
+    if current_toolchain != proof.toolchain_hash {
+        return Ok(None);
+    }
+    Ok(Some(proof.hit))
+}
+
+fn watchable_file(root: &Path, path: &str) -> bool {
+    let Ok(canonical_root) = std::fs::canonicalize(root) else {
+        return false;
+    };
+    let path = Path::new(path);
+    let candidate = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        if path.components().any(|component| {
+            matches!(
+                component,
+                Component::ParentDir | Component::RootDir | Component::Prefix(_)
+            )
+        }) {
+            return false;
+        }
+        canonical_root.join(path)
+    };
+    let Ok(canonical) = std::fs::canonicalize(&candidate) else {
+        // Missing expected files still need the ordinary identity check. A
+        // watcher cannot prove that a path reached through a missing/symlinked
+        // ancestor remains absent.
+        return false;
+    };
+    let Ok(relative) = canonical.strip_prefix(&canonical_root) else {
+        return false;
+    };
+    // Reject symlinks even when they happen to point back into the workspace;
+    // notify backends differ in whether they follow a replaced link target.
+    candidate == canonical && !relative.starts_with(".git")
 }
 
 fn certificate_path(root: &Path, profile: &str, platform: &str) -> PathBuf {
@@ -307,5 +425,29 @@ mod tests {
         let hit = check(&root, "debug", HOST_PLATFORM, &BTreeMap::new(), false).unwrap();
         assert!(hit.is_none());
         let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn watcher_proofs_cover_only_normal_files_inside_the_workspace() {
+        let root =
+            std::env::temp_dir().join(format!("frost-fast-noop-watchable-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(root.join("src")).unwrap();
+        std::fs::write(root.join("src/input"), b"inside").unwrap();
+        assert!(watchable_file(&root, "src/input"));
+        assert!(!watchable_file(&root, "../outside"));
+        assert!(!watchable_file(&root, ".git/index"));
+
+        let outside = root.with_extension("outside");
+        std::fs::write(&outside, b"outside").unwrap();
+        assert!(!watchable_file(&root, outside.to_str().unwrap()));
+
+        #[cfg(unix)]
+        {
+            std::os::unix::fs::symlink(&outside, root.join("src/link")).unwrap();
+            assert!(!watchable_file(&root, "src/link"));
+        }
+        std::fs::remove_dir_all(root).ok();
+        std::fs::remove_file(outside).ok();
     }
 }

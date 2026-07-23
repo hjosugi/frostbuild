@@ -8,7 +8,7 @@ history, specific hardware, a release tag, or an external service.
 | #8, #15, #16, #19, #63 | mmap/versioned postcard graph store, parallel stat/hash cache, append-only journal, torn-tail and kill tests |
 | #9, #10, #12, #13 | captured executor, env whitelist, critical-path/fifo scheduler, progress, keep-going, failure summary |
 | #18 | structured progress events plus a TTY-only live dashboard with job slots, cache/timing state, critical path, scrollable logs, plain pipe/CI fallback and `--no-tui`; PTY/plain E2E and renderer overhead gate |
-| #14, #21, #25, #44 | benchmark runner and PR/nightly artifacts exist. The daemon now validates eligible certificates in-process instead of spawning a second CLI. A checked rotating median-of-31 one-target run measured 0.238 ms socket roundtrip and 1.711 ms end-to-end daemon CLI versus 2.043 ms standalone. #25 stays open because its exact 10k-target daemon <5-ms gate has not been measured; the checked 10k result is standalone |
+| #14, #21, #25, #44 | benchmark runner and PR/nightly artifacts exist. #25's equivalent 10k linear-graph median-of-31 measured 2.396 ms end-to-end daemon CLI and 0.229 ms direct socket versus Ninja 62.693 ms (26.17x), with raw samples and reproduction command checked in. Watcher proofs require one full certificate validation plus normal in-workspace evidence; event barriers invalidate on source/manifest/`.frost` output changes, while external/symlink/missing evidence, arbitrary dynamic env, watcher errors or timeouts stay on the complete check/fallback path. The same report records the losing leaf-change result (390.660 ms versus Ninja 63.764 ms) rather than extending the no-op claim |
 | #17, #20, #50, #56 | escaped depfiles, dynamic headers, early cutoff, path policy/E2E, generated order-only edges |
 | #22, #23, #24 | framed/versioned socket, recursive watcher, lifecycle commands, serialized builds, correctness-preserving engine validation/fallback |
 | #26, #28, #29 | immutable BLAKE3 CAS with GC, cached compiler closure, bubblewrap sandbox and undeclared-header E2E |
@@ -31,10 +31,9 @@ history, specific hardware, a release tag, or an external service.
 The v0.3.0 release and its Linux/macOS/Windows archives provide the publication
 gate for #81, #83 and #84. The remaining cache-v2 research is deliberately
 open: #82 still needs remote CPU/bandwidth/protocol calibration, and #64
-requires an external REAPI executor experiment. #25 retains its exact 10k
-daemon gate; #87 retains npm/Vite discovery, persistent compiler/browser HMR
-and real-monorepo adoption evidence. Local command adapters or one-target no-op
-benchmarks do not imply those gates.
+requires an external REAPI executor experiment. #87 retains npm/Vite discovery,
+persistent compiler/browser HMR and real-monorepo adoption evidence. Local
+command adapters or synthetic no-op wins do not imply those remaining gates.
 
 Long-running CI-noise records, historical ML replay and a remote executor
 experiment are not represented as completed; they require external evidence

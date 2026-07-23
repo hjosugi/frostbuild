@@ -442,6 +442,56 @@ architecture is gone; it does not imply sub-5-ms for a 10k-file certificate or
 under arbitrary contention. The report keeps the earlier workload distinct
 from the checked 10k standalone result.
 
+## 10k daemon versus Ninja harness
+
+The large-graph harness generates one 10,000-target linear genrule graph with
+equal commands and declared inputs for Frost and Ninja:
+
+```bash
+cargo run --release --locked -p frostbuild-bench --bin frost-bench-rs -- \
+  daemon-graph --frost /absolute/path/to/release/frost \
+  --targets 10000 --iterations 31 \
+  --out bench/baselines/<date>-<host>-daemon-10k.json
+```
+
+After building both graphs it starts the daemon and warms every path. No-op
+iterations rotate standalone Frost, end-to-end daemon CLI, direct framed
+socket and Ninja so no path always runs first. The harness then changes the
+last source once per iteration and alternates Frost/Ninja order, measuring a
+one-file, one-action leaf rebuild without silently treating that result as a
+no-op win. Every no-op must explicitly report no work, and the direct socket
+uses a nonexistent fallback executable to prove the response stayed inside
+the daemon.
+
+The watcher shortcut is installed only after the ordinary checksummed
+certificate validates graph, toolchain, key environment and every recorded
+input/output identity. It additionally requires all file evidence to be an
+existing, non-symlink path below the workspace and outside `.git`. A quick hit
+still checks the certificate identity, toolchain and client environment, then
+waits for a marker event that drains earlier watcher events. Source, manifest
+or `.frost` output events invalidate the proof. Missing/external/symlinked
+evidence, arbitrary `pass_env`, watcher errors and marker timeouts all use the
+complete certificate or child-build fallback instead.
+
+The checked report is
+[`2026-07-23-issue-25-daemon-10k.json`](../bench/baselines/2026-07-23-issue-25-daemon-10k.json).
+It used Ninja 1.13.2, 8 logical CPUs, the performance governor and a starting
+load average of 9.79 / 8.67 / 5.78:
+
+| 10k linear graph, median of 31 | Time | Ninja / Frost |
+|---|---:|---:|
+| Frost standalone no-op | 30.453 ms | 2.06x |
+| Frost daemon CLI no-op | **2.396 ms** | **26.17x** |
+| Frost direct socket no-op | 0.229 ms | 273.75x |
+| Ninja no-op | 62.693 ms | 1.00x |
+| Frost daemon leaf change | 390.660 ms | — |
+| Ninja leaf change | 63.764 ms | — |
+
+This passes #25's exact 10k daemon median below 5 ms and greater-than-2x Ninja
+gates on the recorded host. It is not evidence that Frost wins a changed leaf;
+the same report shows the opposite, and no claim should omit that result or the
+recorded load.
+
 ## How to make the benchmark real
 
 Replace simulated `.fb` sources with actual adapters:
